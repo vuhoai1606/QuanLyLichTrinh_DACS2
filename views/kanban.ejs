@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/kanban.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Kanban Board</title>
+</head>
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <div class="main-content">
+    <div class="dashboard-header">
+      <h1>Kanban Board</h1>
+      <div class="toolbar">
+        <button id="add-column" class="btn btn-primary"><i class="fas fa-plus"></i> Add Column</button>
+        <button id="save-board" class="btn btn-secondary"><i class="fas fa-save"></i> Save</button>
+      </div>
+    </div>
+
+    <div class="kanban-container">
+      <div class="kanban-board" id="kanban-board"></div>
+    </div>
+  </div>
+
+  <!-- Modal Edit Task -->
+  <div id="task-detail-modal" class="modal">
+    <div class="modal-content">
+      <h3>Task Details</h3>
+      <input type="text" id="task-title" placeholder="Task Title" class="input-field">
+      <textarea id="task-desc" placeholder="Description" class="input-field textarea"></textarea>
+      <input type="datetime-local" id="task-due" class="input-field">
+      <select id="task-priority" class="input-field">
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <input type="text" id="task-assignee" placeholder="Assignee" class="input-field">
+      <div class="modal-actions">
+        <button id="save-task" class="btn btn-primary">Save</button>
+        <button id="delete-task" class="btn btn-danger">Delete</button>
+        <button id="close-detail" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Edit Column -->
+  <div id="column-edit-modal" class="modal">
+    <div class="modal-content">
+      <h3>Edit Column</h3>
+      <input type="text" id="column-title" placeholder="Column Title" class="input-field">
+      <div class="modal-actions">
+        <button id="save-column" class="btn btn-primary">Save</button>
+        <button id="close-column" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/kanban.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</body>
+</html>

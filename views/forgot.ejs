@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/forgot.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Quên mật khẩu - TaskManager</title>
+</head>
+<body>
+  <div class="forgot-container">
+    <div class="forgot-card">
+      <h3>Quên mật khẩu</h3>
+      <p class="subtitle">Nhập địa chỉ email của bạn để đặt lại mật khẩu.</p>
+
+      <form id="forgot-form">
+        <div class="form-group">
+          <label for="forgot-email">Email</label>
+          <input type="email" id="forgot-email" placeholder="Nhập email đã đăng ký" required>
+          <span class="error" id="email-error"></span>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-paper-plane"></i> Gửi yêu cầu
+        </button>
+
+        <p class="text-center back-login">
+          <a href="login.html"><i class="fas fa-arrow-left"></i> Quay lại đăng nhập</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/forgot.js"></script>
+</body>
+</html>

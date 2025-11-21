@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta 
+    name="description" 
+    content="Lịch trình công việc - quản lý và theo dõi công việc hằng ngày một cách trực quan." 
+  />
+  
+  <link rel="stylesheet" href="/css/header.css" />
+  <link rel="stylesheet" href="/css/calendar.css" />
+
+  <!-- Font Awesome -->
+  <link 
+    rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" 
+  />
+
+  <title>Lịch công việc</title>
+</head>
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <div class="main-container">
+
+    <!-- ===== Calendar Header ===== -->
+    <div class="calendar-header">
+      <!-- Left Controls -->
+      <div class="left-controls">
+        <button onclick="prevPeriod()" class="btn-secondary"><i class="fas fa-chevron-left"></i></button>
+        <button onclick="today()" class="btn-secondary">Today</button>
+        <button onclick="nextPeriod()" class="btn-secondary"><i class="fas fa-chevron-right"></i></button>
+        <h2 id="month-year">September 2025</h2>
+
+        <select id="viewMode" onchange="changeView()">
+          <option value="month">Month</option>
+          <option value="week">Week</option>
+          <option value="day">Day</option>
+          <option value="year">Year</option>
+        </select>
+      </div>
+
+      <!-- Right Controls -->
+      <div class="right-controls">
+        <div class="search-container">
+          <i class="fas fa-search search-icon" onclick="toggleSearch()"></i>
+          <input type="text" id="search" placeholder="Search events...">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Calendar Body ===== -->
+    <div class="calendar-body">
+
+      <!-- ==== Calendar Main ==== -->
+      <div class="calendar-main">
+        <!-- Weekdays Row -->
+        <div class="weekdays" id="weekdays">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid" id="calendar"></div>
+      </div>
+
+      <!-- ==== Calendar Sidebar ==== -->
+      <aside class="calendar-sidebar">
+        <!-- Create Button -->
+        <button class="create-btn btn-primary"><i class="fas fa-plus"></i> Create</button>
+
+        <!-- Time Insights -->
+        <div class="time-insights card">
+          <h3>Time Insights</h3>
+          <p>You spent <strong>12 hrs</strong> on meetings this week</p>
+          <p>You have <strong>3 hrs</strong> free tomorrow</p>
+        </div>
+
+        <!-- My Calendars -->
+        <div class="my-calendar card">
+          <h3>My Calendars</h3>
+          <div class="calendar-list">
+            <label><input type="checkbox" checked> Work</label>
+            <label><input type="checkbox" checked> Personal</label>
+            <label><input type="checkbox"> Study</label>
+          </div>
+        </div>
+
+        <!-- Upcoming Events -->
+        <div class="upcoming-events card">
+          <h3>Upcoming</h3>
+          <ul id="upcomingList">
+            <li>Meeting at 9 AM</li>
+            <li>Lunch with John</li>
+            <li>Project deadline</li>
+          </ul>
+        </div>
+
+        <div class="event-actions" style="margin-top: 10px;">
+          <button id="edit-event" class="btn-secondary" style="display:none;"><i class="fas fa-edit"></i> Edit Event</button>
+          <button id="delete-event" class="btn-secondary" style="display:none;"><i class="fas fa-trash"></i> Delete Event</button>
+        </div>
+        <div id="reminder-modal" class="modal" style="display:none;">
+          <div class="card">
+            <h3>Set Reminder</h3>
+            <input type="datetime-local" id="reminder-time">
+            <button class="btn-primary">Save</button>
+            <button id="close-reminder">Close</button>
+          </div>
+        </div>
+        <select id="group-calendar" style="margin-top: 10px;">
+          <option value="personal">Personal Calendar</option>
+          <option value="group">Group Calendar</option>
+        </select>
+        <button id="share-calendar" class="btn-primary" style="margin-top: 10px;"><i class="fas fa-share"></i> Share Calendar</button>
+      </aside>
+    </div>
+  </div>
+
+  <div class="modal" id="eventModal">
+    <div class="modal-content">
+      <h3>Add Event</h3>
+      <input type="text" id="eventTitle" placeholder="Event title">
+      <textarea id="eventDesc" rows="3" placeholder="Description..."></textarea>
+      <button onclick="saveEvent()" class="btn-primary">Save</button>
+    </div>
+  </div>
+
+  <script src="/js/calendar.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/notifications.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Notifications</title>
+</head>
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <!-- Nội dung chính -->
+  <div class="main-content">
+    <div class="dashboard-header">
+      <h1>Notifications</h1>
+      <p class="subtitle">Thông báo mới</p>
+      <button id="mark-read" class="btn-primary">Mark all read</button>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <ul id="noti-list">
+          <li class="noti-item unread">
+            <div>
+              <strong>Deadline sắp tới</strong>
+              <div class="small">Nộp báo cáo vào 2025-09-20</div>
+            </div>
+            <div><button class="btn" data-id="1">Mark</button></div>
+          </li>
+          <li class="noti-item">
+            <div>
+              <strong>Thành viên mới</strong>
+              <div class="small">Nguyễn A đã tham gia Team</div>
+            </div>
+            <div><button class="btn" data-id="2">Mark</button></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/notifications.js"></script>
+</body>
+</html>

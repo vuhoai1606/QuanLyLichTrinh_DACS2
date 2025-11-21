@@ -1,0 +1,283 @@
+/* ===========================
+   🌟 StarConnect Notifications CSS
+   Author: Tiến Đinh & GPT-5 (Refined UI)
+=========================== */
+
+/* ===========================
+   🎨 Global Variables
+=========================== */
+:root {
+  --primary-color: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --secondary-color: #ec4899;
+  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg: #f3f4f8;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --radius: 16px;
+  --shadow: 0 8px 28px rgba(16, 24, 40, 0.08);
+  --transition: all 0.25s ease;
+}
+
+/* ===========================
+   Reset & Base
+=========================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg-gradient);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+/* Animated Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.3), transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(99, 102, 241, 0.2), transparent 50%);
+  animation: bgAnimation 15s ease infinite;
+  z-index: -1;
+}
+
+@keyframes bgAnimation {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* ===========================
+   ⚙️ Main Layout
+=========================== */
+.main-content {
+  flex: 1;
+  padding: 40px 70px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ===========================
+   📢 Dashboard Header
+=========================== */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  color: #fff;
+  font-weight: 800;
+}
+
+.dashboard-header .subtitle {
+  color: var(--muted);
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #6366f1);
+  border: none;
+  padding: 12px 26px;
+  color: white;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background: var(--accent-hover);
+}
+
+/* ===========================
+   💬 Notification List
+=========================== */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+#noti-list {
+  list-style: none;
+}
+
+.noti-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.noti-item:hover {
+  background: var(--accent-soft);
+  transform: translateY(-3px);
+}
+
+.noti-item.unread {
+  border-left: 6px solid var(--accent);
+  background: #f7f8ff;
+}
+
+.noti-item strong {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a1a2f;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.noti-item .small {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.noti-item .btn {
+  background: var(--accent);
+  border: none;
+  padding: 8px 16px;
+  color: white;
+  font-size: 14px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: var(--transition);
+  box-shadow: 0 3px 12px rgba(79, 70, 229, 0.25);
+}
+
+.noti-item .btn:hover {
+  background: var(--accent-hover);
+  transform: scale(1.08);
+}
+
+/* ===========================
+   💡 Empty State
+=========================== */
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  font-size: 16px;
+  padding: 80px 0;
+}
+
+.empty-state i {
+  font-size: 42px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+/* ===========================
+   ✨ Animation
+=========================== */
+.noti-item {
+  animation: fadeInUp 0.35s ease;
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.read-label {
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+/* ===========================
+   📱 Responsive
+=========================== */
+@media (max-width: 1000px) {
+  .main-content {
+    padding: 28px 40px;
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-primary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .noti-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .noti-item .btn {
+    align-self: flex-end;
+  }
+
+  .dashboard-header h1 {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 20px 16px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 22px;
+  }
+
+  .noti-item strong {
+    font-size: 15px;
+  }
+}

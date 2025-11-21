@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/index.css">
+  <title>Dashboard</title>
+</head>
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="dashboard-header">
+      <h1>📊 Dashboard</h1>
+      <p class="subtitle">Tổng quan công việc & lịch trình</p>
+    </div>
+
+    <!-- Grid Layout -->
+    <div class="dashboard-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Welcome Card -->
+        <div class="card highlight">
+          <h2 id="welcome-message">Xin chào, <%= fullName || 'Guest' %> 👋</h2>
+          <p>Đây là tổng quan công việc và lịch trình của bạn hôm nay.</p>
+        </div>
+
+        <!-- Today's Tasks -->
+        <div class="card">
+          <h2>📌 Công việc hôm nay</h2>
+          <ul id="today-tasks"></ul>
+        </div>
+
+        <!-- Quick Task Form -->
+        <div class="card">
+          <h2>⚡ Thêm nhiệm vụ nhanh</h2>
+          <form id="quick-add" class="quick-task-form">
+            <input type="text" id="quick-title" placeholder="✏️ Nhập tiêu đề..." required>
+            <input type="date" id="quick-due">
+            <button type="submit" class="btn-primary">+ Thêm</button>
+          </form>
+        </div>
+
+        <!-- Tags -->
+        <div class="card">
+          <h2>🏷️ Tags</h2>
+          <div class="tags">
+            <span class="tag">Work</span>
+            <span class="tag">Study</span>
+            <span class="tag">Personal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Statistics -->
+        <div class="card">
+          <h2>📊 Thống kê</h2>
+          <p>✅ Hoàn thành: <span id="stat-done">0</span></p>
+          <p>⏰ Trễ hạn: <span id="stat-overdue">0</span></p>
+          <p>📊 Tổng: <span id="stat-total">0</span></p>
+          <div class="progress-bar">
+            <div class="progress" id="progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Upcoming Events -->
+        <div class="card">
+          <h2>📅 Sự kiện sắp tới</h2>
+          <ul id="upcoming-events">
+            <li>🕘 9:00 AM - Họp nhóm Marketing</li>
+            <li>📑 2:00 PM - Trình bày báo cáo</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Search and Stats Link -->
+    <div class="card">
+      <h2>🔍 Tìm kiếm & Thống kê</h2>
+      <input type="text" id="global-search" placeholder="Search everything" style="width: 100%; margin: 15px 0; border-radius: 20px;">
+      <a href="/reports" class="btn-secondary">Xem Thống Kê Chi Tiết</a>
+    </div>
+  </div>
+
+  <script src="/js/index.js"></script>
+  <script src="/js/header.js"></script>
+</body>
+</html>

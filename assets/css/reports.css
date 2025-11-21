@@ -1,0 +1,281 @@
+/* =========================== 
+   Global Variables 
+=========================== */
+:root {
+  --primary-color: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --secondary-color: #ec4899;
+  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #4f46e5;
+  --accent-2: #06b6d4;
+  --shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+  --radius: 12px;
+  --glass: rgba(255, 255, 255, 0.6);
+}
+
+/* ===========================
+   Reset & Base
+=========================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg-gradient);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+/* Animated Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.3), transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(99, 102, 241, 0.2), transparent 50%);
+  animation: bgAnimation 15s ease infinite;
+  z-index: -1;
+}
+
+@keyframes bgAnimation {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* =========================== 
+   Topbar 
+=========================== */
+.topbar {
+  height: 64px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #fff, #fbfdff);
+  border-bottom: 1px solid #e6eef8;
+  margin: 0;
+  width: 100%;
+}
+
+.dashboard-header {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.subtitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* =========================== 
+   Card & Components 
+=========================== */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn:hover {
+  background: #4338ca;
+}
+
+.input,
+textarea,
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e6eef8;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  color: #111827;
+}
+
+/* =========================== 
+   Utility 
+=========================== */
+.small {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* =========================== 
+   Main Content 
+=========================== */
+.main-content {
+  padding: 20px;
+}
+
+/* =========================== 
+   Dashboard Layout (CHỈNH MỚI) 
+=========================== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Hai biểu đồ nằm ngang */
+  gap: 25px;
+  align-items: stretch;
+}
+
+.dashboard-grid .card {
+  width: 100%;
+}
+
+/* =========================== 
+   Card Header 
+=========================== */
+.card h2 {
+  font-size: 20px;
+  color: #1f2937;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+canvas {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+/* =========================== 
+   Report Actions 
+=========================== */
+.report-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.form-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+input[type="email"] {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fafafa;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+input[type="email"]:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.2);
+  outline: none;
+}
+
+/* =========================== 
+   Buttons 
+=========================== */
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #1f2937;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+  color: #111827;
+}
+
+/* =========================== 
+   Responsive 
+=========================== */
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr; 
+  }
+
+  .card {
+    width: 100%;
+  }
+
+  .report-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .form-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  input[type="email"] {
+    width: 100%;
+  }
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/register.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Đăng ký - TaskManager</title>
+</head>
+<body>
+  <div class="register-container">
+    <div class="register-card">
+      <h3>Đăng ký</h3>
+      <form id="register-form">
+        <div class="form-group">
+          <label for="register-username">Tên đăng nhập</label>
+          <input type="text" id="register-username" placeholder="Nhập tên đăng nhập" required>
+          <span class="error" id="username-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="register-fullname">Họ và tên</label>
+          <input type="text" id="register-fullname" placeholder="Nhập họ và tên" required>
+          <span class="error" id="fullname-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="register-email">Email</label>
+          <input type="email" id="register-email" placeholder="Nhập email" required>
+          <span class="error" id="email-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="register-password">Mật khẩu</label>
+          <input type="password" id="register-password" placeholder="Nhập mật khẩu" required>
+          <span class="error" id="password-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="register-dob">Ngày sinh (không bắt buộc)</label>
+          <input type="date" id="register-dob">
+        </div>
+
+        <button type="submit" class="btn-primary">Đăng ký</button>
+        <p class="text-center">Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/register.js"></script>
+</body>
+</html>
