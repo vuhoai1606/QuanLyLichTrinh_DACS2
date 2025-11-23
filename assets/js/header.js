@@ -1,109 +1,172 @@
-// header.js - Xử lý sidebar và dropdown tài khoản
-(function () {
-  // === KHỞI TẠO SIDEBAR ===
-  function initSidebar() {
-    const header = document.querySelector('header');
+// assets/js/header.js
+// ===================================================================
+// header.js - FRONTEND (CHỈ XỬ LÝ UI HEADER VÀ GỌI API CHO SYNC/EXPORT/LOGOUT)
+// ===================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupHeaderListeners();
+    loadNotificationsCount(); // Load badge notif
+    checkAuthStatus(); // Kiểm tra đăng nhập
+});
+
+// Setup listeners cho header
+function setupHeaderListeners() {
     const menuToggle = document.getElementById('menu-toggle');
+    const header = document.querySelector('header');
+    if (menuToggle && header) {
+        menuToggle.addEventListener('click', () => {
+            header.classList.toggle('collapsed');
+            menuToggle.style.transform = header.classList.contains('collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
+    }
     
-    if (!header || !menuToggle) {
-      return;
-    }
+    document.getElementById('googleSyncBtn').addEventListener('click', syncGoogleCalendar);
+    document.getElementById('quickExportBtn').addEventListener('click', quickExport);
+    document.getElementById('logout-btn').addEventListener('click', handleLogout);
+    document.getElementById('globalSearchInput').addEventListener('input', handleGlobalSearch);
+}
 
-    // Tránh khởi tạo lại nhiều lần
-    if (window.__headerSidebarInit) return;
-    window.__headerSidebarInit = true;
+// ===================================================================
+// CÁC HÀM GỌI API
+// ===================================================================
 
-    // Hàm áp trạng thái sidebar
-    function applySidebarState(collapsed) {
-      if (collapsed) {
-        header.classList.add('collapsed');
-        menuToggle.classList.add('inside');
-        menuToggle.style.transform = 'rotate(180deg)';
-      } else {
-        header.classList.remove('collapsed');
-        menuToggle.classList.remove('inside');
-        menuToggle.style.transform = 'rotate(0deg)';
-      }
-    }
-
-    // Phục hồi trạng thái từ localStorage
-    const saved = localStorage.getItem('menuCollapsed') === 'true';
-    applySidebarState(saved);
-
-    // Toggle khi click nút menu
-    menuToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const willCollapse = !header.classList.contains('collapsed');
-      applySidebarState(willCollapse);
-      localStorage.setItem('menuCollapsed', willCollapse.toString());
-    });
-  }
-
-  // === KHỞI TẠO DROPDOWN TÀI KHOẢN ===
-  function initAccountDropdown() {
-    const container = document.getElementById('account-dropdown-container');
-    const trigger = document.getElementById('account-trigger');
-    const logoutBtn = document.getElementById('logout-btn');
-
-    if (!container || !trigger) {
-      return;
-    }
-
-    // Xử lý đăng xuất
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
+/**
+ * Sync with Google Calendar
+ */
+async function syncGoogleCalendar() {
+    try {
+        const response = await fetch('/api/sync/google');
+        const data = await response.json();
         
-        try {
-          const response = await fetch('/api/logout', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            alert('Đăng xuất thành công!');
-            window.location.href = '/login';
-          } else {
-            alert(data.message || 'Đăng xuất thất bại');
-          }
-        } catch (error) {
-          console.error('Lỗi:', error);
-          alert('Có lỗi xảy ra khi đăng xuất.');
+        if (data.success) {
+            alert('Sync thành công!');
+        } else {
+            alert(data.message);
         }
-      });
+    } catch (error) {
+        console.error('Lỗi:', error);
     }
+}
 
-    // Hiệu ứng hover + click cho dropdown
-    let hoverTimeout;
-    const show = () => {
-      clearTimeout(hoverTimeout);
-      container.classList.add('active');
-    };
-    const hide = () => {
-      hoverTimeout = setTimeout(() => container.classList.remove('active'), 300);
-    };
+/**
+ * Quick export
+ */
+async function quickExport() {
+    try {
+        const response = await fetch('/api/export/quick');
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'quick_export.csv';
+            a.click();
+        }
+    } catch (error) {
+        console.error('Lỗi:', error);
+    }
+}
 
-    container.addEventListener('mouseenter', show);
-    container.addEventListener('mouseleave', hide);
-    trigger.addEventListener('click', (e) => {
-      e.preventDefault();
-      container.classList.toggle('active');
-    });
-  }
+/**
+ * Load số lượng notifications chưa đọc cho badge
+ */
+async function loadNotificationsCount() {
+    try {
+        const response = await fetch('/api/notifications/count');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('notif-badge').textContent = data.count;
+        }
+    } catch (error) {
+        console.error('Lỗi:', error);
+    }
+}
 
-  // === KHỞI CHẠY ===
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initSidebar();
-      initAccountDropdown();
-    });
-  } else {
-    initSidebar();
-    initAccountDropdown();
-  }
-})();
+/**
+ * Kiểm tra trạng thái auth
+ */
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/api/check-auth');
+        const data = await response.json();
+        
+        if (data.isAuthenticated) {
+            document.getElementById('account-label').textContent = data.fullName;
+            // Cập nhật dropdown nếu cần
+        } else {
+            // Hiển thị login/register
+        }
+    } catch (error) {
+        console.error('Lỗi:', error);
+    }
+}
 
+/**
+ * Handle logout
+ */
+async function handleLogout() {
+    try {
+        const response = await fetch('/api/logout', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('Lỗi:', error);
+    }
+}
+
+/**
+ * Global search
+ */
+async function handleGlobalSearch(e) {
+    const query = e.target.value.trim();
+    if (!query) return;
+    
+    try {
+        const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySearchResults(data.results);
+        }
+    } catch (error) {
+        console.error('Lỗi:', error);
+    }
+}
+
+// ===================================================================
+// CÁC HÀM UI
+// ===================================================================
+
+function displaySearchResults(results) {
+    // TODO: Hiển thị kết quả search (modal hoặc dropdown)
+    console.log(results);
+}
+
+// ===================================================================
+// NOTES - CẬP NHẬT CHÍNH XÁC THEO BACKEND HIỆN TẠI CỦA BẠN
+// ===================================================================
+// ✅ ĐÃ CÓ SẴN trong backend (bạn KHÔNG cần tạo thêm):
+//    - /api/logout (POST)           → authController.logout
+//    - /api/check-auth (GET)        → authController.checkAuth
+//    - /api/notifications/count     → bạn cần thêm 1 route nhỏ (rất dễ)
+// 
+// ❌ CHƯA CÓ trong backend (bạn cần tạo thêm để header hoạt động đầy đủ):
+//    - /api/sync/google             → Sync Google Calendar
+//    - /api/export/quick            → Quick export CSV
+//    - /api/search                  → Global search (tasks + events)
+//    - /api/notifications/count     → Đếm thông báo chưa đọc
+//
+// Gợi ý nhanh để thêm /api/notifications/count (nếu bạn muốn hoàn thiện ngay):
+// Trong routes/notificationRoutes.js (hoặc thêm vào authRoutes.js)
+// 
+// router.get('/api/notifications/count', requireAuth, async (req, res) => {
+//   const count = await Notification.countUnread(req.session.userId);
+//   res.json({ success: true, count });
+// });
+//
+// Nếu chưa muốn làm real-time badge → cứ để 0 cũng được, không lỗi
+// ===================================================================

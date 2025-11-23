@@ -39,6 +39,53 @@
   box-shadow: 0 4px 12px rgba(76,175,80,0.3);
 }
 
+/* logout-success vẫn giữ riêng */
+.logout-success {
+    text-align: center;
+    padding: 80px 20px;
+    font-family: 'Segoe UI', sans-serif;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.logout-success i {
+    font-size: 64px;
+    color: #10b981;
+    margin-bottom: 24px;
+}
+
+.logout-actions {
+    margin: 32px 0;
+}
+
+.logout-actions a {
+    display: inline-block;
+    padding: 12px 28px;
+    margin: 0 8px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.logout-actions .btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.logout-actions .btn-primary:hover { background: #2563eb; }
+
+.logout-actions .btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.logout-actions .btn-secondary:hover { background: #4b5563; }
+
+.countdown-text {
+    color: #94a3b8;
+    font-size: 15px;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }

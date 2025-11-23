@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/css/login.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <title>Đăng nhập - TaskManager</title>
 </head>
 <body>
@@ -33,6 +34,14 @@
 
         <button type="submit" class="btn-primary">Đăng nhập</button>
       </form>
+
+      <!-- ==== DIVIDER ==== -->
+      <div class="divider">
+        <span>Hay</span>
+      </div>
+
+      <!-- ==== GOOGLE SIGN-IN BUTTON ==== -->
+      <div id="google-signin-button"></div>
 
       <p class="text-center">Chưa có tài khoản? <a href="/register">Đăng ký</a></p>
     </div>

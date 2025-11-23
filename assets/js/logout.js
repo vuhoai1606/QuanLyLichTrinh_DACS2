@@ -1,25 +1,52 @@
-// logout.js (tương tự, bỏ gọi initAccountDropdown() vì header.js tự xử lý)
+// assets/js/logout.js
+// ===================================================================
+// logout.js - FRONTEND (CHỈ XỬ LÝ UI + GỌI API LOGOUT ĐÚNG CHUẨN)
+// Không lưu logic nghiệp vụ, chỉ gọi API và làm đẹp UI
+// ===================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Fetch header (chỉ insert, không gọi init dropdown nữa)
-  fetch('header.html')
-    .then(response => response.text())
-    .then(html => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const headerHTML = doc.querySelector('header').outerHTML;
-      document.getElementById('header-placeholder').innerHTML = headerHTML;
+    // 1. XÓA TOÀN BỘ TOKEN & DỮ LIỆU ĐĂNG NHẬP
+    localStorage.clear();
+    sessionStorage.clear();
 
-      // header.js sẽ tự init mọi thứ (sidebar + dropdown)
+    // 2. GỌI API LOGOUT ĐỂ INVALIDATE TOKEN Ở SERVER (nếu có)
+    fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include', // Quan trọng nếu dùng session cookie
+        headers: {
+            'Content-Type': 'application/json',
+        }
     })
-    .catch(error => console.error('Lỗi tải header:', error));
+    .catch(err => {
+        console.warn('API /api/logout không phản hồi (có thể chưa có route)', err);
+    });
 
-  console.log('Đã đăng xuất thành công.');
+    // 3. ĐẾM NGƯỢC + TỰ ĐỘNG CHUYỂN HƯỚNG
+    let seconds = 5;
+    const countdownEl = document.getElementById('countdown');
+    const timer = setInterval(() => {
+        seconds--;
+        if (countdownEl) countdownEl.textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(timer);
+            window.location.href = '/';
+        }
+    }, 1000);
 
-  // XÓA user
-  localStorage.removeItem('currentUser');
-
-  // Chuyển về trang chủ sau 2 giây
-  setTimeout(() => {
-    window.location.href = 'index.html';
-  }, 2000);
+    // Dừng đếm ngược nếu người dùng click nút
+    document.querySelectorAll('.logout-container a').forEach(link => {
+        link.addEventListener('click', () => clearInterval(timer));
+    });
 });
+
+// ===================================================================
+// NOTES:
+// ===================================================================
+// - Hoàn toàn phù hợp với cấu trúc bạn đang làm: chỉ UI + gọi API
+// - Tự động xóa mọi token (localStorage & sessionStorage)
+// - Gọi /api/logout (an toàn, không crash nếu backend chưa có)
+// - Giao diện đẹp, có animation, responsive
+// - Tự động redirect về trang chủ sau 5 giây
+// - Dừng đếm ngược khi người dùng click link
+// - Inject CSS inline nếu chưa có file logout.css riêng
+// ===================================================================

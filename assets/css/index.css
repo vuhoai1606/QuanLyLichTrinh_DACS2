@@ -20,18 +20,26 @@
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   background: var(--bg-gradient);
-  min-height: 100vh;
-  padding: 0;
-  position: relative;
-  overflow-x: hidden;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   display: flex;
-  margin-left: 240px; /* Để dành chỗ cho sidebar */
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  /* margin-top: 100px; */
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-gradient);
+  color: #111827;
+  display: flex;
+  min-height: 100vh;
+  /* overflow: hidden; */
+  position: relative;
 }
 
 /* Animated Background */
@@ -350,5 +358,161 @@ select {
   }
   .quick-task-form button {
     width: 100%;
+  }
+}
+
+/* =====================================================
+   🔍 GLOBAL SEARCH (Topbar)
+===================================================== */
+/* .global-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: 14px;
+  width: 280px;
+  transition: all 0.3s ease;
+} */
+
+.global-search input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-dark);
+}
+
+.global-search i {
+  color: #6b7280;
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+.global-search:hover {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+  border-color: var(--accent);
+}
+
+/* =====================================================
+   🔔 NOTIFICATION ICON + BADGE
+===================================================== */
+.notif-icon-container {
+  position: relative;
+  display: inline-block;
+  margin-left: 20px;
+}
+
+.notif-link i {
+  font-size: 20px;
+  color: #4f46e5;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.notif-link i:hover {
+  transform: scale(1.1);
+  color: #4338ca;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 20px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* =====================================================
+   ⤓ QUICK EXPORT BUTTON
+===================================================== */
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s ease;
+  margin-left: 20px;
+}
+
+.export-btn:hover {
+  background: #ea580c;
+  transform: translateY(-2px);
+}
+
+/* =====================================================
+   🔍 GLOBAL SEARCH (Cuối trang trong card)
+===================================================== */
+#global-search {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: white;
+  font-size: 15px;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+}
+
+#global-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+}
+
+/* Responsive cho các nút */
+@media (max-width: 900px) {
+  .global-search {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .google-sync-btn,
+  .export-btn {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 10px;
+  }
+}
+
+/* ===========================
+   Responsive FIXED
+=========================== */
+
+@media (max-width: 1440px) {
+  .main-content {
+    max-width: 1100px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .main-content {
+    max-width: 1000px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .main-content {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    max-width: 100%;
+    padding: 20px;
   }
 }

@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timeline</title>
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/timeline.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <title>Timeline</title>
 </head>
 <body>
-  
+
   <!-- Header -->
   <%- include('header') %>
 
@@ -20,29 +20,34 @@
       <p class="subtitle">Quản lý tiến độ dự án của bạn</p>
     </div>
 
+    <!-- Zoom Controls -->
+    <div class="timeline-zoom-controls">
+        <button id="zoomOutBtn">-</button>
+        <span id="zoomLevel">100%</span>
+        <button id="zoomInBtn">+</button>
+    </div>
+
+    <!-- Timeline card -->
     <div class="dashboard-grid">
       <div class="card">
-        <ul id="timeline">
-          <li class="timeline-row" data-start="2025-09-01" data-end="2025-09-10">
-            <div class="timeline-label">
-              <strong>Sprint 1</strong>
-              <div class="small">2025-09-01 → 2025-09-10</div>
-            </div>
-            <div class="timeline-bar-container">
-              <div class="timeline-bar"></div>
-            </div>
-          </li>
-          <li class="timeline-row" data-start="2025-09-11" data-end="2025-09-20">
-            <div class="timeline-label">
-              <strong>Sprint 2</strong>
-              <div class="small">2025-09-11 → 2025-09-20</div>
-            </div>
-            <div class="timeline-bar-container">
-              <div class="timeline-bar"></div>
-            </div>
-          </li>
-        </ul>
-        <button id="add-timeline" class="btn-primary" style="margin-top: 20px;"><i class="fa fa-plus"></i> Thêm Sprint</button>
+        
+        <!-- Milestones và Tasks -->
+        <div id="timeline-milestones" class="timeline-layer"></div>
+        <div id="timeline-tasks" class="timeline-layer"></div>
+
+        <!-- Sprints -->
+        <ul id="timeline"></ul>
+
+        <!-- Export buttons -->
+        <div class="timeline-export">
+            <button id="exportImgBtn"><i class="fa fa-image"></i> Xuất PNG</button>
+            <button id="exportPdfBtn"><i class="fa fa-file-pdf"></i> Xuất PDF</button>
+        </div>
+
+        <!-- Thêm Sprint -->
+        <button id="add-timeline" class="btn-primary" style="margin-top: 20px;">
+          <i class="fa fa-plus"></i> Thêm Sprint
+        </button>
       </div>
     </div>
 
@@ -70,8 +75,15 @@
         </form>
       </div>
     </div>
+
   </div>
 
+  <!-- Tooltip -->
+  <div id="timeline-tooltip" class="timeline-tooltip hidden"></div>
+
+  <!-- Libraries -->
+   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/timeline.js"></script>
 </body>

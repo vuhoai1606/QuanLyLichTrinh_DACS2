@@ -51,6 +51,7 @@
             <button class="chat-action-btn" title="Gọi video"><i class="fas fa-video"></i></button>
             <button class="chat-action-btn" title="Gọi thoại"><i class="fas fa-phone"></i></button>
             <button class="chat-action-btn" title="Tùy chọn"><i class="fas fa-ellipsis-v"></i></button>
+            <button id="btn-share-events" class="chat-action-btn" title="Chia sẻ lịch trình"><i class="fas fa-calendar-alt"></i></button>
           </div>
         </div>
 
@@ -89,6 +90,22 @@
       <div class="modal-actions">
         <button id="start-chat" class="btn-primary">Bắt đầu chat</button>
         <button id="close-chat-modal" class="btn-secondary">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Chia sẻ sự kiện/lịch trình -->
+  <div id="share-events-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Chia sẻ sự kiện / công việc</h3>
+      <input type="text" id="event-title" placeholder="Tên sự kiện / task">
+      <input type="datetime-local" id="event-datetime">
+      <select id="event-members" multiple>
+        <!-- Danh sách thành viên sẽ generate JS -->
+      </select>
+      <div class="modal-actions">
+        <button id="btn-share-event-submit" class="btn-primary">Chia sẻ</button>
+        <button id="close-share-event" class="btn-outline">Đóng</button>
       </div>
     </div>
   </div>

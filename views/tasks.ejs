@@ -99,6 +99,31 @@
             <button type="button" id="close-modal">Hủy</button>
             <button type="submit" class="btn-primary"><i class="fa fa-save"></i> Lưu</button>
           </div>
+
+          <label for="t-recurring">Lặp lại</label>
+          <select id="t-recurring">
+            <option value="none">Không lặp</option>
+            <option value="daily">Hằng ngày</option>
+            <option value="weekly">Hằng tuần</option>
+            <option value="monthly">Hằng tháng</option>
+          </select>
+
+          <label for="t-dependency">Phụ thuộc vào Task</label>
+          <select id="t-dependency">
+            <option value="">Không phụ thuộc</option>
+          </select>
+
+          <label for="t-assign">Giao cho</label>
+          <select id="t-assign">
+            <option value="">Không giao</option>
+          </select>
+
+          <!-- Gantt view button -->
+          <button id="view-gantt" type="button" class="btn-secondary">
+            <i class="fa fa-chart-bar"></i> Xem Gantt Chart
+          </button>
+
+          <div id="gantt-container" style="display:none;"></div>
         </form>
       </div>
     </div>

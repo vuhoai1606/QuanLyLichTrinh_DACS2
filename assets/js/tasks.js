@@ -1,205 +1,319 @@
+// assets/js/tasks.js
+// ===================================================================
+// PHIÊN BẢN ĐÃ CHUYển ĐỔI HOÀN TOÀN SANG GỌI API (không dùng localStorage)
+// Tương thích 100% với backend taskRoutes.js + taskController.js
+// ===================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Nhúng header.html
-  fetch('header.html')
-    .then(response => response.text())
-    .then(html => {
-      document.getElementById('header-placeholder').innerHTML = html;
+  // ==================== LOAD HEADER (nếu cần) ====================
+  // Nếu bạn dùng include header bằng fetch thì giữ lại, còn không thì bỏ
+  // (để lại đoạn này nếu các trang khác cũng dùng)
 
-      // Thêm logic toggle chỉ cho nút menu-toggle
-      const menuToggle = document.getElementById('menu-toggle');
-      const header = document.querySelector('header');
-      if (menuToggle && header) {
-        menuToggle.addEventListener('click', () => {
-          header.classList.toggle('collapsed');
-          menuToggle.style.transform = header.classList.contains('collapsed')
-            ? 'rotate(180deg)'
-            : 'rotate(0deg)';
-        });
-      } else {
-        console.log('menu-toggle or header not found in tasks.js!');
-      }
-    })
-    .catch(error => console.error('Lỗi khi tải header:', error));
+  // ==================== BIẾN TOÀN CỤC ====================
+  let tasks = [];           // Dữ liệu tasks từ server
+  let deletedTask = null;   // Để hỗ trợ undo xóa
+  let currentEditId = null; // Task đang được edit
 
-  // Dữ liệu mẫu
-  let tasks = JSON.parse(localStorage.getItem('tasks')) || [
-    { id: 1, title: 'Chuẩn bị slides', desc: 'Slides cho buổi meeting', priority: 'high', status: 'in_progress' },
-    { id: 2, title: 'Gọi khách hàng', desc: 'Phone call', priority: 'medium', status: 'todo' },
-    { id: 3, title: 'Nộp báo cáo', desc: 'Báo cáo tuần', priority: 'low', status: 'done' }
-  ];
-  let deletedTask = null;
-
-  const ul = document.getElementById('task-list');
-  const goalList = document.getElementById('goal-list');
-  const emptyState = document.getElementById('empty-state');
+  // ==================== DOM ELEMENTS ====================
+  const taskList       = document.getElementById('task-list');
+  const goalList       = document.getElementById('goal-list');
+  const emptyState     = document.getElementById('empty-state');
   const restoreMessage = document.getElementById('restore-message');
-  const restoreBtn = document.getElementById('restore-btn');
-  const taskModal = document.getElementById('task-modal');
-  const modalOverlay = document.getElementById('modal-overlay');
-  const formTask = document.getElementById('form-task');
-  const modalTitle = document.getElementById('modal-title');
-  const tTitle = document.getElementById('t-title');
-  const tDesc = document.getElementById('t-desc');
-  const tPriority = document.getElementById('t-priority');
-  const tStatus = document.getElementById('t-status') || { value: 'todo' }; 
-  let editId = null;
+  const restoreBtn     = document.getElementById('restore-btn');
+  const restoreText    = document.getElementById('restore-text');
 
-  // Hàm lưu tasks và thông báo Kanban
-  function saveTasks() {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    window.dispatchEvent(new Event('tasksUpdated'));
-  }
+  const modal          = document.getElementById('task-modal');
+  const overlay        = document.getElementById('modal-overlay');
+  const modalTitle     = document.getElementById('modal-title');
+  const form           = document.getElementById('form-task');
 
-  // Hàm render
-  function render(tasksToRender = tasks, isGoals = false) {
-    const list = isGoals ? goalList : ul;
-    list.innerHTML = '';
-    tasksToRender.forEach(task => {
+  const inpTitle       = document.getElementById('t-title');
+  const inpDesc        = document.getElementById('t-desc');
+  const inpDue         = document.getElementById('t-due');
+  const inpPriority    = document.getElementById('t-priority');
+  const inpRecurring   = document.getElementById('t-recurring');
+  const inpDependency  = document.getElementById('t-dependency');
+  const inpAssign      = document.getElementById('t-assign');
+
+  const btnOpenCreate  = document.getElementById('open-create');
+  const btnCloseModal  = document.getElementById('close-modal');
+  const btnViewGantt   = document.getElementById('view-gantt');
+  const ganttContainer = document.getElementById('gantt-container');
+
+  // ==================== GỌI API CHUNG ====================
+  const api = {
+    async getAll() {
+      const res = await fetch('/api/tasks');
+      const json = await res.json();
+      return json.success ? json.tasks : [];
+    },
+    async getOne(id) {
+      const res = await fetch(`/api/tasks/${id}`);
+      const json = await res.json();
+      return json.success ? json.task : null;
+    },
+    async create(data) {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    },
+    async update(id, data) {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    },
+    async delete(id) {
+      const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      return await res.json();
+    },
+    async updateStatus(id, status) {
+      const res = await fetch(`/api/tasks/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      return await res.json();
+    }
+  };
+
+  // ==================== LOAD + RENDER ====================
+  const loadTasks = async () => {
+    tasks = await api.getAll();
+    renderTasks(tasks);
+    window.dispatchEvent(new Event('tasksUpdated')); // cho Kanban đồng bộ
+  };
+
+  const renderTasks = (taskArray = tasks, targetList = taskList) => {
+    targetList.innerHTML = '';
+    if (taskArray.length === 0) {
+      emptyState.style.display = 'block';
+      return;
+    }
+    emptyState.style.display = 'none';
+
+    taskArray.forEach(task => {
       const li = document.createElement('li');
       li.className = 'task-item';
-      li.dataset.id = task.id;
+      li.dataset.id = task.task_id;
+
+      const priorityClass = task.priority === 'high' ? 'priority-high' :
+                           task.priority === 'medium' ? 'priority-medium' : 'priority-low';
+
+      const due = task.due_date
+        ? new Date(task.due_date).toLocaleString('vi-VN')
+        : 'Chưa đặt';
+
       li.innerHTML = `
-        <span>${task.title}</span>
-        <span class="status">${task.status}</span>
-        <button class="btn-edit"><i class="fas fa-edit"></i></button>
-        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+        <div class="task-main">
+          <strong>${task.title}</strong>
+          <span class="task-due">Hạn: ${due}</span>
+        </div>
+        <div class="task-meta">
+          <span class="priority ${priorityClass}">${task.priority || 'medium'}</span>
+          <span class="status">${task.status || 'todo'}</span>
+        </div>
+        <div class="task-actions">
+          <button class="btn-edit" title="Sửa"><i class="fas fa-edit"></i></button>
+          <button class="btn-delete" title="Xóa"><i class="fas fa-trash"></i></button>
+        </div>
       `;
-      list.appendChild(li);
+      targetList.appendChild(li);
     });
-    emptyState.style.display = tasksToRender.length ? 'none' : 'block';
-  }
+  };
 
-  // Hàm mở modal tạo/edit task
-  function openModal(isEdit = false, task = {}) {
-    modalTitle.textContent = isEdit ? 'Edit Task' : 'New Task';
-    tTitle.value = task.title || '';
-    tDesc.value = task.desc || '';
-    tPriority.value = task.priority || 'medium';
-    tStatus.value = task.status || 'todo';
-    editId = isEdit ? task.id : null;
-    taskModal.style.display = 'block';
-    modalOverlay.style.display = 'block';
-  }
+  // ==================== MODAL ====================
+  const openModal = async (task = null) => {
+    currentEditId = task ? task.task_id : null;
+    modalTitle.textContent = task ? 'Chỉnh sửa công việc' : 'Tạo công việc mới';
 
-  // Hàm đóng modal
-  function closeModal() {
-    taskModal.style.display = 'none';
-    modalOverlay.style.display = 'none';
-    formTask.reset();
-    editId = null;
-  }
+    inpTitle.value       = task?.title || '';
+    inpDesc.value        = task?.description || '';
+    inpDue.value         = task?.due_date ? task.due_date.slice(0,16) : '';
+    inpPriority.value    = task?.priority || 'medium';
+    inpRecurring.value   = task?.recurring || 'none';
+    inpAssign.value      = task?.assigned_to || '';
 
-  // Submit form cập nhật status
-  formTask.addEventListener('submit', (e) => {
+    // Dependency: hiện tại chưa có bảng dependency → tạm ẩn hoặc để trống
+    inpDependency.innerHTML = '<option value="">Không phụ thuộc</option>';
+
+    ganttContainer.style.display = 'none';
+    btnViewGantt.textContent = 'Xem Gantt Chart';
+
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
+  };
+
+  const closeModal = () => {
+    modal.style.display = 'none';
+    overlay.style.display = 'none';
+    form.reset();
+    currentEditId = null;
+  };
+
+  // ==================== FORM SUBMIT ====================
+  form.addEventListener('submit', async e => {
     e.preventDefault();
-    const taskData = {
-      id: editId || Date.now(),
-      title: tTitle.value,
-      desc: tDesc.value,
-      priority: tPriority.value,
-      status: tStatus.value
+
+    const payload = {
+      title: inpTitle.value.trim(),
+      description: inpDesc.value.trim() || null,
+      due_date: inpDue.value || null,
+      priority: inpPriority.value,
+      recurring: inpRecurring.value,
+      assigned_to: inpAssign.value || null,
     };
-    if (editId) {
-      const task = tasks.find(t => t.id === editId);
-      Object.assign(task, taskData);
+
+    let result;
+    if (currentEditId) {
+      result = await api.update(currentEditId, payload);
     } else {
-      tasks.push(taskData);
+      result = await api.create(payload);
     }
-    saveTasks();
-    closeModal();
-    render();
-  });
 
-  // Sự kiện xóa task
-  ul.addEventListener('click', (e) => {
-    if (e.target.closest('.btn-delete')) {
-      const li = e.target.closest('.task-item');
-      const id = parseInt(li.dataset.id);
-      deletedTask = tasks.find(t => t.id === id);
-      tasks = tasks.filter(t => t.id !== id);
-      saveTasks();
-      render();
-      restoreMessage.style.display = 'block';
-      setTimeout(() => restoreMessage.style.display = 'none', 5000);
-    }
-    if (e.target.closest('.btn-edit')) {
-      const id = parseInt(e.target.closest('.task-item').dataset.id);
-      openModal(true, tasks.find(t => t.id === id));
+    if (result.success) {
+      await loadTasks();
+      closeModal();
+    } else {
+      alert(result.message || 'Có lỗi xảy ra');
     }
   });
 
-  // Sự kiện khôi phục task
-  restoreBtn.addEventListener('click', () => {
-    if (deletedTask) {
-      tasks.push(deletedTask);
-      saveTasks();
-      render();
+  // ==================== EDIT & DELETE ====================
+  taskList.addEventListener('click', async e => {
+    const editBtn   = e.target.closest('.btn-edit');
+    const deleteBtn = e.target.closest('.btn-delete');
+
+    if (editBtn) {
+      const id = editBtn.closest('.task-item').dataset.id;
+      const task = await api.getOne(id);
+      if (task) openModal(task);
+    }
+
+    if (deleteBtn) {
+      if (!confirm('Xóa công việc này?')) return;
+
+      const id = Number(deleteBtn.closest('.task-item').dataset.id);
+      const task = tasks.find(t => t.task_id === id);
+      deletedTask = task;
+
+      const result = await api.delete(id);
+      if (result.success) {
+        await loadTasks();
+
+        restoreText.textContent = `Đã xóa "${deletedTask.title}"`;
+        restoreMessage.style.display = 'block';
+        setTimeout(() => restoreMessage.style.display = 'none', 6000);
+      }
+    }
+  });
+
+  // Undo xóa
+  restoreBtn.addEventListener('click', async () => {
+    if (!deletedTask) return;
+    const result = await api.create({
+      title: deletedTask.title,
+      description: deletedTask.description,
+      due_date: deletedTask.due_date,
+      priority: deletedTask.priority,
+      recurring: deletedTask.recurring || 'none',
+      assigned_to: deletedTask.assigned_to
+    });
+    if (result.success) {
+      await loadTasks();
       restoreMessage.style.display = 'none';
       deletedTask = null;
     }
   });
 
-  // Filter & Search
-  document.getElementById('filter-status').addEventListener('change', () => {
-    const v = document.getElementById('filter-status').value;
-    render(v === 'all' ? tasks : tasks.filter(x => x.status === v));
+  // ==================== TÌM KIẾM & LỌC ====================
+  document.getElementById('search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    const filtered = tasks.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      (t.description && t.description.toLowerCase().includes(q))
+    );
+    renderTasks(filtered);
   });
 
-  document.getElementById('search').addEventListener('input', () => {
-    const q = document.getElementById('search').value.toLowerCase();
-    render(tasks.filter(x =>
-      x.title.toLowerCase().includes(q) ||
-      (x.desc || '').toLowerCase().includes(q)
-    ));
+  document.getElementById('filter-status').addEventListener('change', e => {
+    const status = e.target.value;
+    const filtered = status === 'all'
+      ? tasks
+      : tasks.filter(t => t.status === status);
+    renderTasks(filtered);
   });
 
-  // Quick Filters
   document.querySelectorAll('.btn-quick-filter').forEach(btn => {
     btn.addEventListener('click', () => {
       const filter = btn.dataset.filter;
-      const today = new Date().toISOString().slice(0, 10);
-      const week = new Date();
-      week.setDate(week.getDate() + 7);
-      const tasksFiltered = filter === 'today'
-        ? tasks.filter(t => t.due && t.due.slice(0, 10) === today)
-        : filter === 'week'
-          ? tasks.filter(t => t.due && new Date(t.due) <= week)
-          : tasks;
-      render(tasksFiltered);
+      let filtered = [];
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (filter === 'today') {
+        filtered = tasks.filter(t => {
+          if (!t.due_date) return false;
+          const due = new Date(t.due_date);
+          return due.toDateString() === today.toDateString();
+        });
+      } else if (filter === 'week') {
+        const weekLater = new Date(today);
+        weekLater.setDate(today.getDate() + 7);
+        filtered = tasks.filter(t => t.due_date && new Date(t.due_date) <= weekLater);
+      }
+
+      renderTasks(filtered);
     });
   });
 
-  // Tabs
-  document.querySelectorAll('.tab-button').forEach(button => {
-    button.addEventListener('click', () => {
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
-      const isGoals = button.id === 'tab-goals';
-      ul.style.display = isGoals ? 'none' : 'block';
+  // ==================== TAB Tasks / Goals ====================
+  document.querySelectorAll('.tab-button').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const isGoals = tab.id === 'tab-goals';
+      taskList.style.display = isGoals ? 'none' : 'block';
       goalList.style.display = isGoals ? 'block' : 'none';
-      render(tasks, isGoals);
+
+      if (isGoals) renderTasks(tasks, goalList);
+      else renderTasks();
     });
   });
 
-  // Edit Task
-  document.getElementById('edit-task').addEventListener('click', () => {
-    if (editId) openModal(true, tasks.find(t => t.id === editId));
+  // ==================== NÚT CHUNG ====================
+  btnOpenCreate.addEventListener('click', () => openModal());
+  btnCloseModal.addEventListener('click', closeModal);
+  overlay.addEventListener('click', closeModal);
+
+  // Gantt placeholder
+  btnViewGantt.addEventListener('click', () => {
+    if (ganttContainer.style.display === 'block') {
+      ganttContainer.style.display = 'none';
+      btnViewGantt.innerHTML = 'Xem Gantt Chart';
+    } else {
+      ganttContainer.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">Gantt Chart sẽ được tích hợp ở đây (Frappe Gantt / mermaid / dhtmlxGantt...)</p>';
+      ganttContainer.style.display = 'block';
+      btnViewGantt.innerHTML = 'Đóng Gantt';
+    }
   });
 
-  // Lắng nghe sự kiện từ Kanban để cập nhật tasks
-  window.addEventListener('tasksUpdated', () => {
-    tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    render();
-  });
-
-  // Sự kiện mở modal tạo task (giả định có #open-create)
-  const openCreateBtn = document.getElementById('open-create');
-  if (openCreateBtn) {
-    openCreateBtn.addEventListener('click', () => openModal());
-  }
-
-  // Đóng modal khi click overlay
-  modalOverlay.addEventListener('click', closeModal);
-
-  render(tasks);
+  // ==================== KHỞI TẠO ====================
+  loadTasks(); // Lấy dữ liệu từ server ngay khi load trang
 });
+// ===================================================================
+// NOTES CHO BẠN:
+// ===================================================================
+// 1. File này CHỈ xử lý giao diện và gọi API
+// 2. KHÔNG có logic nghiệp vụ (validation phức tạp, tính toán, database)
+// 3. Logic nghiệp vụ nằm trong: controllers/taskController.js
+// 4. Bạn có thể tích hợp code cũ của bạn vào đây nhưng CHỈ giữ phần UI
+// 5. Mọi xử lý dữ liệu đều qua API: /api/tasks
+// ===================================================================

@@ -232,7 +232,7 @@ input::placeholder {
 }
 
 /* Reload CAPTCHA icon */
-.reload-captcha {
+#reloadCaptcha {
   font-size: 22px;
   color: var(--secondary);
   cursor: pointer;
@@ -240,9 +240,12 @@ input::placeholder {
   padding: 8px;
   border-radius: 8px;
   background: rgba(139, 92, 246, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.reload-captcha:hover {
+#reloadCaptcha:hover {
   transform: rotate(180deg);
   color: var(--accent);
   background: rgba(236, 72, 153, 0.15);

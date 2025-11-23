@@ -12,33 +12,58 @@
     <div class="register-card">
       <h3>Đăng ký</h3>
       <form id="register-form">
+
+        <!-- Username -->
         <div class="form-group">
           <label for="register-username">Tên đăng nhập</label>
           <input type="text" id="register-username" placeholder="Nhập tên đăng nhập" required>
           <span class="error" id="username-error"></span>
         </div>
+
+        <!-- Fullname -->
         <div class="form-group">
-          <label for="register-fullname">Họ và tên</label>
-          <input type="text" id="register-fullname" placeholder="Nhập họ và tên" required>
+          <label for="register-fullname">Họ tên</label>
+          <input type="text" id="register-fullname" placeholder="Nhập họ tên" required>
           <span class="error" id="fullname-error"></span>
         </div>
+
+        <!-- Email -->
         <div class="form-group">
           <label for="register-email">Email</label>
           <input type="email" id="register-email" placeholder="Nhập email" required>
           <span class="error" id="email-error"></span>
         </div>
+
+        <!-- Password -->
         <div class="form-group">
           <label for="register-password">Mật khẩu</label>
           <input type="password" id="register-password" placeholder="Nhập mật khẩu" required>
           <span class="error" id="password-error"></span>
         </div>
+
+        <!-- Date of Birth -->
         <div class="form-group">
-          <label for="register-dob">Ngày sinh (không bắt buộc)</label>
-          <input type="date" id="register-dob">
+          <label for="register-dob">Ngày sinh</label>
+          <input type="date" id="register-dob" required>
         </div>
 
+        <!-- CAPTCHA -->
+        <div class="form-group captcha-group">
+          <label for="captcha-input">Mã kiểm tra</label>
+          <div class="captcha-container">
+            <canvas id="captchaCanvas" width="160" height="50"></canvas>
+            <button type="button" id="reloadCaptcha" title="Tải lại mã"><i class="fas fa-sync-alt"></i></button>
+          </div>
+          <div class="captcha-input-wrapper">
+            <i class="fas fa-shield-alt"></i>
+            <input type="text" id="captcha-input" placeholder="Nhập mã kiểm tra" required>
+          </div>
+          <span class="error" id="captcha-error"></span>
+        </div>
+
+        <!-- Submit -->
         <button type="submit" class="btn-primary">Đăng ký</button>
-        <p class="text-center">Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+        <p class="text-center">Đã có tài khoản? <a href="login.html">Đăng nhập</a></p>
       </form>
     </div>
   </div>

@@ -45,6 +45,24 @@
           </form>
         </div>
 
+        <!-- Quick Calendar (Today / Week) -->
+        <div class="card">
+          <h2>🗓️ Lịch trình hôm nay / tuần</h2>
+          <div id="mini-calendar"></div>
+          <ul id="calendar-events"></ul>
+        </div>
+
+        <!-- Quick Add Event (Timeline Integration) -->
+        <div class="card">
+          <h2>⚡ Thêm sự kiện nhanh</h2>
+          <form id="quick-event-form">
+            <input type="text" id="event-title" placeholder="✏️ Tên sự kiện..." required>
+            <input type="datetime-local" id="event-start" required>
+            <input type="datetime-local" id="event-end" required>
+            <button class="btn-primary">+ Thêm sự kiện</button>
+          </form>
+        </div>
+
         <!-- Tags -->
         <div class="card">
           <h2>🏷️ Tags</h2>

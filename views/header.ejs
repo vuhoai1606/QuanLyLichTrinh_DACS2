@@ -1,14 +1,38 @@
 <!-- header.html -->
 <header>
   <div class="header-top">
-    <!-- Nút menu mobile -->
-    <div class="menu-toggle" id="menu-toggle">&#9776;</div> 
-    
-    <!-- Logo + tên app -->
-    <div class="logo-section">
-      <img src="/img/logo.jpg" alt="Logo" class="logo">
-      <span class="app-name">TaskManager</span>
-    </div>
+      <!-- Nút menu mobile -->
+      <div class="menu-toggle" id="menu-toggle">&#9776;</div> 
+      
+      <!-- Logo + tên app -->
+      <div class="logo-section">
+        <img src="/img/logo.jpg" alt="Logo" class="logo">
+        <span class="app-name">TaskManager</span>
+      </div>
+
+      <!-- 🔎 NEW — Search bar toàn cục -->
+      <div class="global-search">
+        <input type="text" id="globalSearchInput" placeholder="Tìm sự kiện, lịch trình theo ngày/tháng...">
+        <i class="fas fa-search"></i>
+      </div>
+
+      <!-- 🔔 NEW — Notification + badge -->
+      <div class="notif-icon-container">
+        <a href="notifications.html" class="notif-link">
+          <i class="fas fa-bell"></i>
+          <span id="notif-badge" class="notif-badge">0</span>
+        </a>
+      </div>
+
+      <!-- 🔄 NEW — Sync Google Calendar -->
+      <button id="googleSyncBtn" class="google-sync-btn">
+        <i class="fas fa-sync"></i> Sync with Google
+      </button>
+
+      <!-- ⤓ NEW — Quick Export -->
+      <button id="quickExportBtn" class="export-btn">
+        <i class="fas fa-file-export"></i> Export
+      </button>
   </div>
 
   <!-- Menu điều hướng -->

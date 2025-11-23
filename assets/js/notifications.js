@@ -1,141 +1,278 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  /* ===========================
-     1️⃣ NẠP HEADER DYNAMIC
-  =========================== */
-  try {
-    const response = await fetch("header.html");
-    const html = await response.text();
-    document.getElementById("header-placeholder").innerHTML = html;
+// assets/js/notifications.js
+// ===================================================================
+// notifications.js - FRONTEND (CHỈ XỬ LÝ UI & GỌI API)
+// Backend xử lý toàn bộ logic notifications
+// ===================================================================
 
-    // Toggle menu
-    const menuToggle = document.getElementById("menu-toggle");
-    const header = document.querySelector("header");
-    if (menuToggle && header) {
-      menuToggle.addEventListener("click", () => {
-        header.classList.toggle("collapsed");
-        menuToggle.style.transform = header.classList.contains("collapsed")
-          ? "rotate(180deg)"
-          : "rotate(0deg)";
-      });
-    }
-  } catch (error) {
-    console.error("Lỗi khi tải header:", error);
-  }
+document.addEventListener('DOMContentLoaded', () => {
+    const notiList = document.getElementById('noti-list');
+    const markAllBtn = document.getElementById('mark-read');
 
-  /* ===========================
-     2️⃣ DỮ LIỆU THÔNG BÁO (LocalStorage)
-  =========================== */
-  const STORAGE_KEY = "notifications_data";
-  const defaultNotis = [
-    { id: 1, title: "Deadline sắp tới", body: "Nộp báo cáo vào 2025-09-20", read: false },
-    { id: 2, title: "Thành viên mới", body: "Nguyễn A đã tham gia Team", read: true },
-    { id: 3, title: "Cập nhật hệ thống", body: "Hệ thống sẽ bảo trì lúc 22:00 hôm nay", read: false },
-  ];
+    let notifications = [];           // Dữ liệu từ API
+    let currentFilter = 'all';        // all | task | event | message | system
 
-  let notis = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultNotis;
+    // ===================================================================
+    // 1. Load notifications + badge khi vào trang
+    // ===================================================================
+    loadNotifications();
 
-  const ul = document.getElementById("noti-list");
-  const markAllBtn = document.getElementById("mark-read");
-
-  /* ===========================
-     3️⃣ HÀM HIỂN THỊ THÔNG BÁO
-  =========================== */
-  function render() {
-    ul.innerHTML = "";
-
-    if (notis.length === 0) {
-      ul.innerHTML = `<li class="noti-empty">Không có thông báo nào</li>`;
-      updateBadge();
-      return;
+    // ===================================================================
+    // 2. Event Listeners
+    // ===================================================================
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', markAllAsRead);
     }
 
-    notis.forEach((n, index) => {
-      const li = document.createElement("li");
-      li.className = `noti-item ${n.read ? "" : "unread"}`;
-      li.style.animationDelay = `${index * 0.05}s`; // hiệu ứng lần lượt
+    // Click đánh dấu đã đọc từng cái
+    notiList?.addEventListener('click', e => {
+        const btn = e.target.closest('.btn-mark');
+        if (!btn) return;
 
-      li.innerHTML = `
-        <div class="noti-text">
-          <strong>${n.title}</strong>
-          <div class="small">${n.body}</div>
-        </div>
-        <div>
-          ${
-            n.read
-              ? `<span class="read-label"><i class="fa-solid fa-circle-check"></i> Đã đọc</span>`
-              : `<button class="btn btn-mark" data-id="${n.id}">
-                  <i class="fa-solid fa-check"></i> Đánh dấu
-                 </button>`
-          }
-        </div>
-      `;
-      ul.appendChild(li);
+        const notifId = btn.dataset.id;
+        markAsRead(notifId);
     });
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notis));
-    updateBadge();
-  }
-
-  /* ===========================
-     4️⃣ CẬP NHẬT BADGE SỐ THÔNG BÁO
-  =========================== */
-  function updateBadge() {
-    const unreadCount = notis.filter((n) => !n.read).length;
-    let badge = document.querySelector(".notification-badge");
-
-    if (!badge) {
-      const icon = document.querySelector(".notification-icon");
-      if (icon) {
-        badge = document.createElement("span");
-        badge.className = "notification-badge";
-        icon.appendChild(badge);
-      }
-    }
-
-    if (badge) {
-      badge.textContent = unreadCount > 0 ? unreadCount : "";
-      badge.style.opacity = unreadCount > 0 ? "1" : "0";
-      badge.style.transform = unreadCount > 0 ? "scale(1)" : "scale(0.7)";
-    }
-  }
-
-  /* ===========================
-     5️⃣ SỰ KIỆN: ĐÁNH DẤU ĐÃ ĐỌC
-  =========================== */
-  ul.addEventListener("click", (e) => {
-    const btn = e.target.closest(".btn-mark");
-    if (btn) {
-      const id = btn.dataset.id;
-      const n = notis.find((x) => x.id == id);
-      if (n) {
-        n.read = true;
-        animateRead(btn.closest(".noti-item"));
-        setTimeout(render, 350);
-      }
-    }
-  });
-
-  // Hiệu ứng fade-out khi đánh dấu đã đọc
-  function animateRead(element) {
-    element.style.transition = "all 0.3s ease";
-    element.style.opacity = "0";
-    element.style.transform = "translateY(-8px)";
-  }
-
-  markAllBtn.addEventListener("click", () => {
-    if (notis.every((n) => n.read)) return;
-    notis.forEach((n) => (n.read = true));
-
-    // Hiệu ứng nhẹ khi mark all
-    ul.querySelectorAll(".noti-item.unread").forEach((el, i) => {
-      setTimeout(() => animateRead(el), i * 70);
+    // Filter buttons (nếu có)
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.type || 'all';
+            render();
+        });
     });
 
-    setTimeout(render, 500);
-  });
+    // ===================================================================
+    // 3. API CALLS
+    // ===================================================================
 
-  /* ===========================
-     6️⃣ HIỂN THỊ BAN ĐẦU
-  =========================== */
-  render();
+    /** Lấy danh sách thông báo */
+    async function loadNotifications() {
+        try {
+            const res = await fetch('/api/notifications');
+            const data = await res.json();
+
+            if (data.success) {
+                notifications = data.notifications || [];
+                render();
+                updateGlobalBadge();
+            } else {
+                console.warn('Load notifications failed:', data.message);
+            }
+        } catch (err) {
+            console.error('Lỗi load notifications:', err);
+        }
+    }
+
+    /** Đánh dấu tất cả đã đọc */
+    async function markAllAsRead() {
+        try {
+            const res = await fetch('/api/notifications/mark-all', { method: 'PATCH' });
+            const data = await res.json();
+
+            if (data.success) {
+                loadNotifications(); // reload để đồng bộ
+            }
+        } catch (err) {
+            console.error('Lỗi mark all read:', err);
+        }
+    }
+
+    /** Đánh dấu một thông báo đã đọc */
+    async function markAsRead(notifId) {
+        try {
+            const res = await fetch(`/api/notifications/${notifId}/mark`, { method: 'PATCH' });
+            const data = await res.json();
+
+            if (data.success) {
+                loadNotifications();
+            }
+        } catch (err) {
+            console.error('Lỗi mark single read:', err);
+        }
+    }
+
+    // ===================================================================
+    // 4. RENDER UI
+    // ===================================================================
+
+    function render() {
+        if (!notiList) return;
+
+        const filtered = currentFilter === 'all'
+            ? notifications
+            : notifications.filter(n => n.type === currentFilter);
+
+        if (filtered.length === 0) {
+            notiList.innerHTML = '<li class="noti-empty"><i class="fas fa-bell-slash"></i> Không có thông báo nào</li>';
+            return;
+        }
+
+        notiList.innerHTML = '';
+
+        filtered.forEach((notif, idx) => {
+            const li = document.createElement('li');
+            li.className = `noti-item ${notif.is_read ? '' : 'unread'}`;
+            li.style.animationDelay = `${idx * 0.05}s`;
+
+            li.innerHTML = `
+                <div class="noti-content">
+                    <div class="noti-icon">
+                        ${getIconByType(notif.type)}
+                    </div>
+                    <div class="noti-text">
+                        <strong>${escapeHtml(notif.title)}</strong>
+                        <div class="noti-message">${escapeHtml(notif.message || '')}</div>
+                        <div class="noti-time">${formatTime(notif.created_at)}</div>
+                    </div>
+                </div>
+                <div class="noti-actions">
+                    ${notif.is_read
+                        ? '<span class="read-label"><i class="fas fa-check-circle"></i> Đã đọc</span>'
+                        : `<button class="btn btn-mark" data-id="${notif.notification_id}">
+                                <i class="fas fa-check"></i>
+                           </button>`
+                    }
+                </div>
+            `;
+
+            // Animation khi đánh dấu đã đọc
+            if (!notif.is_read) {
+                li.querySelector('.btn-mark')?.addEventListener('click', () => {
+                    li.style.transition = 'all 0.35s ease';
+                    li.style.opacity = '0.6';
+                    li.style.transform = 'translateX(-12px)';
+                });
+            }
+
+            notiList.appendChild(li);
+        });
+    }
+
+    // ===================================================================
+    // 5. Helper functions
+    // ===================================================================
+
+    function getIconByType(type) {
+        const icons = {
+            task: '<i class="fas fa-tasks"></i>',
+            event: '<i class="fas fa-calendar-alt"></i>',
+            message: '<i class="fas fa-envelope"></i>',
+            system: '<i class="fas fa-cog"></i>'
+        };
+        return icons[type] || '<i class="fas fa-bell"></i>';
+    }
+
+    function formatTime(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMin = Math.floor(diffMs / 60000);
+
+        if (diffMin < 1) return 'Vừa xong';
+        if (diffMin < 60) return `${diffMin} phút trước`;
+        if (diffMin < 1440) return `${Math.floor(diffMin / 60)} giờ trước`;
+        return date.toLocaleDateString('vi-VN');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Cập nhật badge ở header (nếu tồn tại)
+    function updateGlobalBadge() {
+        const unreadCount = notifications.filter(n => !n.is_read).length;
+        const badge = document.getElementById('notif-badge') || document.querySelector('.notif-badge');
+
+        if (badge) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        }
+    }
+
+    // ===================================================================
+    // 6. Real-time (tùy chọn - nếu dùng WebSocket)
+    // ===================================================================
+    // Nếu bạn dùng Socket.io sau này, chỉ cần:
+    // socket.on('new-notification', () => loadNotifications());
+
+    // ===================================================================
+    // 7. Push Notification (Service Worker - nếu cần)
+    // ===================================================================
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.ready.then(reg => {
+            // Có thể subscribe push ở đây nếu muốn
+        });
+    }
 });
+
+// ===================================================================
+// NOTES CHO DEVELOPER & BACKEND TEAM
+// ===================================================================
+/*
+  1. API ENDPOINTS BẮT BUỘC PHẢI CÓ (ở backend):
+     • GET    /api/notifications           → { success: true, notifications: [...] }
+     • PATCH  /api/notifications/mark-all  → { success: true }
+     • PATCH  /api/notifications/:id/mark  → { success: true }
+
+     Khuyến khích thêm:
+     • GET    /api/notifications/unread-count → { success: true, count: 12 }
+     • GET    /api/notifications?page=1&limit=20&type=task  (phân trang + filter)
+
+  2. CẤU TRÚC RESPONSE MONG ĐỢI (notifications array):
+     {
+       notification_id: 123,
+       title: "Deadline sắp tới",
+       message: "Công việc 'Thiết kế UI' còn 2 giờ nữa hết hạn",
+       type: "task" | "event" | "message" | "system",
+       is_read: false,
+       created_at: "2025-11-23T10:30:00.000Z",
+       // Tùy chọn:
+       related_id: 456,        // task_id / event_id / message_id
+       related_type: "task"    // để click vào thì nhảy đúng trang
+     }
+
+  3. REAL-TIME (nếu dùng Socket.io):
+     - Server emit: 'new-notification' → { notification: { ... } }
+     - Server emit: 'notification-read' → { notification_id: 123 }
+     → Frontend chỉ cần:
+       socket.on('new-notification', (data) => {
+         notifications.unshift(data.notification);
+         render();
+         updateGlobalBadge();
+       });
+
+  4. CLICK VÀO THÔNG BÁO → NHẢY ĐÚNG TRANG:
+     - Thêm onclick vào .noti-content:
+       li.querySelector('.noti-content').addEventListener('click', () => {
+         navigateToRelated(notif);
+       });
+
+     function navigateToRelated(notif) {
+       if (notif.related_type === 'task') {
+         window.location.href = `/tasks#task-${notif.related_id}`;
+       } else if (notif.related_type === 'event') {
+         window.location.href = `/calendar?date=${notif.extra?.date}`;
+       }
+       // ... các case khác
+       // Sau khi nhảy thì tự động mark as read (nếu chưa đọc)
+       if (!notif.is_read) markAsRead(notif.notification_id);
+     }
+
+  5. PUSH NOTIFICATION (Web Push):
+     - Đã có sẵn đoạn kiểm tra serviceWorker
+     - Khi cần bật: gọi registerPushSubscription() trong file riêng
+     - Backend lưu subscription vào bảng push_subscriptions
+
+  6. CẢI THIỆN UX NHỎ (tùy chọn):
+     - Thêm loading skeleton khi đang fetch
+     - Infinite scroll / pagination
+     - Delete notification (nếu muốn)
+     - Sound khi có thông báo mới (nếu user bật)
+
+  7. SECURITY:
+     - Luôn escape HTML (đã làm tốt rồi)
+     - Backend phải validate user_id == req.user.id trước khi trả notifications
+*/

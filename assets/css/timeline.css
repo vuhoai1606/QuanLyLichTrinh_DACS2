@@ -17,13 +17,6 @@
   --glass: rgba(255, 255, 255, 0.6);
 }
 
-/* ===========================
-   Reset & Base
-=========================== */
-* {
-  box-sizing: border-box;
-}
-
 html,
 body {
   height: 100%;
@@ -195,6 +188,43 @@ select {
   transition: width 0.3s ease;
 }
 
+.timeline-export {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.timeline-export button {
+  padding: 10px 16px;
+  background: #2e7dff;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.timeline-export button:hover {
+  background: #145be7;
+}
+
+.timeline-bar-container {
+  position: relative;
+  height: 16px;
+  background: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.timeline-bar {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(90deg, #4aa3ff, #1d82ff);
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
 /* ==================== Button ==================== */
 .btn-primary {
   background: linear-gradient(135deg, #4f46e5, #6366f1);
@@ -336,8 +366,83 @@ input:focus, select:focus {
     margin-top: 4px;
   }
 
+  .timeline-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  user-select: none;
+}
+
+  .timeline-zoom-controls button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #eee;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+
+  .timeline-zoom-controls button:hover {
+    background: #d4d4d4;
+  }
+
+  #zoomLevel {
+    font-weight: bold;
+    font-size: 16px;
+  }
+
   .dashboard-grid {
     width: 100%;
+  }
+
+    /* Milestones */
+  #timeline-milestones {
+    position: relative;
+    height: 40px;
+    margin-bottom: 10px;
+  }
+
+  .timeline-milestone {
+    position: absolute;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    background: #ff4747;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 0 6px rgba(0,0,0,0.2);
+  }
+
+  .timeline-milestone i {
+    color: white;
+    font-size: 12px;
+    position: absolute;
+    left: 4px;
+    top: 4px;
+  }
+
+  #timeline-tasks {
+    position: relative;
+    height: 30px;
+    margin-bottom: 20px;
+  }
+
+  .timeline-task-bar {
+    position: absolute;
+    height: 10px;
+    background: #4aa3ff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .timeline-task-bar:hover {
+    background: #1d82ff;
   }
 
   /* Timeline rows */
@@ -433,6 +538,28 @@ input:focus, select:focus {
     background: #e5e7eb;
   }
 }
+
+  .timeline-tooltip {
+    position: fixed;
+    background: rgba(20, 20, 20, 0.9);
+    padding: 8px 12px;
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .timeline-tooltip.show {
+    opacity: 1;
+  }
+
+  .hidden {
+    display: none;
+  }
+
 
 /* ==================== Animations ==================== */
 @keyframes fadeIn {

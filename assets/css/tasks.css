@@ -24,13 +24,6 @@
   --bg-light: #f8fafc;
 }
 
-/* ===========================
-   Reset & Base
-=========================== */
-* {
-  box-sizing: border-box;
-}
-
 html,
 body {
   height: 100%;
@@ -653,4 +646,59 @@ select:focus {
     font-size: 14px;
     padding: 10px;
   }
+}
+
+/* ===========================
+   🔔 Notification Icon + Badge
+=========================== */
+.notif-icon-container {
+    position: relative;
+    margin-left: 18px;
+}
+
+.notif-link {
+    color: var(--text-dark);
+    font-size: 22px;
+    position: relative;
+}
+
+.notif-link:hover {
+    color: var(--primary);
+}
+
+.notif-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 50%;
+    font-weight: 700;
+    box-shadow: 0 0 6px rgba(0,0,0,0.15);
+}
+
+/* ===========================
+   ⤓ Quick Export Button
+=========================== */
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #14b8a6;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.export-btn:hover {
+    background: #0d9488;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(13,148,136,0.3);
 }

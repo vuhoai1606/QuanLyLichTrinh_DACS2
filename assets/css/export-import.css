@@ -16,8 +16,7 @@
 }
 
 /* Reset */
-* { 
-  box-sizing: border-box; 
+* {
   margin: 0; 
   padding: 0; 
 }
@@ -244,7 +243,6 @@ input[type="text"] {
   border-radius: 12px;
   border: 2px solid #e5e7eb;
   font-size: 14px;
-  margin-top: 12px;
   transition: var(--transition);
   background: white;
 }
@@ -378,4 +376,71 @@ input[type="text"]:focus {
   .card h2 {
     font-size: 1.25rem;
   }
+}
+
+/* ===========================
+   Report & Analytics Card
+=========================== */
+#report-output {
+  margin-top: 20px;
+  text-align: left;
+  background: rgba(249, 250, 251, 0.8);
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  max-height: 250px;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+#report-output ul {
+  list-style: disc inside;
+}
+
+#report-output li {
+  margin-bottom: 8px;
+}
+
+/* Buttons specific for new features */
+#btn-report,
+#btn-analytics,
+#btn-export-ical,
+#btn-export-pdf {
+  margin-top: 8px;
+}
+
+/* Hover effects consistent with .btn-primary */
+#btn-report:hover,
+#btn-analytics:hover,
+#btn-export-ical:hover,
+#btn-export-pdf:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+/* Optional: Scrollbar styling for report-output */
+#report-output::-webkit-scrollbar {
+  width: 6px;
+}
+
+#report-output::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 12px;
+}
+
+#report-output::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+  border-radius: 12px;
+}
+
+/* Optional: Chart container styling if Chart.js hoặc canvas dùng */
+.chart-container {
+  margin-top: 16px;
+  background: rgba(249,250,251,0.85);
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
