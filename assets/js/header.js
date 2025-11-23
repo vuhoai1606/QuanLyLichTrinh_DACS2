@@ -90,15 +90,27 @@ async function checkAuthStatus() {
     try {
         const response = await fetch('/api/check-auth');
         const data = await response.json();
-        
-        if (data.isAuthenticated) {
-            document.getElementById('account-label').textContent = data.fullName;
-            // Cập nhật dropdown nếu cần
+
+        const label = document.getElementById('account-label');
+        const dropdownContainer = document.getElementById('account-dropdown-container');
+
+        if (data.isAuthenticated && data.user && data.user.fullName) {
+            // HIỆN TÊN ĐẸP
+            if (label) label.textContent = data.user.fullName;
+
+            // Hiện dropdown tài khoản (nếu đang bị ẩn)
+            if (dropdownContainer) {
+                dropdownContainer.style.display = 'block';
+            }
         } else {
-            // Hiển thị login/register
+            // Chưa đăng nhập
+            if (label) label.textContent = 'Tài khoản';
+            if (dropdownContainer) {
+                dropdownContainer.style.display = 'none';
+            }
         }
-    } catch (error) {
-        console.error('Lỗi:', error);
+    } catch (err) {
+        console.error('Lỗi check auth:', err);
     }
 }
 
