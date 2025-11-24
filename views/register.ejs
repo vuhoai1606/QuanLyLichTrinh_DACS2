@@ -39,6 +39,22 @@
           <label for="register-password">Mật khẩu</label>
           <input type="password" id="register-password" placeholder="Nhập mật khẩu" required>
           <span class="error" id="password-error"></span>
+          
+          <!-- Password validation checklist -->
+          <div class="password-requirements" id="password-requirements">
+            <p style="font-size: 12px; color: #64748b; margin: 5px 0;">Mật khẩu phải:</p>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li id="req-length" style="font-size: 12px; color: #94a3b8;">
+                <i class="fas fa-circle" style="font-size: 6px;"></i> Ít nhất 6 ký tự
+              </li>
+              <li id="req-letter" style="font-size: 12px; color: #94a3b8;">
+                <i class="fas fa-circle" style="font-size: 6px;"></i> Có chữ cái
+              </li>
+              <li id="req-number" style="font-size: 12px; color: #94a3b8;">
+                <i class="fas fa-circle" style="font-size: 6px;"></i> Có số
+              </li>
+            </ul>
+          </div>
         </div>
 
         <!-- Date of Birth -->
@@ -51,19 +67,19 @@
         <div class="form-group captcha-group">
           <label for="captcha-input">Mã kiểm tra</label>
           <div class="captcha-container">
-            <canvas id="captchaCanvas" width="160" height="50"></canvas>
+            <img id="captcha-image" src="/api/captcha" alt="CAPTCHA" style="border: 1px solid #e2e8f0; border-radius: 4px;">
             <button type="button" id="reloadCaptcha" title="Tải lại mã"><i class="fas fa-sync-alt"></i></button>
           </div>
           <div class="captcha-input-wrapper">
             <i class="fas fa-shield-alt"></i>
-            <input type="text" id="captcha-input" placeholder="Nhập mã kiểm tra" required>
+            <input type="text" id="captcha-input" placeholder="Nhập mã kiểm tra" required autocomplete="off">
           </div>
           <span class="error" id="captcha-error"></span>
         </div>
 
         <!-- Submit -->
         <button type="submit" class="btn-primary">Đăng ký</button>
-        <p class="text-center">Đã có tài khoản? <a href="login.html">Đăng nhập</a></p>
+        <p class="text-center">Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
       </form>
     </div>
   </div>

@@ -1,38 +1,63 @@
-// assets/js/login.js
+// assets/js/login.js - UPDATED FOR CAPTCHA + GOOGLE OAUTH
 // ===================================================================
-// login.js - FRONTEND (CHỈ XỬ LÝ UI VÀ GỌI API ĐĂNG NHẬP)
-// Đã được tối ưu UX/UI, loading, toast, clear error, remember me chuẩn
+// login.js - FRONTEND với Captcha và Google Sign-In
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('login-form');
     const submitBtn = form.querySelector('button[type="submit"]');
+    const usernameInput = document.getElementById('login-username');
+    const passwordInput = document.getElementById('login-password');
+    const captchaInput = document.getElementById('captcha-input');
+    const captchaImage = document.getElementById('captcha-image');
+    const reloadCaptchaBtn = document.getElementById('reload-captcha');
 
-    // Xóa thông báo lỗi khi người dùng bắt đầu nhập lại
-    const clearErrorsOnInput = () => {
-        document.getElementById('username-error').textContent = '';
-        document.getElementById('password-error').textContent = '';
-    };
+    const usernameError = document.getElementById('username-error');
+    const passwordError = document.getElementById('password-error');
+    const captchaError = document.getElementById('captcha-error');
 
-    document.getElementById('login-username').addEventListener('input', clearErrorsOnInput);
-    document.getElementById('login-password').addEventListener('input', clearErrorsOnInput);
+    // ===================================================================
+    // CAPTCHA - Reload button
+    // ===================================================================
+    if (reloadCaptchaBtn) {
+        reloadCaptchaBtn.addEventListener('click', () => {
+            captchaImage.src = '/api/captcha?' + Date.now();
+            captchaInput.value = '';
+        });
+    }
 
-    // Submit form
+    // Clear errors on input
+    usernameInput.addEventListener('input', () => {
+        usernameError.textContent = '';
+    });
+
+    passwordInput.addEventListener('input', () => {
+        passwordError.textContent = '';
+    });
+
+    if (captchaInput) {
+        captchaInput.addEventListener('input', () => {
+            captchaError.textContent = '';
+        });
+    }
+
+    // ===================================================================
+    // FORM SUBMIT - Đăng nhập thông thường
+    // ===================================================================
     form.addEventListener('submit', handleLogin);
 
     async function handleLogin(e) {
         e.preventDefault();
 
-        const username = document.getElementById('login-username').value.trim();
-        const password = document.getElementById('login-password').value;
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        const captcha = captchaInput ? captchaInput.value.trim() : '';
         const remember = document.getElementById('remember-me').checked;
-
-        const usernameError = document.getElementById('username-error');
-        const passwordError = document.getElementById('password-error');
 
         // Reset lỗi
         usernameError.textContent = '';
         passwordError.textContent = '';
+        if (captchaError) captchaError.textContent = '';
 
         // Validation cơ bản
         let hasError = false;
@@ -44,157 +69,198 @@ document.addEventListener('DOMContentLoaded', () => {
             passwordError.textContent = 'Vui lòng nhập mật khẩu';
             hasError = true;
         }
+        // Chỉ validate captcha nếu có trường captcha
+        if (captchaInput && !captcha) {
+            captchaError.textContent = 'Vui lòng nhập mã xác thực';
+            hasError = true;
+        }
         if (hasError) return;
 
-        // Loading state cho button
+        // Loading state
         const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...`;
 
         try {
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, password, remember })
+                body: JSON.stringify({
+                    username,
+                    password,
+                    captcha,
+                    remember
+                })
             });
 
             const data = await response.json();
 
             if (data.success) {
-                // Lưu thông tin user (không lưu password)
-                localStorage.setItem('currentUser', JSON.stringify({
-                    user_id: data.user.user_id,
-                    username: data.user.username,
-                    full_name: data.user.full_name,
-                    email: data.user.email,
-                    avatar_url: data.user.avatar_url
-                }));
-
-                // Lưu token theo ý người dùng
-                if (remember) {
-                    localStorage.setItem('authToken', data.token);
-                } else {
-                    sessionStorage.setItem('authToken', data.token);
-                }
-
-                // Thông báo thành công
-                showToast('Đăng nhập thành công! Đang chuyển hướng...', 'success');
-
-                // Chuyển hướng sau 1 giây để người dùng thấy toast
+                // Success toast
+                showToast('✅ Đăng nhập thành công!', 'success');
+                
+                // Redirect
                 setTimeout(() => {
-                    window.location.href = '/';
-                }, 1200);
-
+                    window.location.href = data.redirectUrl || '/';
+                }, 500);
             } else {
-                // Hiển thị lỗi từ server
-                passwordError.textContent = data.message || 'Tên đăng nhập hoặc mật khẩu không đúng';
+                // Hiển thị lỗi
+                if (data.message.includes('Username') || data.message.includes('Tên đăng nhập')) {
+                    usernameError.textContent = data.message;
+                } else if (data.message.includes('Password') || data.message.includes('Mật khẩu')) {
+                    passwordError.textContent = data.message;
+                } else if (data.message.includes('Captcha') || data.message.includes('captcha')) {
+                    if (captchaError) captchaError.textContent = data.message;
+                    // Reload captcha if exists
+                    if (captchaImage) captchaImage.src = '/api/captcha?' + Date.now();
+                    if (captchaInput) captchaInput.value = '';
+                } else {
+                    showToast('❌ ' + data.message, 'error');
+                }
             }
-
         } catch (error) {
-            console.error('Lỗi đăng nhập:', error);
-            passwordError.textContent = 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
+            console.error('Login error:', error);
+            showToast('❌ Lỗi kết nối server. Vui lòng thử lại!', 'error');
         } finally {
-            // Khôi phục button
-            submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
     }
 
-    // Hàm toast đẹp (có thể dùng chung cho toàn dự án)
-    function showToast(message, type = 'success') {
-        // Xóa toast cũ nếu có
-        const oldToast = document.querySelector('.custom-toast');
-        if (oldToast) oldToast.remove();
+    // ===================================================================
+    // GOOGLE OAUTH - Sign in with Google
+    // ===================================================================
+    const googleSignInBtn = document.getElementById('google-signin-btn');
 
+    if (googleSignInBtn) {
+        googleSignInBtn.addEventListener('click', handleGoogleSignIn);
+    }
+
+    async function handleGoogleSignIn() {
+        try {
+            // Sử dụng Google Identity Services (GIS)
+            // Đọc GOOGLE_CLIENT_ID từ window (được inject từ login.ejs)
+            const GOOGLE_CLIENT_ID = window.GOOGLE_CLIENT_ID;
+
+            if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('your-') || GOOGLE_CLIENT_ID === 'undefined') {
+                showToast('❌ Google OAuth chưa được cấu hình. Vui lòng cấu hình GOOGLE_CLIENT_ID trong .env', 'error');
+                return;
+            }
+
+            // Check if google object is loaded
+            if (typeof google === 'undefined') {
+                showToast('❌ Google SDK chưa được tải. Vui lòng thử lại sau!', 'error');
+                return;
+            }
+
+            // Initialize Google Sign-In
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleCallback
+            });
+
+            // Prompt sign-in
+            google.accounts.id.prompt();
+        } catch (error) {
+            console.error('Google Sign-In error:', error);
+            showToast('❌ Lỗi khi đăng nhập Google: ' + error.message, 'error');
+        }
+    }
+
+    async function handleGoogleCallback(response) {
+        // response.credential chứa JWT token từ Google
+        const idToken = response.credential;
+
+        try {
+            // Gửi token đến backend để verify
+            const res = await fetch('/api/auth/google', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: idToken
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                showToast('✅ Đăng nhập Google thành công!', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = data.redirectUrl || '/';
+                }, 500);
+            } else {
+                showToast('❌ ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Google auth error:', error);
+            showToast('❌ Lỗi khi xác thực Google', 'error');
+        }
+    }
+
+    // ===================================================================
+    // HELPER - Toast notification
+    // ===================================================================
+    function showToast(message, type = 'info') {
+        // Tạo toast element
         const toast = document.createElement('div');
-        toast.className = `custom-toast toast-${type}`;
-        toast.textContent = message;
-
         toast.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};
             color: white;
-            padding: 14px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            z-index: 10000;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            font-family: inherit;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            font-size: 14px;
+            animation: slideIn 0.3s ease-out;
         `;
+        toast.textContent = message;
+
+        // Add animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
 
         document.body.appendChild(toast);
 
-        // Trigger animation
+        // Auto remove after 3s
         setTimeout(() => {
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateX(0)';
-        }, 100);
-
-        // Tự động ẩn sau 3 giây
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            toast.addEventListener('transitionend', () => toast.remove());
+            toast.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
         }, 3000);
     }
+
+    // ===================================================================
+    // ALTERNATIVE: Google One Tap (tự động hiển thị)
+    // ===================================================================
+    // Uncomment để bật Google One Tap
+    /*
+    window.onload = function() {
+        google.accounts.id.initialize({
+            client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+            callback: handleGoogleCallback
+        });
+        google.accounts.id.prompt(); // Auto-show One Tap
+    };
+    */
 });
-
-// ===================================================================
-// NOTES CHO DEVELOPER & TEAM (CẬP NHẬT 23/11/2025)
-// ===================================================================
-// 1. API ĐĂNG NHẬP:
-//    - Endpoint: POST /api/login
-//    - Request body: { username, password, remember: true/false }
-//    - Response thành công (200):
-//      {
-//        success: true,
-//        message: "Đăng nhập thành công",
-//        token: "jwt-token-here",
-//        user: { user_id, username, full_name, email, avatar_url, ... }
-//      }
-//    - Response lỗi (401/400):
-//      { success: false, message: "Sai tên đăng nhập hoặc mật khẩu" }
-
-// 2. QUẢN LÝ TOKEN:
-//    - Nếu người dùng chọn "Ghi nhớ đăng nhập" → lưu vào localStorage('authToken')
-//    - Nếu không chọn → chỉ lưu vào sessionStorage('authToken')
-//    - Các request API sau này cần thêm header:
-//      Authorization: Bearer ${token}
-
-// 3. CURRENT USER:
-//    - Sau khi đăng nhập thành công sẽ lưu vào localStorage('currentUser')
-//    - Dùng để hiển thị tên, avatar ở header, profile, dashboard, v.v.
-//    - Khi logout: xóa cả localStorage và sessionStorage
-
-// 4. TOAST CUSTOM:
-//    - Hàm showToast() được viết sẵn, có thể copy sang file utils/toast.js để dùng chung toàn dự án
-//    - Hỗ trợ 2 loại: success (xanh), error (đỏ)
-
-// 5. UX/UI ĐÃ TỐI ƯU:
-//    - Loading spinner + disable button khi đang submit
-//    - Tự động xóa lỗi khi người dùng nhập lại
-//    - Toast đẹp, tự động ẩn sau 3s
-//    - Chuyển hướng có delay nhẹ để người dùng thấy toast
-
-// 6. CÁC TRƯỜNG HỢP CẦN XỬ LÝ THÊM (TƯƠNG LAI):
-//    - Rate limiting (quá nhiều lần đăng nhập sai → block tạm thời)
-//    - Caps Lock warning khi nhập password
-//    - Hỗ trợ Enter key để submit form
-//    - Redirect với query param ?redirect=/some-page (nếu có)
-//    - Xử lý trường hợp token hết hạn → tự động logout + thông báo
-
-// 7. BẢO MẬT:
-//    - Không lưu password ở bất kỳ đâu
-//    - Token được lưu an toàn theo ý người dùng (remember me)
-//    - Tất cả request sau đều cần kiểm tra token ở middleware requireAuth
-
-// ===================================================================
-// Đã test kỹ trên Chrome, Firefox, Safari, Mobile (iOS & Android)
-// ===================================================================

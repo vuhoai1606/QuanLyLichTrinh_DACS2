@@ -16,8 +16,37 @@ router.get('/register', requireGuest, (req, res) => {
 // API đăng nhập
 router.post('/api/login', authController.login);
 
-// API đăng ký
+// API đăng ký cũ (giữ lại để tương thích)
 router.post('/api/register', authController.register);
+
+// ============================================
+// NEW ROUTES - OTP Registration Flow
+// ============================================
+// BƯỚC 1: Gửi OTP qua email
+router.post('/api/register/initiate', authController.initiateRegistration);
+
+// BƯỚC 2: Xác thực OTP và tạo tài khoản
+router.post('/api/register/verify-otp', authController.verifyOTP);
+
+// Gửi lại OTP
+router.post('/api/register/resend-otp', authController.resendOTP);
+
+// Trang nhập OTP
+router.get('/verify-otp', (req, res) => {
+  // Lấy email từ session hoặc query parameter
+  const email = req.session.pendingRegistration?.email || req.query.email || '';
+  res.render('verify-otp', { email });
+});
+
+// ============================================
+// CAPTCHA - Tạo captcha SVG
+// ============================================
+router.get('/api/captcha', authController.generateCaptcha);
+
+// ============================================
+// GOOGLE OAUTH - Đăng nhập Google
+// ============================================
+router.post('/api/auth/google', authController.googleLogin);
 
 // API đăng xuất
 router.post('/api/logout', authController.logout);

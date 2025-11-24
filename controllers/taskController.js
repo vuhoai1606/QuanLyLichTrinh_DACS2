@@ -1,29 +1,45 @@
-const pool = require('../config/db');
+const taskService = require('../services/taskService');
 
-// Lấy danh sách tasks của user
+/**
+ * TASK CONTROLLER - Đã tái cấu trúc sử dụng Services
+ * ====================================================
+ * Controller chỉ xử lý HTTP request/response
+ * Business logic đã chuyển sang taskService
+ */
+
+// Lấy danh sách tasks của user với filters
 exports.getTasks = async (req, res) => {
   try {
     const userId = req.session.userId;
     
-    const result = await pool.query(
-      `SELECT task_id, title, description, start_time, end_time, 
-              is_all_day, repeat_type, priority, status, kanban_column,
-              created_at, updated_at
-       FROM tasks 
-       WHERE user_id = $1 
-       ORDER BY start_time DESC`,
-      [userId]
-    );
-    
-    res.json({ 
-      success: true, 
-      tasks: result.rows 
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Vui lòng đăng nhập' 
+      });
+    }
+
+    // Lấy filters từ query params
+    const filters = {
+      status: req.query.status,
+      priority: req.query.priority,
+      search: req.query.search,
+      sortBy: req.query.sortBy || 'created_at',
+      sortOrder: req.query.sortOrder || 'DESC'
+    };
+
+    const tasks = await taskService.getTasksByUser(userId, filters);
+
+    res.json({
+      success: true,
+      tasks: tasks
     });
   } catch (error) {
-    console.error('Lỗi lấy tasks:', error);
+    console.error('Error getting tasks:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Không thể lấy danh sách công việc' 
+      message: 'Lỗi server khi lấy danh sách tasks',
+      error: error.message 
     });
   }
 };
@@ -33,28 +49,33 @@ exports.getTaskById = async (req, res) => {
   try {
     const userId = req.session.userId;
     const { id } = req.params;
-    
-    const result = await pool.query(
-      'SELECT * FROM tasks WHERE task_id = $1 AND user_id = $2',
-      [id, userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ 
+
+    if (!userId) {
+      return res.status(401).json({ 
         success: false, 
-        message: 'Không tìm thấy công việc' 
+        message: 'Vui lòng đăng nhập' 
       });
     }
-    
-    res.json({ 
-      success: true, 
-      task: result.rows[0] 
+
+    const task = await taskService.getTaskById(id, userId);
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy task'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: task
     });
   } catch (error) {
-    console.error('Lỗi lấy task:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Không thể lấy thông tin công việc' 
+    console.error('Error getting task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server',
+      error: error.message
     });
   }
 };
@@ -63,56 +84,42 @@ exports.getTaskById = async (req, res) => {
 exports.createTask = async (req, res) => {
   try {
     const userId = req.session.userId;
-    const { 
-      title, 
-      description, 
-      start_time, 
-      end_time, 
-      is_all_day, 
-      repeat_type, 
-      priority, 
-      status,
-      kanban_column 
-    } = req.body;
-    
-    // Validation
-    if (!title || !start_time) {
-      return res.status(400).json({ 
+
+    if (!userId) {
+      return res.status(401).json({ 
         success: false, 
-        message: 'Tiêu đề và thời gian bắt đầu là bắt buộc' 
+        message: 'Vui lòng đăng nhập' 
       });
     }
-    
-    const result = await pool.query(
-      `INSERT INTO tasks (
-        user_id, title, description, start_time, end_time, 
-        is_all_day, repeat_type, priority, status, kanban_column
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
-      RETURNING *`,
-      [
-        userId, 
-        title, 
-        description || null, 
-        start_time, 
-        end_time || null,
-        is_all_day || false,
-        repeat_type || 'none',
-        priority || 'medium',
-        status || 'pending',
-        kanban_column || 'todo'
-      ]
-    );
-    
-    res.json({ 
-      success: true, 
-      message: 'Thêm công việc thành công',
-      task: result.rows[0] 
+
+    const taskData = {
+      title: req.body.title,
+      description: req.body.description,
+      startTime: req.body.start_time || req.body.startTime,
+      endTime: req.body.end_time || req.body.endTime,
+      isAllDay: req.body.is_all_day || req.body.isAllDay || false,
+      repeatType: req.body.repeat_type || req.body.repeatType || 'none',
+      priority: req.body.priority || 'medium',
+      status: req.body.status || 'pending',
+      kanbanColumn: req.body.kanban_column || req.body.kanbanColumn || 'todo',
+      categoryId: req.body.category_id || req.body.categoryId,
+      tags: req.body.tags || [],
+      progress: req.body.progress || 0
+    };
+
+    const newTask = await taskService.createTask(userId, taskData);
+
+    res.status(201).json({
+      success: true,
+      message: 'Tạo task thành công',
+      data: newTask
     });
   } catch (error) {
-    console.error('Lỗi tạo task:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Không thể thêm công việc' 
+    console.error('Error creating task:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Lỗi khi tạo task',
+      error: error.message
     });
   }
 };
@@ -122,63 +129,56 @@ exports.updateTask = async (req, res) => {
   try {
     const userId = req.session.userId;
     const { id } = req.params;
-    const { 
-      title, 
-      description, 
-      start_time, 
-      end_time, 
-      is_all_day, 
-      repeat_type, 
-      priority, 
-      status,
-      kanban_column 
-    } = req.body;
-    
-    // Kiểm tra task có tồn tại và thuộc về user không
-    const checkResult = await pool.query(
-      'SELECT task_id FROM tasks WHERE task_id = $1 AND user_id = $2',
-      [id, userId]
-    );
-    
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({ 
+
+    if (!userId) {
+      return res.status(401).json({ 
         success: false, 
-        message: 'Không tìm thấy công việc' 
+        message: 'Vui lòng đăng nhập' 
       });
     }
-    
-    const result = await pool.query(
-      `UPDATE tasks 
-       SET title = $1, description = $2, start_time = $3, end_time = $4,
-           is_all_day = $5, repeat_type = $6, priority = $7, status = $8,
-           kanban_column = $9
-       WHERE task_id = $10 AND user_id = $11 
-       RETURNING *`,
-      [
-        title, 
-        description, 
-        start_time, 
-        end_time,
-        is_all_day,
-        repeat_type,
-        priority,
-        status,
-        kanban_column,
-        id, 
-        userId
-      ]
-    );
-    
-    res.json({ 
-      success: true, 
-      message: 'Cập nhật công việc thành công',
-      task: result.rows[0] 
+
+    const updateData = {
+      title: req.body.title,
+      description: req.body.description,
+      startTime: req.body.start_time || req.body.startTime,
+      endTime: req.body.end_time || req.body.endTime,
+      isAllDay: req.body.is_all_day || req.body.isAllDay,
+      repeatType: req.body.repeat_type || req.body.repeatType,
+      priority: req.body.priority,
+      status: req.body.status,
+      kanbanColumn: req.body.kanban_column || req.body.kanbanColumn,
+      categoryId: req.body.category_id || req.body.categoryId,
+      tags: req.body.tags,
+      progress: req.body.progress
+    };
+
+    // Loại bỏ các giá trị undefined
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+
+    const updatedTask = await taskService.updateTask(id, userId, updateData);
+
+    if (!updatedTask) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy task'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Cập nhật task thành công',
+      data: updatedTask
     });
   } catch (error) {
-    console.error('Lỗi cập nhật task:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Không thể cập nhật công việc' 
+    console.error('Error updating task:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Lỗi khi cập nhật task',
+      error: error.message
     });
   }
 };
@@ -188,28 +188,33 @@ exports.deleteTask = async (req, res) => {
   try {
     const userId = req.session.userId;
     const { id } = req.params;
-    
-    const result = await pool.query(
-      'DELETE FROM tasks WHERE task_id = $1 AND user_id = $2 RETURNING *',
-      [id, userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ 
+
+    if (!userId) {
+      return res.status(401).json({ 
         success: false, 
-        message: 'Không tìm thấy công việc' 
+        message: 'Vui lòng đăng nhập' 
       });
     }
-    
-    res.json({ 
-      success: true, 
-      message: 'Xóa công việc thành công' 
+
+    const deleted = await taskService.deleteTask(id, userId);
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy task'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Xóa task thành công'
     });
   } catch (error) {
-    console.error('Lỗi xóa task:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Không thể xóa công việc' 
+    console.error('Error deleting task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi xóa task',
+      error: error.message
     });
   }
 };
@@ -220,36 +225,41 @@ exports.updateTaskStatus = async (req, res) => {
     const userId = req.session.userId;
     const { id } = req.params;
     const { status } = req.body;
-    
-    if (!['pending', 'in_progress', 'done'].includes(status)) {
-      return res.status(400).json({ 
+
+    if (!userId) {
+      return res.status(401).json({ 
         success: false, 
-        message: 'Trạng thái không hợp lệ' 
+        message: 'Vui lòng đăng nhập' 
       });
     }
-    
-    const result = await pool.query(
-      'UPDATE tasks SET status = $1 WHERE task_id = $2 AND user_id = $3 RETURNING *',
-      [status, id, userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Không tìm thấy công việc' 
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trạng thái không được để trống'
       });
     }
-    
-    res.json({ 
-      success: true, 
+
+    const updatedTask = await taskService.updateTaskStatus(id, userId, status);
+
+    if (!updatedTask) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy task'
+      });
+    }
+
+    res.json({
+      success: true,
       message: 'Cập nhật trạng thái thành công',
-      task: result.rows[0] 
+      data: updatedTask
     });
   } catch (error) {
-    console.error('Lỗi cập nhật trạng thái:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Không thể cập nhật trạng thái' 
+    console.error('Error updating status:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Lỗi khi cập nhật trạng thái',
+      error: error.message
     });
   }
 };
@@ -259,30 +269,73 @@ exports.updateTaskKanbanColumn = async (req, res) => {
   try {
     const userId = req.session.userId;
     const { id } = req.params;
-    const { kanban_column } = req.body;
-    
-    const result = await pool.query(
-      'UPDATE tasks SET kanban_column = $1 WHERE task_id = $2 AND user_id = $3 RETURNING *',
-      [kanban_column, id, userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ 
+    const { kanban_column, kanbanColumn } = req.body;
+    const column = kanban_column || kanbanColumn;
+
+    if (!userId) {
+      return res.status(401).json({ 
         success: false, 
-        message: 'Không tìm thấy công việc' 
+        message: 'Vui lòng đăng nhập' 
       });
     }
-    
-    res.json({ 
-      success: true, 
-      message: 'Cập nhật vị trí thành công',
-      task: result.rows[0] 
+
+    if (!column) {
+      return res.status(400).json({
+        success: false,
+        message: 'Kanban column không được để trống'
+      });
+    }
+
+    const updatedTask = await taskService.updateTask(id, userId, { 
+      kanbanColumn: column 
+    });
+
+    if (!updatedTask) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy task'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Cập nhật cột Kanban thành công',
+      data: updatedTask
     });
   } catch (error) {
-    console.error('Lỗi cập nhật Kanban:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Không thể cập nhật vị trí' 
+    console.error('Error updating kanban column:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Lỗi khi cập nhật cột Kanban',
+      error: error.message
+    });
+  }
+};
+
+// Lấy thống kê tasks
+exports.getTaskStatistics = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Vui lòng đăng nhập' 
+      });
+    }
+
+    const stats = await taskService.getTaskStatistics(userId);
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error getting statistics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy thống kê',
+      error: error.message
     });
   }
 };
