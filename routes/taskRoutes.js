@@ -9,6 +9,7 @@ router.use(requireAuth);
 // API routes cho tasks
 // Routes đặc biệt phải đặt TRƯỚC routes có parameter :id
 router.get('/api/tasks', taskController.getTasks);
+router.get('/api/tasks/today', taskController.getTodayTasks);
 router.post('/api/tasks', taskController.createTask);
 
 // Routes đặc biệt với string cụ thể

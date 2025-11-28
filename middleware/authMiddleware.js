@@ -8,7 +8,8 @@ exports.requireAuth = (req, res, next) => {
   
   // Người dùng chưa đăng nhập
   // Nếu là AJAX request, trả về JSON
-  if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+  const acceptHeader = req.headers.accept || '';
+  if (req.xhr || acceptHeader.indexOf('json') > -1) {
     return res.status(401).json({ 
       success: false, 
       message: 'Vui lòng đăng nhập để tiếp tục',

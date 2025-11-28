@@ -273,7 +273,7 @@ exports.getUpcomingEvents = async (req, res) => {
 
     res.json({
       success: true,
-      data: events
+      events: events || []
     });
   } catch (error) {
     console.error('Error getting upcoming events:', error);

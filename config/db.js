@@ -7,19 +7,25 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  max: 20, // Số kết nối tối đa
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  max: 10, // Giảm từ 20 xuống 10 - đủ cho localhost
+  min: 2, // Luôn giữ 2 connection sẵn sàng
+  idleTimeoutMillis: 10000, // Giảm từ 30s xuống 10s
+  connectionTimeoutMillis: 3000, // Tăng từ 2s lên 3s
+  keepAlive: true, // Giữ connection alive
+  keepAliveInitialDelayMillis: 10000,
 });
 
-// Test kết nối
+// Test kết nối - chỉ log 1 lần
+let hasConnected = false;
 pool.on('connect', () => {
-  console.log('✅ Kết nối PostgreSQL thành công!');
+  if (!hasConnected) {
+    console.log('✅ Kết nối PostgreSQL thành công!');
+    hasConnected = true;
+  }
 });
 
 pool.on('error', (err) => {
   console.error('❌ Lỗi kết nối PostgreSQL:', err);
-  process.exit(-1);
 });
 
 module.exports = pool;

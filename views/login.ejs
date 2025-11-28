@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/css/login.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous">
   <title>Đăng nhập - TaskManager</title>
 </head>
 <body>
@@ -17,13 +16,13 @@
       <form id="login-form">
         <div class="form-group">
           <label for="login-username">Tên đăng nhập</label>
-          <input type="text" id="login-username" placeholder="Nhập tên đăng nhập" required>
+          <input type="text" id="login-username" placeholder="Nhập tên đăng nhập" autocomplete="username" required>
           <span class="error" id="username-error"></span>
         </div>
 
         <div class="form-group">
           <label for="login-password">Mật khẩu</label>
-          <input type="password" id="login-password" placeholder="Nhập mật khẩu" required>
+          <input type="password" id="login-password" placeholder="Nhập mật khẩu" autocomplete="current-password" required>
           <span class="error" id="password-error"></span>
         </div>
 
@@ -56,12 +55,13 @@
     </div>
   </div>
 
-  <!-- Google Sign-In Library -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Scripts - Load at end for better performance -->
   <script>
     // Inject GOOGLE_CLIENT_ID into window object
     window.GOOGLE_CLIENT_ID = '<%= process.env.GOOGLE_CLIENT_ID || "" %>';
   </script>
-  <script src="/js/login.js"></script>
+  <script src="/js/login.js" defer></script>
+  <!-- Google Sign-In Library - Load last -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>

@@ -48,7 +48,7 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Đã gửi OTP email đến: ${email}`);
+      // console.log(`✅ Đã gửi OTP email đến: ${email}`);
       return { success: true };
     } catch (error) {
       console.error('❌ Lỗi gửi email:', error);
@@ -238,7 +238,7 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Đã gửi welcome email đến: ${email}`);
+      // console.log(`✅ Đã gửi welcome email đến: ${email}`);
     } catch (error) {
       console.error('❌ Lỗi gửi welcome email:', error);
       // Không throw error vì đây không phải critical
@@ -258,7 +258,7 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Đã gửi password reset email đến: ${email}`);
+      // console.log(`✅ Đã gửi password reset email đến: ${email}`);
       return { success: true };
     } catch (error) {
       console.error('❌ Lỗi gửi email reset password:', error);

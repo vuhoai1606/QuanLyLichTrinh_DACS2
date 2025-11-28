@@ -339,3 +339,37 @@ exports.getTaskStatistics = async (req, res) => {
     });
   }
 };
+
+// Lấy tasks hôm nay
+exports.getTodayTasks = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Vui lòng đăng nhập' 
+      });
+    }
+
+    // Lấy tasks có start_time là hôm nay
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const tasks = await taskService.getTasksByDateRange(userId, today, tomorrow);
+
+    res.json({
+      success: true,
+      tasks: tasks || []
+    });
+  } catch (error) {
+    console.error('Error getting today tasks:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy tasks hôm nay',
+      error: error.message
+    });
+  }
+};

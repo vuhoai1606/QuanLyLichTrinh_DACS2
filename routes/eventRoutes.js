@@ -9,6 +9,7 @@ router.use(requireAuth);
 // API routes cho events
 // Routes đặc biệt phải đặt TRƯỚC routes có parameter :id
 router.get('/api/events', eventController.getEvents);
+router.get('/api/events/upcoming', eventController.getUpcomingEvents);
 router.get('/api/events/range', eventController.getEventsByDateRange);
 router.post('/api/events', eventController.createEvent);
 

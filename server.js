@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 require('dotenv').config();
 
 // Import database
@@ -19,12 +20,18 @@ const { setUserLocals } = require('./middleware/authMiddleware');
 const app = express();
 const PORT = process.env.PORT || 8888;
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Compression middleware - Nén response để giảm bandwidth
+app.use(compression());
+
+// Tắt logging không cần thiết để tăng performance
+app.set('x-powered-by', false);
+
+// Middleware - Tối ưu thứ tự
+app.use(express.json({ limit: '1mb' })); // Giới hạn request size
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
-// Config session
+// Config session - Tối ưu
 app.use(session({
   secret: process.env.JWT_SECRET || 'your-secret-key',
   resave: false,
@@ -32,16 +39,22 @@ app.use(session({
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 giờ
     httpOnly: true,
-    secure: false // Đổi thành true nếu dùng HTTPS
-  }
+    secure: false
+  },
+  rolling: true, // Gia hạn session mỗi request
+  name: 'sessionId' // Đổi tên cookie mặc định
 }));
 
 // Config template engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Config static files
-app.use(express.static(path.join(__dirname, 'assets')));
+// Config static files với cache
+app.use(express.static(path.join(__dirname, 'assets'), {
+  maxAge: '1d', // Cache static files 1 ngày
+  etag: true,
+  lastModified: true
+}));
 
 // Middleware thêm thông tin user vào views
 app.use(setUserLocals);

@@ -176,24 +176,42 @@ exports.login = async (req, res) => {
  */
 exports.googleLogin = async (req, res) => {
   try {
-    const { googleToken } = req.body;
+    console.log('🔍 ===== BACKEND: Google Login Request =====');
+    console.log('Request body:', req.body);
+    console.log('Has token:', !!req.body.token);
+    
+    const { token } = req.body;
 
-    if (!googleToken) {
+    if (!token) {
+      console.error('❌ Token is missing from request');
       return res.status(400).json({
         success: false,
         message: 'Token không hợp lệ',
       });
     }
 
-    const result = await authService.loginWithGoogle(googleToken);
+    console.log('✅ Token received. Length:', token.length);
+    console.log('Token preview:', token.substring(0, 50) + '...');
+    console.log('📞 Calling authService.loginWithGoogle()...');
+
+    const result = await authService.loginWithGoogle(token);
+
+    console.log('✅ AuthService returned result:', {
+      isNewUser: result.isNewUser,
+      userId: result.user.user_id,
+      email: result.user.email
+    });
 
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
 
+    console.log('✅ Session saved. Sending response...');
+
     res.json({
       success: true,
       message: result.isNewUser ? 'Đăng ký thành công!' : 'Đăng nhập thành công!',
+      redirectUrl: '/',
       user: {
         userId: result.user.user_id,
         username: result.user.username,
@@ -203,10 +221,13 @@ exports.googleLogin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Lỗi Google login:', error);
+    console.error('❌ ===== Google Login Error =====');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Stack:', error.stack);
     res.status(400).json({
       success: false,
-      message: error.message,
+      message: 'Lỗi đăng nhập Google: ' + error.message,
     });
   }
 };

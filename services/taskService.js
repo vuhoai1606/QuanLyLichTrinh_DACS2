@@ -304,6 +304,22 @@ class TaskService {
 
     return result.rows[0];
   }
+
+  /**
+   * LẤY TASKS THEO KHOẢNG THỜI GIAN
+   */
+  async getTasksByDateRange(userId, startDate, endDate) {
+    const result = await pool.query(
+      `SELECT * FROM tasks
+       WHERE user_id = $1
+         AND start_time >= $2
+         AND start_time < $3
+       ORDER BY start_time ASC`,
+      [userId, startDate, endDate]
+    );
+
+    return result.rows;
+  }
 }
 
 // Export singleton
