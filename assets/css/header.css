@@ -119,27 +119,154 @@ header::after {
   z-index: 1;
 }
 
-/* ============================
-   HEADER TOP SECTION
-   ============================ */
-.header-top {
+/* ===================================================================
+   HEADER HOÀN CHỈNH 100% – KHÔNG MẤT NÚT NÀO, TASKMANAGER HIỆN ĐỦ
+   =================================================================== */
+.header-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-xs) var(--spacing-md);
+  backdrop-filter: blur(10px);
   gap: var(--spacing-md);
-  position: relative;
   z-index: 2;
-  padding: var(--spacing-xs);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Logo Section */
+/* HÀNG TRÊN */
+.row-top {
+  justify-content: flex-start;
+  gap: 16px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+/* HÀNG DƯỚI – 3 NÚT CÂN ĐỐI, KHÔNG BAO GIỜ MẤT */
+.row-bottom {
+  justify-content: space-between;     /* đẩy Thông báo sang trái, Sync sang phải */
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 8px 0;
+  flex-wrap: nowrap !important;
+}
+
+/* NÚT THÔNG BÁO (bên trái) */
+.row-bottom > .action-btn:first-child {
+  width: 46px;
+  height: 46px;
+  transition: all 0.35s ease;
+  position: relative;
+}
+
+.row-bottom > .action-btn:first-child:hover {
+  background: rgba(99,102,241,0.25);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(99,102,241,0.3);
+}
+
+.row-bottom > .action-btn:first-child .notif-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-primary);
+}
+
+/* NÚT SYNC WITH GOOGLE (bên phải) */
+#googleSyncBtn {
+  margin-right: 4px;
+}
+
+/* TOOLTIP CHO CẢ 2 NÚT */
+.action-btn[data-tooltip]::after,
+.row-bottom > .action-btn:first-child::after {
+  content: attr(data-tooltip, "Thông báo"); /* Thông báo dùng fallback */
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(15,15,35,0.97);
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s ease;
+  z-index: 9999;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99,102,241,0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.action-btn[data-tooltip]::before,
+.row-bottom > .action-btn:first-child::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%) translateY(4px);
+  border: 7px solid transparent;
+  border-bottom-color: rgba(15,15,35,0.97);
+  opacity: 0;
+  transition: all 0.35s ease;
+}
+
+.action-btn:hover[data-tooltip]::after,
+.action-btn:hover[data-tooltip]::before,
+.row-bottom > .action-btn:first-child:hover::after,
+.row-bottom > .action-btn:first-child:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(6px);
+}
+
+/* KHI SIDEBAR COLLAPSE → TOOLTIP HIỆN BÊN PHẢI */
+header.collapsed .action-btn[data-tooltip]::after,
+header.collapsed .row-bottom > .action-btn:first-child::after {
+  left: 110%;
+  top: 50%;
+  transform: translateY(-50%) translateX(10px);
+}
+
+header.collapsed .action-btn[data-tooltip]::before,
+header.collapsed .row-bottom > .action-btn:first-child::before {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-bottom-color: transparent;
+  border-right-color: rgba(15,15,35,0.97);
+}
+
+header.collapsed .action-btn:hover[data-tooltip]::after,
+header.collapsed .row-bottom > .action-btn:first-child:hover::after {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* KHI COLLAPSE → ẨN CHỮ SYNC, CHỈ GIỮ ICON */
+header.collapsed #googleSyncBtn {
+  width: 46px;
+  padding: 0;
+  justify-content: center;
+}
+header.collapsed #googleSyncBtn .btn-text {
+  opacity: 0;
+  width: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Logo + TaskManager */
 .logo-section {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  flex: 1;
+  gap: 16px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 header .logo {
@@ -147,7 +274,7 @@ header .logo {
   height: 48px;
   border-radius: var(--radius-md);
   object-fit: cover;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 16px rgba(99,102,241,0.4);
   border: 2px solid var(--glass-border);
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
@@ -156,106 +283,193 @@ header .logo {
   position: relative;
   overflow: hidden;
 }
-
-header .logo::before {
+header .logo::before { /* shimmer */
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
   transform: rotate(45deg);
-  transition: var(--transition-base);
 }
+header .logo:hover { transform: scale(1.1) rotate(-5deg); box-shadow: 0 8px 24px rgba(99,102,241,0.6), var(--shadow-glow); border-color: var(--accent-primary); }
+header .logo:hover::before { animation: shimmer 1.5s ease-in-out; }
 
-header .logo:hover {
-  transform: scale(1.1) rotate(-5deg);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.6), var(--shadow-glow);
-  border-color: var(--accent-primary);
-}
-
-header .logo:hover::before {
-  animation: shimmer 1.5s ease-in-out;
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-}
-
+/* TASKMANAGER – ĐỒNG BỘ HOÀN TOÀN VỚI CÁC MENU */
 .app-name {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  transition: var(--transition-base);
-  white-space: nowrap;
-  overflow: hidden;
+  font-size: 19px !important;
+  font-weight: 600 !important;           /* giống hệt font-weight của nav-link */
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial !important;       /* dùng font hệ thống giống menu */
   letter-spacing: 0.5px;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-  background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+  color: var(--text-primary) !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 152px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+  /* Gradient chữ ĐẸP + ĐỒNG BỘ với hiệu ứng active menu */
+  background: linear-gradient(135deg, #ffffff, #e0e7ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+
+  /* Hiệu ứng hover nhẹ giống menu */
+  transition: var(--transition-base);
+  position: relative;
 }
 
+/* Hover nhẹ nhàng giống như khi rê vào menu */
+.app-name::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: 1px;
+  transition: var(--transition-base);
+}
+
+header:hover .app-name::after {
+  width: 60%;
+}
+
+/* Khi sidebar collapse → ẩn mượt */
 header.collapsed .app-name {
   opacity: 0;
   width: 0;
-  transform: translateX(-20px);
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-/* Menu Toggle Button */
+/* NÚT MENU */
 .menu-toggle {
+  width: 40px; height: 40px;
   background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  color: var(--text-primary);
-  padding: 10px;
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 18px !important;
+  display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  font-size: 20px;
   transition: var(--transition-bounce);
-  display: flex;
+  flex-shrink: 0;
+}
+.menu-toggle:hover { transform: scale(1.12); box-shadow: 0 4px 16px rgba(99,102,241,0.5); border-color: var(--accent-primary); }
+
+/* ===================================================================
+   3 NÚT CHÍNH – DÙNG action-btn (HTML mới) → HOÀN HẢO
+   =================================================================== */
+.action-btn {
+  position: relative;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--glass-border);
+  gap: 10px;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  backdrop-filter: blur(10px);
   flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
+  min-width: fit-content;
 }
 
-.menu-toggle::before {
+/* Sync with Google */
+.action-btn.sync-btn   { background: linear-gradient(135deg,#4285F4,#3367d6); box-shadow: 0 4px 15px rgba(66,133,244,0.35); }
+.action-btn.sync-btn:hover   { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(66,133,244,0.5); }
+
+/* Thông báo (nếu dùng action-btn) */
+.action-btn.notif-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+}
+.action-btn.notif-btn:hover { background: rgba(99,102,241,0.25); transform: translateY(-3px); }
+
+/* Icon + chữ */
+.action-btn i { font-size: 16px; }
+.action-btn .btn-text { white-space: nowrap; }
+
+/* Khi collapse → chỉ giữ icon */
+header.collapsed .action-btn {
+  width: 46px;
+  padding: 0;
+  justify-content: center;
+}
+header.collapsed .action-btn .btn-text {
+  opacity: 0; width: 0; padding: 0; margin: 0; overflow: hidden;
+}
+
+/* ===================================================================
+   TOOLTIP SIÊU ĐẸP
+   =================================================================== */
+.action-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%; top: 100%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(15,15,35,0.97);
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s ease;
+  z-index: 9999;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99,102,241,0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+.action-btn[data-tooltip]::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  left: 50%; top: 100%;
+  transform: translateX(-50%) translateY(4px);
+  border: 7px solid transparent;
+  border-bottom-color: rgba(15,15,35,0.97);
   opacity: 0;
-  transition: var(--transition-base);
-  z-index: -1;
+  transition: all 0.35s ease;
+}
+.action-btn:hover[data-tooltip]::after,
+.action-btn:hover[data-tooltip]::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(6px);
 }
 
-.menu-toggle:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
-  border-color: var(--accent-primary);
-}
+/* Tooltip khi collapse → hiện bên phải */
+header.collapsed .action-btn[data-tooltip]::after  { left: 110%; top: 50%; transform: translateY(-50%) translateX(10px); }
+header.collapsed .action-btn[data-tooltip]::before { left: 100%; top: 50%; transform: translateY(-50%); border-bottom-color: transparent; border-right-color: rgba(15,15,35,0.97); }
+header.collapsed .action-btn:hover[data-tooltip]::after  { transform: translateY(-50%) translateX(0); }
+header.collapsed .action-btn:hover[data-tooltip]::before { transform: translateY(-50%) translateX(0); }
 
-.menu-toggle:hover::before {
-  opacity: 0.2;
+/* ===================================================================
+   HỖ TRỢ CLASS CŨ (nếu bạn vẫn dùng .google-sync-btn, .export-btn)
+   =================================================================== */
+.google-sync-btn, .notif-icon-container {
+  flex-shrink: 0;
+  padding: 10px 16px !important;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
 }
-
-.menu-toggle:active {
-  transform: scale(0.95);
-}
-
-.menu-toggle.inside {
-  transform: rotate(180deg);
-}
-
-.menu-toggle.inside:hover {
-  transform: rotate(180deg) scale(1.1);
+.google-sync-btn   { background: linear-gradient(135deg,#4285F4,#3367d6); color:white; }
+.notif-icon-container { background: var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-primary); }
+.google-sync-btn:hover, .notif-icon-container:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 
 /* ============================
@@ -639,7 +853,6 @@ header.collapsed .app-name {
   border-radius: 50%;
   transition: var(--transition-bounce);
   background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm);
 }
 
@@ -677,7 +890,7 @@ header.collapsed .app-name {
   padding: 10px 18px;
   border-radius: var(--radius-full);
   cursor: pointer;
-  display: flex;
+  /* display: flex; */
   align-items: center;
   gap: 8px;
   font-size: 13px;
@@ -686,6 +899,8 @@ header.collapsed .app-name {
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+  min-width: 140px;
+  justify-content:center;
 }
 
 .google-sync-btn::before,

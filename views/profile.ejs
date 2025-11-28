@@ -9,22 +9,22 @@
   <link rel="stylesheet" href="/css/header.css">
 </head>
 <body>
-  <!-- Header -->
+  <!-- Header (EJS include nếu dùng Node/Express + EJS) -->
   <%- include('header') %>
 
   <!-- Nội dung chính -->
   <div class="profile-container">
     <div class="profile-card glass">
       <div class="profile-header">
-        <img src="/img/avt 1.jpg" alt="Avatar" class="avatar">
-        <h2 id="user-name">Nguyễn Văn A</h2>
-        <p class="role">Project Manager</p>
+        <img src="" alt="Avatar" class="avatar" id="user-avatar">
+        <h2 id="user-name"></h2>
+        <p class="role" id="user-role"></p>
       </div>
 
       <div class="profile-info">
-        <p><i class="fas fa-envelope"></i> <span id="user-email">nguyenvana@example.com</span></p>
-        <p><i class="fas fa-phone"></i> <span id="user-phone">+84 912 345 678</span></p>
-        <p><i class="fas fa-calendar"></i> <span id="user-joined">Tham gia: 01/01/2025</span></p>
+        <p><i class="fas fa-envelope"></i> <span id="user-email"></span></p>
+        <p><i class="fas fa-phone"></i> <span id="user-phone"></span></p>
+        <p><i class="fas fa-calendar"></i> <span id="user-joined"></span></p>
       </div>
 
       <div class="profile-actions">
@@ -52,7 +52,7 @@
         </div>
         <div class="form-group">
           <label for="edit-phone">Số điện thoại</label>
-          <input type="tel" id="edit-phone" required>
+          <input type="tel" id="edit-phone">
         </div>
         <div class="form-group">
           <label for="edit-password">Mật khẩu mới</label>
@@ -64,7 +64,7 @@
         </div>
         <div class="form-group">
           <label>Avatar</label>
-          <img id="user-avatar" src="../assets/img/logo.jpg" alt="Avatar" width="120" height="120">
+          <img id="user-avatar-edit" src="" alt="Avatar" width="120" height="120">
           <input type="file" id="avatar-upload" accept="image/*">
           <button type="button" id="google-sync">Sync với Google</button>
         </div>

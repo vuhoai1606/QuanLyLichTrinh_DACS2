@@ -3,29 +3,55 @@
 // header.js - FRONTEND (CHỈ XỬ LÝ UI HEADER VÀ GỌI API CHO SYNC/EXPORT/LOGOUT)
 // ===================================================================
 
+// assets/js/header.js
 document.addEventListener('DOMContentLoaded', () => {
+    const header = document.querySelector('header');
+    const menuToggle = document.getElementById('menu-toggle');
+
+    // === LẤY TRẠNG THÁI TỪ localStorage ===
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed) {
+        header.classList.add('collapsed');
+    }
+
+    // === CẬP NHẬT LẠI ICON MŨI TÊN ===
+    if (menuToggle) {
+        menuToggle.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
     setupHeaderListeners();
-    loadNotificationsCount(); // Load badge notif
-    checkAuthStatus(); // Kiểm tra đăng nhập
+    loadNotificationsCount();
+    checkAuthStatus();
 });
 
-// Setup listeners cho header
 function setupHeaderListeners() {
     const menuToggle = document.getElementById('menu-toggle');
     const header = document.querySelector('header');
+
     if (menuToggle && header) {
         menuToggle.addEventListener('click', () => {
+            const willCollapse = !header.classList.contains('collapsed');
             header.classList.toggle('collapsed');
-            menuToggle.style.transform = header.classList.contains('collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
+
+            // === LƯU TRẠNG THÁI VÀO localStorage ===
+            localStorage.setItem('sidebarCollapsed', willCollapse);
+
+            // Xoay icon
+            menuToggle.style.transform = willCollapse ? 'rotate(180deg)' : 'rotate(0deg)';
         });
     }
-    
-    document.getElementById('googleSyncBtn').addEventListener('click', syncGoogleCalendar);
-    document.getElementById('quickExportBtn').addEventListener('click', quickExport);
-    document.getElementById('logout-btn').addEventListener('click', handleLogout);
-    document.getElementById('globalSearchInput').addEventListener('input', handleGlobalSearch);
-}
 
+    // Các listener khác giữ nguyên
+    const googleSyncBtn = document.getElementById('googleSyncBtn');
+    if (googleSyncBtn) googleSyncBtn.addEventListener('click', syncGoogleCalendar);
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+
+    // Nếu bạn có global search
+    const searchInput = document.getElementById('globalSearchInput');
+    if (searchInput) searchInput.addEventListener('input', handleGlobalSearch);
+}
 // ===================================================================
 // CÁC HÀM GỌI API
 // ===================================================================

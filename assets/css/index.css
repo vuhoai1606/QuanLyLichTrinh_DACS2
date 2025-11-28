@@ -470,6 +470,20 @@ select {
   box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
 }
 
+/* Empty state for today tasks & events */
+.empty {
+    padding: 12px 16px;
+    text-align: center;
+    color: #6b7280;              /* xám nhẹ */
+    font-size: 14px;
+    background: #f3f4f6;         /* nền xám nhạt */
+    border-radius: 8px;
+    margin-top: 8px;
+    border: 1px dashed #cbd5e1;  /* nét đứt đẹp */
+    font-style: italic;
+    user-select: none;
+}
+
 /* Responsive cho các nút */
 @media (max-width: 900px) {
   .global-search {

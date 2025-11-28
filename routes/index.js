@@ -68,57 +68,57 @@ router.get('/api/notes/recent', requireAuth, async (req, res) => {
 
 // Route hiển thị dashboard (trang chủ)
 router.get('/', requireAuth, (req, res) => {
-  res.render('index');
+  res.render('index', { active: "dashboard" });
 });
 
 // Route hiển thị trang tasks
 router.get('/tasks', requireAuth, (req, res) => {
-  res.render('tasks');
+  res.render('tasks', { active: "tasks" });
 });
 
 // Route hiển thị trang calendar
 router.get('/calendar', requireAuth, (req, res) => {
-  res.render('calendar');
+  res.render('calendar', { active: "calendar" });
 });
 
 // Route hiển thị trang kanban
 router.get('/kanban', requireAuth, (req, res) => {
-  res.render('kanban');
+  res.render('kanban', { active: "kanban" });
 });
 
 // Route hiển thị trang timeline
 router.get('/timeline', requireAuth, (req, res) => {
-  res.render('timeline');
+  res.render('timeline', { active: "timeline" });
 });
 
 // Route hiển thị trang groups
 router.get('/groups', requireAuth, (req, res) => {
-  res.render('groups');
+  res.render('groups', { active: "groups" });
 });
 
 // Route hiển thị trang notifications
 router.get('/notifications', requireAuth, (req, res) => {
-  res.render('notifications');
+  res.render('notifications', { active: "notifications" });
 });
 
 // Route hiển thị trang profile
 router.get('/profile', requireAuth, (req, res) => {
-  res.render('profile');
+  res.render('profile', { active: "profile" });
 });
 
 // Route hiển thị trang settings
 router.get('/settings', requireAuth, (req, res) => {
-  res.render('settings');
+  res.render('settings', { active: "settings" });
 });
 
 // Route hiển thị trang reports
 router.get('/reports', requireAuth, (req, res) => {
-  res.render('reports');
+  res.render('reports', { active: "reports" });
 });
 
 // Route hiển thị trang export-import
 router.get('/export-import', requireAuth, (req, res) => {
-  res.render('export-import');
+  res.render('export-import', { active: "export" });
 });
 
 module.exports = router;

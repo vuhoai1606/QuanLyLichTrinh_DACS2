@@ -9,23 +9,24 @@
   <title>Dashboard</title>
 </head>
 <body>
-  <!-- Header -->
-  <%- include('header') %>
 
-  <!-- Main Content -->
+  <%- include('header') %>
+  
+  <!-- MAIN CONTENT -->
   <div class="main-content">
     <div class="dashboard-header">
       <h1>📊 Dashboard</h1>
       <p class="subtitle">Tổng quan công việc & lịch trình</p>
     </div>
 
-    <!-- Grid Layout -->
     <div class="dashboard-grid">
-      <!-- Left Column -->
+
+      <!-- LEFT -->
       <div class="left-column">
-        <!-- Welcome Card -->
+
+        <!-- Welcome -->
         <div class="card highlight">
-          <h2 id="welcome-message">Xin chào, <%= fullName || 'Guest' %> 👋</h2>
+          <h2 id="welcome-message">Xin chào 👋</h2>
           <p>Đây là tổng quan công việc và lịch trình của bạn hôm nay.</p>
         </div>
 
@@ -35,30 +36,30 @@
           <ul id="today-tasks"></ul>
         </div>
 
-        <!-- Quick Task Form -->
+        <!-- Quick Task -->
         <div class="card">
           <h2>⚡ Thêm nhiệm vụ nhanh</h2>
-          <form id="quick-add" class="quick-task-form">
+          <form id="quick-add">
             <input type="text" id="quick-title" placeholder="✏️ Nhập tiêu đề..." required>
             <input type="date" id="quick-due">
-            <button type="submit" class="btn-primary">+ Thêm</button>
+            <button class="btn-primary">+ Thêm</button>
           </form>
         </div>
 
-        <!-- Quick Calendar (Today / Week) -->
+        <!-- MINI CALENDAR -->
         <div class="card">
           <h2>🗓️ Lịch trình hôm nay / tuần</h2>
           <div id="mini-calendar"></div>
           <ul id="calendar-events"></ul>
         </div>
 
-        <!-- Quick Add Event (Timeline Integration) -->
+        <!-- Quick Event -->
         <div class="card">
           <h2>⚡ Thêm sự kiện nhanh</h2>
-          <form id="quick-event-form">
-            <input type="text" id="event-title" placeholder="✏️ Tên sự kiện..." required>
-            <input type="datetime-local" id="event-start" required>
-            <input type="datetime-local" id="event-end" required>
+          <form id="quick-event">
+            <input type="text" id="quick-event-title" placeholder="✏️ Tên sự kiện..." required>
+            <input type="datetime-local" id="quick-event-start" required>
+            <input type="datetime-local" id="quick-event-end">
             <button class="btn-primary">+ Thêm sự kiện</button>
           </form>
         </div>
@@ -72,11 +73,22 @@
             <span class="tag">Personal</span>
           </div>
         </div>
+
+        <!-- NOTES (JS REQUIRED) -->
+        <div class="card">
+          <h2>📝 Ghi chú nhanh</h2>
+          <input type="text" id="quick-note-input" placeholder="Nhập ghi chú...">
+          <button id="add-note-btn" class="btn-primary">+ Thêm ghi chú</button>
+
+          <ul id="notes-list"></ul>
+        </div>
+
       </div>
 
-      <!-- Right Column -->
+      <!-- RIGHT -->
       <div class="right-column">
-        <!-- Statistics -->
+
+        <!-- Stats -->
         <div class="card">
           <h2>📊 Thống kê</h2>
           <p>✅ Hoàn thành: <span id="stat-done">0</span></p>
@@ -90,23 +102,36 @@
         <!-- Upcoming Events -->
         <div class="card">
           <h2>📅 Sự kiện sắp tới</h2>
-          <ul id="upcoming-events">
-            <li>🕘 9:00 AM - Họp nhóm Marketing</li>
-            <li>📑 2:00 PM - Trình bày báo cáo</li>
-          </ul>
+          <ul id="upcoming-events"></ul>
         </div>
+
+        <!-- Weather -->
+        <div class="card">
+          <h2>🌤️ Thời tiết hôm nay (Đà Nẵng)</h2>
+          <div id="weather-box"></div>
+        </div>
+
+        <!-- Timeline Chart -->
+        <div class="card">
+          <h2>📈 Timeline Chart</h2>
+          <canvas id="timelineChart"></canvas>
+        </div>
+
       </div>
     </div>
 
-    <!-- Global Search and Stats Link -->
+    <!-- Global Search -->
     <div class="card">
       <h2>🔍 Tìm kiếm & Thống kê</h2>
-      <input type="text" id="global-search" placeholder="Search everything" style="width: 100%; margin: 15px 0; border-radius: 20px;">
+      <input type="text" id="global-search" placeholder="Tìm kiếm..." class="search-input">
       <a href="/reports" class="btn-secondary">Xem Thống Kê Chi Tiết</a>
     </div>
+
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/js/index.js"></script>
   <script src="/js/header.js"></script>
+
 </body>
 </html>
