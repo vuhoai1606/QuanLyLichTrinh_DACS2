@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Calendar - Manage your events and tasks visually" />
+  
+  <link rel="stylesheet" href="/css/header.css" />
+  <link rel="stylesheet" href="/css/calendar.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <title>Calendar</title>
+</head>
+<body>
+  <%- include('header') %>
+
+  <div class="main-container">
+
+    <!-- Calendar Header -->
+    <div class="calendar-header">
+      <div class="left-controls">
+        <button onclick="prevPeriod()" class="btn-secondary">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button onclick="today()" class="btn-secondary">Today</button>
+        <button onclick="nextPeriod()" class="btn-secondary">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+
+        <h2 id="month-year">Loading...</h2>
+
+        <!-- View Mode Selector (English) -->
+        <select id="viewMode" onchange="changeView()" class="view-select">
+          <option value="month">Month</option>
+          <option value="week">Week</option>
+          <option value="day">Day</option>
+          <option value="year">Year</option>
+        </select>
+      </div>
+
+      <div class="right-controls">
+        <div class="search-container">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="search" placeholder="Search events..." oninput="searchEvents(this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Body -->
+    <div class="calendar-body">
+      <!-- Main Calendar -->
+      <div class="calendar-main">
+        <!-- Weekdays: Monday → Sunday (International standard) -->
+        <div class="weekdays">
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+          <div class="sunday">Sun</div>
+        </div>
+
+        <div class="calendar-grid" id="calendar">
+          <!-- Days will be rendered here by JS -->
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="calendar-sidebar">
+        <button class="create-btn btn-primary">
+          <i class="fas fa-plus"></i> New Event
+        </button>
+
+        <div class="card time-insights">
+          <h3>Time Insights</h3>
+          <div id="timeInsightsContent">Loading...</div>
+        </div>
+
+        <div class="card my-calendar">
+          <h3>My Calendars</h3>
+          <div class="calendar-list">
+            <label><input type="checkbox" checked> Personal</label>
+            <label><input type="checkbox"> Work</label>
+          </div>
+        </div>
+
+        <div class="card upcoming-events">
+          <h3>Upcoming</h3>
+          <ul id="upcomingList"><li>Loading...</li></ul>
+        </div>
+
+        <div class="event-actions">
+          <button id="edit-event" class="btn-secondary" style="display:none;">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+          <button id="delete-event" class="btn-secondary" style="display:none;">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Event Modal -->
+  <div class="modal" id="eventModal">
+    <div class="modal-content">
+      <h3 id="modalTitle">New Event</h3>
+      
+      <input type="text" id="eventTitle" placeholder="Event title" required>
+      <textarea id="eventDesc" rows="3" placeholder="Description (optional)..."></textarea>
+      
+      <div class="datetime-group">
+        <div>
+          <label>Start</label>
+          <input type="datetime-local" id="eventStart" required>
+        </div>
+        <div>
+          <label>End</label>
+          <input type="datetime-local" id="eventEnd">
+        </div>
+      </div>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="eventAllDay"> All day
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeEventModal()">Cancel</button>
+        <button type="button" class="btn-primary" onclick="saveEvent()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/calendar.js"></script>
+  <script src="/js/header.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Export & Import | Smart Planner</title>
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/export-import.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <main class="main-content">
+    <section class="dashboard-header">
+      <h1>Export & Import</h1>
+      <p class="subtitle">Quản lý xuất - nhập dữ liệu nhanh chóng</p>
+    </section>
+
+    <section class="dashboard-grid">
+      <div class="card">
+        <div class="icon-circle">
+          <i class="fa-solid fa-file-export"></i>
+        </div>
+        <h2>Export</h2>
+        <p>Xuất toàn bộ công việc ra tệp CSV để sao lưu hoặc chia sẻ.</p>
+        <button id="btn-export" class="btn-primary"><i class="fa-solid fa-download"></i> Export CSV</button>
+      </div>
+
+      <div class="card">
+        <div class="icon-circle">
+          <i class="fa-solid fa-file-import"></i>
+        </div>
+        <h2>Import</h2>
+        <p>Tải lên tệp CSV để thêm hoặc cập nhật danh sách công việc.</p>
+        <input type="file" id="file-import" accept=".csv">
+        <button id="btn-import" class="btn-primary"><i class="fa-solid fa-upload"></i> Import</button>
+
+        <div class="divider"></div>
+
+        <h3>Báo cáo & Chia sẻ</h3>
+        <button id="btn-print" class="btn-outline"><i class="fa-solid fa-print"></i> In báo cáo</button>
+        
+        <input type="email" id="email-recipient" placeholder="Nhập email nhận báo cáo">
+        <button id="btn-email" class="btn-outline"><i class="fa-solid fa-envelope"></i> Gửi Email</button>
+
+        <button id="btn-backup" class="btn-outline"><i class="fa-solid fa-cloud-arrow-down"></i> Sao lưu toàn bộ</button>
+
+        <button id="share-plan" class="btn-outline"><i class="fa-solid fa-share-nodes"></i> Chia sẻ kế hoạch</button>
+      </div>
+
+      <div class="card">
+        <div class="icon-circle">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <h2>Analytics & Reports</h2>
+        <p>Xem thống kê công việc và báo cáo chi tiết.</p>
+
+        <button id="btn-report" class="btn-primary"><i class="fa-solid fa-calendar-check"></i> Report Tháng</button>
+        <button id="btn-analytics" class="btn-primary"><i class="fa-solid fa-chart-pie"></i> Analytics Task</button>
+        <button id="btn-export-ical" class="btn-primary"><i class="fa-solid fa-calendar-plus"></i> Export iCal</button>
+        <button id="btn-export-pdf" class="btn-primary"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+
+        <div id="report-output" style="margin-top:15px;"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal chia sẻ -->
+  <div id="share-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Chia sẻ kế hoạch</h3>
+      <input type="text" placeholder="Nhập link hoặc email cần chia sẻ">
+      <div class="modal-actions">
+        <button class="btn-primary" id="btn-share-submit">Chia sẻ</button>
+        <button class="btn-outline" id="close-share">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/export-import.js"></script>
+</body>
+</html>

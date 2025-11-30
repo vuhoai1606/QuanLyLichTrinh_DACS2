@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/tasks.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Tasks</title>
+</head>
+<body>
+  
+  <!-- Header -->
+  <%- include('header') %>
+
+  <!-- Nội dung chính -->
+  <div class="main-content">
+    <div class="dashboard-header">
+      <h1>Tasks</h1>
+      <p class="subtitle">Quản lý công việc của bạn</p>
+      <button id="open-create" class="btn-primary">
+        <i class="fa fa-plus"></i> New Task
+      </button>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="filters">
+          <input type="text" id="search" placeholder="Tìm kiếm...">
+          <select id="filter-status">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="todo">Đang làm</option>
+            <option value="in_progress">Đang tiến hành</option>
+            <option value="done">Hoàn thành</option>
+            <option value="canceled">Bị hủy</option>
+          </select>
+          <div class="quick-filters">
+            <button class="btn-quick-filter" data-filter="today"><i class="fa fa-calendar-day"></i> Today</button>
+            <button class="btn-quick-filter" data-filter="week"><i class="fa fa-calendar-week"></i> This Week</button>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state" style="display:none;">
+          <i class="fa fa-tasks"></i>
+          <p>Chưa có công việc nào. Hãy tạo mới!</p>
+        </div>
+
+        <!-- Danh sách task -->
+        <ul id="task-list" class="task-list"></ul>
+
+        <!-- Khôi phục -->
+        <div id="restore-message" class="restore-message" style="display:none;">
+          <span id="restore-text">Đã xóa công việc.</span>
+          <button id="restore-btn" class="btn-restore">
+            <i class="fa fa-undo"></i> Khôi phục
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button id="tab-tasks" class="tab-button active">Tasks</button>
+          <button id="tab-goals" class="tab-button">Goals</button>
+        </div>
+        <ul id="goal-list" class="task-list" style="display:none;"></ul>
+
+        <!-- Actions -->
+        <div class="task-actions">
+          <button id="edit-task" class="btn btn-secondary" style="display:none;"><i class="fas fa-edit"></i> Edit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal overlay -->
+    <div class="modal-overlay" id="modal-overlay" style="display:none"></div>
+
+    <!-- Modal tạo/edit task -->
+    <div class="modal" id="task-modal" style="display:none">
+      <div class="card">
+        <h2 id="modal-title">Tạo công việc mới</h2>
+        <form id="form-task">
+          <label for="t-title">Tiêu đề</label>
+          <input type="text" id="t-title" placeholder="Nhập tiêu đề công việc" required>
+
+          <label for="t-desc">Mô tả</label>
+          <textarea id="t-desc" placeholder="Nhập mô tả chi tiết"></textarea>
+
+          <label for="t-due">Hạn chót</label>
+          <input type="datetime-local" id="t-due" required>
+
+          <label for="t-priority">Mức độ ưu tiên</label>
+          <select id="t-priority" required>
+            <option value="high">Cao</option>
+            <option value="medium">Trung bình</option>
+            <option value="low">Thấp</option>
+          </select>
+
+          <div class="buttons">
+            <button type="button" id="close-modal">Hủy</button>
+            <button type="submit" class="btn-primary"><i class="fa fa-save"></i> Lưu</button>
+          </div>
+
+          <label for="t-recurring">Lặp lại</label>
+          <select id="t-recurring">
+            <option value="none">Không lặp</option>
+            <option value="daily">Hằng ngày</option>
+            <option value="weekly">Hằng tuần</option>
+            <option value="monthly">Hằng tháng</option>
+          </select>
+
+          <label for="t-dependency">Phụ thuộc vào Task</label>
+          <select id="t-dependency">
+            <option value="">Không phụ thuộc</option>
+          </select>
+
+          <label for="t-assign">Giao cho</label>
+          <select id="t-assign">
+            <option value="">Không giao</option>
+          </select>
+
+          <!-- Gantt view button -->
+          <button id="view-gantt" type="button" class="btn-secondary">
+            <i class="fa fa-chart-bar"></i> Xem Gantt Chart
+          </button>
+
+          <div id="gantt-container" style="display:none;"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/tasks.js"></script>
+</body>
+</html>

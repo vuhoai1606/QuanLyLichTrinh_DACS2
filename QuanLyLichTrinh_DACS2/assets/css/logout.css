@@ -1,0 +1,109 @@
+.logout-container {
+  max-width: 500px;
+  margin: 100px auto;
+  padding: 40px;
+  background: #fff;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.logout-container h1 {
+  font-size: 28px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.logout-container p {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.logout-container .btn-primary {
+  display: inline-block;
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.logout-container .btn-primary:hover {
+  background: linear-gradient(135deg, #45a049, #388e3c);
+  box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+}
+
+/* logout-success vẫn giữ riêng */
+.logout-success {
+    text-align: center;
+    padding: 80px 20px;
+    font-family: 'Segoe UI', sans-serif;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.logout-success i {
+    font-size: 64px;
+    color: #10b981;
+    margin-bottom: 24px;
+}
+
+.logout-actions {
+    margin: 32px 0;
+}
+
+.logout-actions a {
+    display: inline-block;
+    padding: 12px 28px;
+    margin: 0 8px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.logout-actions .btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.logout-actions .btn-primary:hover { background: #2563eb; }
+
+.logout-actions .btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.logout-actions .btn-secondary:hover { background: #4b5563; }
+
+.countdown-text {
+    color: #94a3b8;
+    font-size: 15px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .logout-container {
+    margin: 50px auto;
+    padding: 30px;
+    max-width: 90%;
+  }
+
+  .logout-container h1 {
+    font-size: 24px;
+  }
+
+  .logout-container p {
+    font-size: 16px;
+  }
+}

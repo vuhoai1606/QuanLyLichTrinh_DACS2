@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Timeline</title>
+  <link rel="stylesheet" href="/css/timeline.css" />
+  <link rel="stylesheet" href="/css/header.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <%- include('header') %>
+
+  <div class="timeline-container">
+    <!-- Header -->
+    <div class="timeline-header">
+      <div>
+        <h1>Project Timeline</h1>
+        <p class="sub">Visual roadmap • Sprints • Tasks • Milestones</p>
+      </div>
+
+      <div class="timeline-tools">
+        <div class="zoom-group">
+          <button id="zoomOutBtn" class="tool-btn"><i class="fas fa-search-minus"></i></button>
+          <span id="zoomLevel">100%</span>
+          <button id="zoomInBtn" class="tool-btn"><i class="fas fa-search-plus"></i></button>
+        </div>
+
+        <button id="exportImgBtn" class="export-btn">
+          <i class="fas fa-image"></i> PNG
+        </button>
+        <button id="exportPdfBtn" class="export-btn">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+
+        <button id="add-timeline" class="btn-primary">
+          <i class="fas fa-plus"></i> Add Sprint
+        </button>
+      </div>
+    </div>
+
+    <!-- Timeline Board -->
+    <div class="timeline-board">
+      <div id="timeline-grid"></div>
+      
+      <!-- Sprints -->
+      <ul id="timeline"></ul>
+
+      <!-- Tasks & Milestones (hiển thị chồng lên) -->
+      <div id="timeline-tasks"></div>
+      <div id="timeline-milestones"></div>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="timeline-tooltip" class="timeline-tooltip"></div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-overlay"></div>
+  <div class="modal" id="add-sprint-modal">
+    <div class="modal-card">
+      <h2><i class="fas fa-running"></i> New Sprint</h2>
+      <form id="form-sprint">
+        <label>Sprint Title</label>
+        <input type="text" id="s-title" placeholder="e.g. Sprint 1 - Foundation" required />
+
+        <div class="date-group">
+          <div>
+            <label>Start Date</label>
+            <input type="date" id="s-start" required />
+          </div>
+          <div>
+            <label>End Date</label>
+            <input type="date" id="s-end" required />
+          </div>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="button" id="close-modal" class="cancel">Cancel</button>
+          <button type="submit" class="submit"><i class="fas fa-save"></i> Create Sprint</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="/js/timeline.js"></script>
+  <script src="/js/header.js"></script>
+</body>
+</html>
