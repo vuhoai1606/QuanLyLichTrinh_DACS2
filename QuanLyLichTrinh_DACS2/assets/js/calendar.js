@@ -34,7 +34,9 @@ async function loadEvents() {
     const end   = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
 
     // Gọi API mới – chỉ 1 lần duy nhất
-    const res = await fetch(`/api/calendar/items?start=${start}&end=${end}`);
+    const group = document.getElementById('group-calendar').value;
+    const res = await fetch(`/api/calendar/items?start=${start}&end=${end}&group=${group}`);
+
 
     if (!res.ok) throw new Error('Không tải được dữ liệu lịch');
 
@@ -109,8 +111,11 @@ function renderCalendar() {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const isToday = dateStr === new Date().toISOString().slice(0, 10);
-
+    // Trong vòng lặp tạo ngày
+    const today = new Date();
+    const isoDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+      .toISOString().slice(0, 10);
+    const isToday = dateStr === isoDate;
     calendarGrid.innerHTML += `
       <div class="day ${isToday ? 'today' : ''}" onclick="openCreateModal('${dateStr}')">
         <div class="day-number">${day}</div>
@@ -137,7 +142,7 @@ function displayEventsOnCalendar(events) {
 
     container.innerHTML += `
       <div class="event" style="background:${color};"
-           onclick="event.stopPropagation(); selectEvent('${event.event_id}', ${JSON.stringify(event)})">
+          onclick="event.stopPropagation(); selectEvent('${event.event_id || event.task_id}', ${JSON.stringify(event)})">
         ${event.title}
       </div>
     `;
@@ -148,6 +153,10 @@ function displayEventsOnCalendar(events) {
 function openCreateModal(dateStr = '', eventData = null) {
   selectedEvent = eventData ? eventData.event_id : null;
   document.getElementById('modalTitle').textContent = eventData ? 'Sửa sự kiện' : 'Tạo sự kiện mới';
+
+  
+  document.getElementById('eventType').value = eventData?.type || 'event';
+  document.getElementById('eventColor').value = eventData?.color || '#4285f4';
 
   document.getElementById('eventTitle').value = eventData ? eventData.title : '';
   document.getElementById('eventDesc').value = eventData ? eventData.description || '' : '';
@@ -178,10 +187,14 @@ async function saveEvent() {
   const start = document.getElementById('eventStart').value;
   const end = document.getElementById('eventEnd').value || null;
   const allDay = document.getElementById('eventAllDay').checked;
+  const type = document.getElementById('eventType').value;
+  const color = document.getElementById('eventColor').value;
 
   if (!title || !start) return alert('Nhập tiêu đề và thời gian bắt đầu đi bro');
 
   const payload = {
+    type,
+    color,
     title,
     description: desc || null,
     start_time: allDay ? start.slice(0,10) + 'T00:00:00' : start + ':00',
@@ -247,7 +260,183 @@ async function deleteEvent(id) {
 function prevPeriod() { currentMonth.setMonth(currentMonth.getMonth() - 1); renderCalendar(); }
 function nextPeriod() { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendar(); }
 function today() { currentMonth = new Date(); renderCalendar(); }
-function changeView() { /* Để dành mở rộng week/day view */ }
+function changeView() {
+  const mode = document.getElementById('viewMode').value;
+  const wrapper = document.getElementById('calendar-wrapper');
+  const calendar = document.getElementById('calendar');
+
+  // Xóa hết class cũ
+  wrapper.className = '';
+  
+  if (mode === 'month') {
+    wrapper.classList.add('month-view');
+    renderCalendar();
+  } else if (mode === 'week') {
+    wrapper.classList.add('week-view');
+    renderWeekView();
+  } else if (mode === 'day') {
+    wrapper.classList.add('day-view');
+    renderDayView();
+  } else if (mode === 'year') {
+    wrapper.classList.add('year-view');
+    renderYearView();
+  }
+}
+
+// ==================== WEEK VIEW - Chuẩn Google Calendar ====================
+function renderWeekView() {
+  const calendarBody = document.getElementById("calendar");
+  calendarBody.className = "week-view";
+  calendarBody.innerHTML = '';
+
+  // Trong hàm renderWeekView(), sau khi tạo grid, thêm đoạn này:
+  setInterval(() => {
+    const line = document.querySelector('.current-time-line');
+    if (!line) return;
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    const percent = (minutes / 1440) * 100;
+    line.style.top = `${percent}%`;
+  }, 60000); // cập nhật mỗi phút
+
+  const startOfWeek = getStartOfWeek(currentMonth);
+  const headerHTML = `
+    <div class="week-header">
+      <div></div>
+      ${Array.from({length: 7}, (_, i) => {
+        const date = new Date(startOfWeek);
+        date.setDate(date.getDate() + i);
+        const isToday = isSameDate(date, new Date());
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayNum = date.getDate();
+        return `
+          <div ${isToday ? 'style="color:#8ab4f8"' : ''}>
+            <div>${dayName}</div>
+            <div style="font-size:18px; margin-top:4px; ${isToday ? 'font-weight:700; color:#8ab4f8' : ''}">${dayNum}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  let gridHTML = '<div class="week-grid">';
+  for (let hour = 0; hour < 24; hour++) {
+    gridHTML += `<div class="hour-label">${hour.toString().padStart(2, '0')}:00</div>`;
+    for (let day = 0; day < 7; day++) {
+      const date = new Date(startOfWeek);
+      date.setDate(date.getDate() + day);
+      date.setHours(hour, 0, 0, 0);
+      const dateStr = date.toISOString().split('T')[0];
+      const isToday = isSameDate(date, new Date());
+      gridHTML += `<div class="week-cell ${isToday ? 'today' : ''}" id="cell-${dateStr}-${hour}"></div>`;
+    }
+  }
+  gridHTML += '</div>';
+
+  calendarBody.innerHTML = headerHTML + gridHTML;
+
+  // Current time line
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const percent = minutes / (24 * 60);
+  const line = document.createElement('div');
+  line.className = 'current-time-line';
+  line.style.top = `${percent * 100}%`;
+  line.innerHTML = '<div class="current-time-dot"></div>';
+  document.querySelector('.week-grid').appendChild(line);
+
+  loadEvents(); // sẽ tự đổ event vào các ô
+}
+
+// ==================== DAY VIEW ====================
+function renderDayView() {
+  const calendarBody = document.getElementById("calendar");
+  calendarBody.className = "day-view";
+  calendarBody.innerHTML = '';
+
+  const today = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), currentMonth.getDate());
+  const dateStr = today.toISOString().split('T')[0];
+  const displayDate = today.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const headerHTML = `
+    <div class="day-header">
+      <div></div>
+      <div style="text-align:left; padding-left:16px; font-size:18px; font-weight:500">
+        ${displayDate.replace(/^\w/, c => c.toUpperCase())}
+      </div>
+    </div>
+  `;
+
+  let gridHTML = '<div class="day-grid">';
+  for (let hour = 0; hour < 24; hour++) {
+    gridHTML += `
+      <div class="hour">${hour.toString().padStart(2, '0')}:00</div>
+      <div class="day-cell today" id="cell-${dateStr}-${hour}"></div>
+    `;
+  }
+  gridHTML += '</div>';
+
+  calendarBody.innerHTML = headerHTML + gridHTML;
+  loadEvents();
+}
+
+// ==================== YEAR VIEW ====================
+function renderYearView() {
+  const calendarBody = document.getElementById("calendar");
+  calendarBody.className = "year-view";
+  calendarBody.innerHTML = '';
+
+  const year = currentMonth.getFullYear();
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  for (let m = 0; m < 12; m++) {
+    const firstDay = new Date(year, m, 1);
+    const daysInMonth = new Date(year, m + 1, 0).getDate();
+    const startDayOfWeek = firstDay.getDay(); // 0 = CN
+    const adjustedStart = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+
+    const monthName = firstDay.toLocaleDateString('vi-VN', { month: 'long' });
+    
+    let monthHTML = `
+      <div class="year-month">
+        <div class="ym-title">${monthName} ${year}</div>
+        <div class="ym-grid">
+          <div class="ym-day">T2</div><div class="ym-day">T3</div><div class="ym-day">T4</div>
+          <div class="ym-day">T5</div><div class="ym-day">T6</div><div class="ym-day">T7</div><div class="ym-day">CN</div>
+    `;
+
+    // Empty cells
+    for (let i = 0; i < adjustedStart; i++) {
+      monthHTML += `<div class="ym-day"></div>`;
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const isToday = dateStr === todayStr;
+      monthHTML += `<div class="ym-day ${isToday ? 'today' : ''}">${day}</div>`;
+    }
+
+    monthHTML += `</div></div>`;
+    calendarBody.innerHTML += monthHTML;
+  }
+}
+
+// Helper
+function getStartOfWeek(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - (day === 0 ? 6 : day - 1); // Thứ 2 là đầu tuần
+  d.setDate(diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function isSameDate(d1, d2) {
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+}
 
 // Gắn sự kiện
 function attachEventListeners() {
@@ -261,6 +450,8 @@ function attachEventListeners() {
   document.getElementById('group-calendar').onchange = () => loadEvents(); // Reload khi đổi
   // Search – giả sử
   document.getElementById('search').oninput = (e) => searchEvents(e.target.value);
+  // Thêm vào cuối attachEventListeners()
+  document.getElementById('delete-event').onclick = deleteSelectedEvent;
 }
 
 function searchEvents(keyword) {
@@ -296,6 +487,31 @@ function formatDateTime(iso) {
     minute: '2-digit'
   });
 }
+
+// Current time line chạy thật – dùng class mới
+function updateCurrentTimeLine() {
+  const line = document.querySelector('.current-time-indicator');
+  if (!line) return;
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const percent = (minutes / 1440) * 100;
+  line.style.top = `${percent}%`;
+}
+setInterval(updateCurrentTimeLine, 60000);
+
+// Override renderWeekView để tạo line đúng class
+const originalRenderWeekView = renderWeekView;
+renderWeekView = function() {
+  originalRenderWeekView.apply(this, arguments);
+
+  // Tạo line nếu chưa có
+  if (!document.querySelector('.current-time-indicator')) {
+    const line = document.createElement('div');
+    line.className = 'current-time-indicator';
+    document.querySelector('.week-grid')?.appendChild(line);
+  }
+  updateCurrentTimeLine();
+};
 
 // ===================================================================
 // NOTES CHO BẠN:

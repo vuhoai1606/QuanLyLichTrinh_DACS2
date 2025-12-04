@@ -102,14 +102,26 @@ router.get('/notifications', requireAuth, (req, res) => {
 });
 
 // Route hiển thị trang profile
-router.get('/profile', requireAuth, (req, res) => {
-  res.render('profile', { active: "profile" });
+router.get('/profile', requireAuth, async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(req.session.userId);
+    
+    if (!user) {
+      return res.redirect('/login');
+    }
+    
+    res.render('profile', { 
+      active: "profile",
+      user: user
+    });
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    res.status(500).send('Có lỗi xảy ra khi tải trang hồ sơ');
+  }
 });
 
-// Route hiển thị trang settings
-router.get('/settings', requireAuth, (req, res) => {
-  res.render('settings', { active: "settings" });
-});
+// Settings route removed - now using popup (settings-popup.ejs)
 
 // Route hiển thị trang reports
 router.get('/reports', requireAuth, (req, res) => {

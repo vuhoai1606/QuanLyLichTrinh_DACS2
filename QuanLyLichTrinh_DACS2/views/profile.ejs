@@ -3,80 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hồ sơ cá nhân - TaskManager</title>
-  <link rel="stylesheet" href="/css/profile.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <title>Hồ sơ cá nhân | TaskManager</title>
   <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/settings.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-  <!-- Header (EJS include nếu dùng Node/Express + EJS) -->
   <%- include('header') %>
 
-  <!-- Nội dung chính -->
-  <div class="profile-container">
-    <div class="profile-card glass">
-      <div class="profile-header">
-        <img src="" alt="Avatar" class="avatar" id="user-avatar">
-        <h2 id="user-name"></h2>
-        <p class="role" id="user-role"></p>
+  <main class="settings-container">
+    <div class="settings-header">
+      <div>
+        <h1>Profile Personal</h1>
+        <p class="subtitle">Manage your account information</p>
       </div>
-
-      <div class="profile-info">
-        <p><i class="fas fa-envelope"></i> <span id="user-email"></span></p>
-        <p><i class="fas fa-phone"></i> <span id="user-phone"></span></p>
-        <p><i class="fas fa-calendar"></i> <span id="user-joined"></span></p>
-      </div>
-
-      <div class="profile-actions">
-        <button id="edit-btn"><i class="fas fa-edit"></i> Chỉnh sửa</button>
-        <button id="logout-btn" class="logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
-      </div>
+      <button id="save-profile" class="btn-save-all">
+        <i class="fa-solid fa-floppy-disk"></i> Save Profile
+      </button>
     </div>
-  </div>
 
-  <!-- Modal overlay -->
-  <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="settings-grid">
+      <!-- 🧍 Thông tin cá nhân -->
+      <section class="card">
+        <h2><i class="fa-solid fa-user"></i> Personal information</h2>
+        <form id="profile-form">
+          <!-- Avatar -->
+          <div class="form-group" style="text-align: center; margin-bottom: 30px;">
+            <img id="avatar-preview" src="<%= user.avatar_url || '/img/default-avatar.jpg' %>" 
+                 alt="Avatar" 
+                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--primary-color);">
+            <div>
+              <label for="avatar-upload" class="btn-secondary" style="cursor: pointer; display: inline-block;">
+                <i class="fa-solid fa-camera"></i> Change photo
+              </label>
+              <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+            </div>
+          </div>
 
-  <!-- Modal chỉnh sửa -->
-  <div class="modal" id="edit-modal">
-    <div class="card">
-      <h2>Chỉnh sửa hồ sơ</h2>
-      <form id="edit-form">
-        <div class="form-group">
-          <label for="edit-name">Tên</label>
-          <input type="text" id="edit-name" required>
+          <div class="form-group">
+            <label for="username">Login name</label>
+            <input type="text" id="username" value="<%= user.username %>" disabled 
+                   style="background: #f5f5f5; cursor: not-allowed;">
+            <small style="color: #666;">Unable to change login name</small>
+          </div>
+
+          <div class="form-group">
+            <label for="fullName">Full name</label>
+            <input type="text" id="fullName" value="<%= user.full_name || '' %>" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" value="<%= user.email || '' %>" required>
+            <% if (user.is_email_verified) { %>
+              <small style="color: #22c55e;"><i class="fas fa-check-circle"></i> Verified email</small>
+            <% } else { %>
+              <small style="color: #f59e0b;"><i class="fas fa-exclamation-circle"></i> Email chưa xác minh</small>
+            <% } %>
+          </div>
+
+          <div class="form-group">
+            <label for="dateOfBirth">Date</label>
+            <input type="date" id="dateOfBirth" value="<%= user.date_of_birth ? user.date_of_birth.toISOString().split('T')[0] : '' %>">
+          </div>
+
+          <div class="form-group">
+            <label>Affiliate account</label>
+            <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+              <% if (user.google_id) { %>
+                <p><i class="fab fa-google" style="color: #DB4437;"></i> Google: <strong>Linked</strong></p>
+              <% } else { %>
+                <p><i class="fab fa-google" style="color: #999;"></i> Google: Not yet linked</p>
+                <button type="button" id="link-google" class="btn-secondary">
+                  <i class="fab fa-google"></i> Link Google
+                </button>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Personal information</label>
+            <div style="padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 14px;">
+              <p><i class="fas fa-calendar-alt"></i> Tham gia: <%= user.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'N/A' %></p>
+              <p><i class="fas fa-clock"></i> Cập nhật: <%= user.updated_at ? new Date(user.updated_at).toLocaleDateString('vi-VN') : 'N/A' %></p>
+              <p><i class="fas fa-sign-in-alt"></i> Phương thức: <%= user.login_provider === 'google' ? 'Google' : 'Email' %></p>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-save"></i> Update information
+          </button>
+        </form>
+      </section>
+
+      <!-- 🔐 Bảo mật -->
+      <section class="card">
+        <h2><i class="fa-solid fa-shield-halved"></i> Security & Password</h2>
+        
+        <% if (user.login_provider !== 'google') { %>
+          <div class="section">
+            <h3><i class="fa-solid fa-key"></i> Change password</h3>
+            <form id="password-form">
+              <div class="form-group">
+                <label for="currentPassword">Current password</label>
+                <input type="password" id="currentPassword" placeholder="••••••••" required>
+              </div>
+              <div class="form-group">
+                <label for="newPassword">New password</label>
+                <input type="password" id="newPassword" placeholder="••••••••" required>
+                <small style="color: #666;">Minimum 6 characters, including letters and numbers</small>
+              </div>
+              <div class="form-group">
+                <label for="confirmPassword">Confirm new password</label>
+                <input type="password" id="confirmPassword" placeholder="••••••••" required>
+              </div>
+              <button type="submit" class="btn-primary">
+                <i class="fa-solid fa-arrow-rotate-right"></i> Change password
+              </button>
+            </form>
+          </div>
+        <% } else { %>
+          <div style="padding: 15px; background: #e3f2fd; border-radius: 8px; color: #1976d2;">
+            <i class="fab fa-google"></i> You sign in with Google. You cannot change your password here.
+          </div>
+        <% } %>
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+        <div class="section">
+          <h3 style="color: #dc2626;"><i class="fa-solid fa-trash"></i> Delete account</h3>
+          <p style="color: #666; margin-bottom: 15px;">
+            <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> 
+            This action cannot be undone. All your data will be permanently deleted.
+          </p>
+          <button id="delete-account" class="btn-danger">
+            <i class="fa-solid fa-trash"></i> Permanently delete account
+          </button>
         </div>
-        <div class="form-group">
-          <label for="edit-email">Email</label>
-          <input type="email" id="edit-email" required>
-        </div>
-        <div class="form-group">
-          <label for="edit-phone">Số điện thoại</label>
-          <input type="tel" id="edit-phone">
-        </div>
-        <div class="form-group">
-          <label for="edit-password">Mật khẩu mới</label>
-          <input type="password" id="edit-password" placeholder="Nhập mật khẩu mới">
-        </div>
-        <div class="form-group">
-          <label for="timezone-select">Timezone</label>
-          <select id="timezone-select"></select>
-        </div>
-        <div class="form-group">
-          <label>Avatar</label>
-          <img id="user-avatar-edit" src="" alt="Avatar" width="120" height="120">
-          <input type="file" id="avatar-upload" accept="image/*">
-          <button type="button" id="google-sync">Sync với Google</button>
-        </div>
-        <div class="buttons">
-          <button type="button" id="close-modal">Hủy</button>
-          <button type="submit" class="btn-primary">Lưu</button>
-        </div>
-      </form>
+      </section>
     </div>
-  </div>
+  </main>
 
-  <script src="/js/profile.js"></script>
   <script src="/js/header.js"></script>
+  <script src="/js/profile.js"></script>
 </body>
 </html>

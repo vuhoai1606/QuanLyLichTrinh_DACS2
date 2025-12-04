@@ -51,7 +51,7 @@
       <!-- Main Calendar -->
       <div class="calendar-main">
         <!-- Weekdays: Monday → Sunday (International standard) -->
-        <div class="weekdays">
+        <div class="weekdays" id="weekdays-header">
           <div>Mon</div>
           <div>Tue</div>
           <div>Wed</div>
@@ -61,14 +61,16 @@
           <div class="sunday">Sun</div>
         </div>
 
-        <div class="calendar-grid" id="calendar">
-          <!-- Days will be rendered here by JS -->
+        <div id="calendar-wrapper">
+          <div class="calendar-grid" id="calendar">
+            <!-- Days will be rendered here by JS -->
+          </div>
         </div>
       </div>
 
       <!-- Sidebar -->
       <aside class="calendar-sidebar">
-        <button class="create-btn btn-primary">
+        <button class="create-btn btn-primary" onclick="openCreateModal()">
           <i class="fas fa-plus"></i> New Event
         </button>
 
@@ -98,6 +100,26 @@
             <i class="fas fa-trash"></i> Delete
           </button>
         </div>
+
+        <div class="card share-group">
+          <h3>Calendar Options</h3>
+
+          <button id="share-calendar" class="btn-secondary" style="width: 100%; margin-bottom: 10px;">
+            <i class="fas fa-share-alt"></i> Share Calendar
+          </button>
+
+          <label for="group-calendar">Group Calendar</label>
+          <select id="group-calendar" class="view-select" style="width: 100%; margin-top: 6px;">
+            <option value="personal">Personal</option>
+            <option value="team">Team</option>
+            <option value="work">Work</option>
+          </select>
+        </div>
+
+        <button class="btn-secondary" onclick="window.location.href='/timeline'" style="width:100%; margin-bottom: 15px;">
+          <i class="fas fa-chart-gantt"></i> Timeline View
+        </button>
+
       </aside>
     </div>
   </div>
@@ -107,6 +129,18 @@
     <div class="modal-content">
       <h3 id="modalTitle">New Event</h3>
       
+      <!-- Type Selector -->
+      <label>Type</label>
+      <select id="eventType" class="view-select">
+        <option value="event">Event</option>
+        <option value="task">Task</option>
+        <option value="sprint">Sprint</option>
+      </select>
+
+      <!-- Color Picker -->
+      <label style="margin-top:10px;">Color</label>
+      <input type="color" id="eventColor" value="#4285f4" style="width: 100%; height: 40px; border: none; cursor: pointer;">
+
       <input type="text" id="eventTitle" placeholder="Event title" required>
       <textarea id="eventDesc" rows="3" placeholder="Description (optional)..."></textarea>
       
@@ -128,6 +162,21 @@
       <div class="modal-actions">
         <button type="button" class="btn-secondary" onclick="closeEventModal()">Cancel</button>
         <button type="button" class="btn-primary" onclick="saveEvent()">Save</button>
+      </div>
+
+      <!-- Reminder Modal -->
+      <div class="modal" id="reminder-modal">
+        <div class="modal-content">
+          <h3>Set Reminder</h3>
+
+          <label>Reminder Time</label>
+          <input type="datetime-local" id="reminder-time">
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeReminderModal()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="saveReminder()">Save</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -64,18 +64,18 @@
         <li class="dropdown" id="account-dropdown-container">
           <a class="nav-link dropbtn" id="account-trigger">
               <i class="fas fa-user-circle"></i>
-              <span id="account-label"><%= fullName || "Tài khoản" %></span>
+              <span id="account-label"><%= fullName || "Account" %></span>
               <i class="fas fa-caret-down"></i>
           </a>
 
           <div class="dropdown-content" id="account-dropdown">
             <% if (isAuthenticated) { %>
-              <a href="/profile"><i class="fas fa-user"></i> Hồ sơ</a>
-              <a href="/settings"><i class="fas fa-cog"></i> Cài đặt</a>
-              <a href="javascript:void(0)" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+              <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+              <a href="javascript:void(0)" onclick="showSettingsPopup()"><i class="fas fa-cog"></i>Setting</a>
+              <a href="javascript:void(0)" id="logout-btn"><i class="fas fa-sign-out-alt"></i>Logout</a>
             <% } else { %>
-              <a href="/login"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>
-              <a href="/register"><i class="fas fa-user-plus"></i> Đăng ký</a>
+              <a href="/login"><i class="fas fa-sign-in-alt"></i>Login</a>
+              <a href="/register"><i class="fas fa-user-plus"></i>Register</a>
             <% } %>
           </div>
         </li>
@@ -83,3 +83,6 @@
       </ul>
   </nav>
 </header>
+
+<!-- Settings Popup -->
+<%- include('settings-popup') %>
