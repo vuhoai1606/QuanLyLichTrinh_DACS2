@@ -50,16 +50,7 @@
     <div class="calendar-body">
       <!-- Main Calendar -->
       <div class="calendar-main">
-        <!-- Weekdays: Monday → Sunday (International standard) -->
-        <div class="weekdays" id="weekdays-header">
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
-          <div class="sunday">Sun</div>
-        </div>
+        <!-- Weekdays: Monday → Sunday (International standard)  -->
 
         <div id="calendar-wrapper">
           <div class="calendar-grid" id="calendar">
@@ -84,6 +75,40 @@
           <div class="calendar-list">
             <label><input type="checkbox" checked> Personal</label>
             <label><input type="checkbox"> Work</label>
+          </div>
+        </div>
+
+        <!-- PHẦN PHÂN LOẠI SỰ KIỆN - SIÊU ĐẸP -->
+        <div class="card" style="margin-top: 16px;">
+          <h3 style="margin: 0 0 16px 0; color: #000;">
+            <i class="fas fa-tags"></i> Phân loại sự kiện
+          </h3>
+          <div id="event-categories">
+            <label class="category-item">
+              <input type="checkbox" value="work" checked>
+              <span class="category-color" style="background: #8b5cf6;"></span>
+              <span class="category-name">Công việc</span>
+            </label>
+            <label class="category-item">
+              <input type="checkbox" value="personal" checked>
+              <span class="category-color" style="background: #ec4899;"></span>
+              <span class="category-name">Cá nhân</span>
+            </label>
+            <label class="category-item">
+              <input type="checkbox" value="meeting" checked>
+              <span class="category-color" style="background: #3b82f6;"></span>
+              <span class="category-name">Họp hành</span>
+            </label>
+            <label class="category-item">
+              <input type="checkbox" value="birthday" checked>
+              <span class="category-color" style="background: #10b981;"></span>
+              <span class="category-name">Sinh nhật</span>
+            </label>
+            <label class="category-item">
+              <input type="checkbox" value="holiday" checked>
+              <span class="category-color" style="background: #f59e0b;"></span>
+              <span class="category-name">Nghỉ lễ</span>
+            </label>
           </div>
         </div>
 
@@ -164,17 +189,26 @@
         <button type="button" class="btn-primary" onclick="saveEvent()">Save</button>
       </div>
 
-      <!-- Reminder Modal -->
-      <div class="modal" id="reminder-modal">
-        <div class="modal-content">
-          <h3>Set Reminder</h3>
+      <div class="modal" id="shareModal">
+        <div class="modal-content" style="width: 500px;">
+          <h3 style="text-align: left;"><i class="fas fa-share-alt"></i> Share Calendar</h3>
+          
+          <label>Invite by Email</label>
+          <input type="email" id="shareEmail" placeholder="Enter email address...">
+          <button type="button" class="btn-primary" onclick="sendShareInvite()" style="margin-bottom: 20px; width: 100%;">
+              <i class="fas fa-paper-plane"></i> Send Invitation
+          </button>
 
-          <label>Reminder Time</label>
-          <input type="datetime-local" id="reminder-time">
+          <h4 style="margin-bottom: 10px; color: var(--text-dark); font-size: 16px;">Or Share Link</h4>
+          <div style="display: flex; gap: 10px;">
+              <input type="text" id="shareLink" readonly value="Click to generate link">
+              <button type="button" class="btn-secondary" onclick="generateShareLink()">
+                  <i class="fas fa-link"></i> Generate
+              </button>
+          </div>
 
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" onclick="closeReminderModal()">Cancel</button>
-            <button type="button" class="btn-primary" onclick="saveReminder()">Save</button>
+          <div class="modal-actions" style="justify-content: flex-end; margin-top: 20px;">
+            <button type="button" class="btn-secondary" onclick="closeShareModal()">Close</button>
           </div>
         </div>
       </div>

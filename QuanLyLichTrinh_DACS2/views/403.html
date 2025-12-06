@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>403 - Từ chối truy cập</title>
+  <style>
+    body {
+      margin: 0; padding: 0; height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: 'Inter', system-ui, sans-serif;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+    }
+    h1 { 
+      font-size: 120px; margin: 0; font-weight: 900;
+      background: linear-gradient(135deg, #fff, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p { font-size: 24px; margin: 20px 0; }
+    a {
+      margin-top: 30px; padding: 16px 40px; background: rgba(255,255,255,0.2);
+      color: white; text-decoration: none; border-radius: 16px; font-weight: 600;
+      backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3);
+      transition: all 0.3s ease; font-size: 18px;
+    }
+    a:hover { 
+      background: rgba(255,255,255,0.3); 
+      transform: translateY(-4px); 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+  <h1>403</h1>
+  <p>Quyền truy cập bị từ chối</p>
+  <p>Chỉ <strong>Admin</strong> mới được vào khu vực này</p>
+  <a href="/">Quay về trang chủ</a>
+</body>
+</html>

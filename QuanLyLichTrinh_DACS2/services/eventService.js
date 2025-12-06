@@ -173,27 +173,29 @@ class EventService {
     }
 
     // Insert event
-    const result = await pool.query(
-      `INSERT INTO events 
-       (user_id, title, description, start_time, end_time, location, category_id, 
-        repeat_type, notify_before, is_all_day, meeting_link, tags)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       RETURNING *`,
-      [
-        userId,
-        title.trim(),
-        description?.trim() || null,
-        startTime,
-        endTime,
-        location?.trim() || null,
-        categoryId || null,
-        repeatType,
-        notifyBefore || null,
-        isAllDay,
-        meetingLink || null,
-        tags,
-      ]
-    );
+    // services/eventService.js (Bên trong async createEvent)
+
+// Sửa lệnh INSERT:
+// Chỉ dùng $1 đến $11 (11 cột)
+      const result = await pool.query(
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, category_id, 
+        repeat_type, is_all_day, meeting_link, tags)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+        RETURNING *`,
+        [
+            userId,
+            title.trim(),
+            description?.trim() || null,
+            startTime,
+            endTime,
+            location?.trim() || null,
+            categoryId || null,
+            repeatType,
+            isAllDay,
+            meetingLink || null,
+            tags,
+        ]
+      );
 
     return result.rows[0];
   }
@@ -272,12 +274,6 @@ class EventService {
     if (repeatType !== undefined) {
       updates.push(`repeat_type = $${paramIndex}`);
       params.push(repeatType);
-      paramIndex++;
-    }
-
-    if (notifyBefore !== undefined) {
-      updates.push(`notify_before = $${paramIndex}`);
-      params.push(notifyBefore);
       paramIndex++;
     }
 

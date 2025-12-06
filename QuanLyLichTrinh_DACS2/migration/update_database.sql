@@ -15,6 +15,7 @@ ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE,
 ADD COLUMN IF NOT EXISTS avatar_url TEXT,
 ADD COLUMN IF NOT EXISTS login_provider VARCHAR(20) DEFAULT 'local'; -- 'local' hoặc 'google'
+ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
 
 -- Tạo index cho google_id
 CREATE INDEX IF NOT EXISTS idx_google_id ON users(google_id);

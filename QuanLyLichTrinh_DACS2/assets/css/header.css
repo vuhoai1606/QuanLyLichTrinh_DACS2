@@ -69,7 +69,7 @@
 header {
   width: var(--sidebar-width);
   height: 100vh;
-  position: fixed;
+  position: fixed !important;
   top: 0;
   left: 0;
   display: flex;
@@ -78,10 +78,12 @@ header {
   background: var(--sidebar-bg);
   backdrop-filter: blur(24px);
   box-shadow: var(--shadow-xl);
-  z-index: 1000;
+  z-index: 9999;
   transition: var(--transition-base);
   overflow: hidden;
   border-right: 1px solid var(--glass-border);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 header.collapsed {
@@ -126,6 +128,44 @@ header::after {
     transparent 100%
   );
   z-index: 1;
+}
+
+/* ĐẨY TOÀN BỘ NỘI DUNG (không cần class .main-content nữa) */
+body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
+  margin-left: var(--sidebar-width) !important;
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Khi sidebar thu gọn → nội dung tự động sát vào */
+/* header.collapsed ~ *:not(header):not(script):not(style):not(link):not(meta):not(title) {
+  margin-left: var(--sidebar-collapsed) !important;
+} */
+
+/* Tablet & Mobile */
+@media (max-width: 1024px) {
+  header {
+    width: var(--sidebar-collapsed);
+  }
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
+    margin-left: var(--sidebar-collapsed) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  header {
+    transform: translateX(-100%);
+  }
+  header.mobile-open {
+    transform: translateX(0);
+  }
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
+    margin-left: 0 !important;
+    padding: 16px;
+  }
 }
 
 /* ============================
@@ -487,7 +527,7 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 16px;
 }
 
 .nav-menu li {
@@ -792,7 +832,7 @@ header.collapsed .nav-link:hover {
    MAIN CONTENT AREA
    ============================ */
 .main-content {
-  flex: 1;
+  /* flex: 1; */
   min-width: 0;
   margin-left: var(--sidebar-width);   /* 280px ban đầu */
   transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -894,3 +934,4 @@ header::after {
     transition-duration: 0.01ms !important;
   }
 }
+

@@ -20,6 +20,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
+
 // Import middleware
 const { setUserLocals } = require('./middleware/authMiddleware');
 
@@ -94,15 +95,28 @@ app.use('/', authRoutes);
 app.use('/', indexRoutes);
 app.use('/', taskRoutes);
 app.use('/', eventRoutes);
-app.use('/', calendarRoutes);
+app.use('/api/calendar', calendarRoutes);
 app.use('/', kanbanRoutes);
 app.use('/', notificationRoutes);
 app.use('/', timelineRoutes);
-app.use('/', reportRoutes)
+app.use('/', reportRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
   res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
+});
+
+// 403 handler
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  
+  res.status(403).render('403', {
+    title: '403 - Từ chối truy cập',
+    active: '',                   
+    userRole: req.session?.userRole || 'user',
+    fullName: req.session?.fullName || '',
+    isAuthenticated: !!req.session?.userId
+  });
 });
 
 // Start server

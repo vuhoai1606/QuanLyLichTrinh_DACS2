@@ -3,7 +3,6 @@
 // header.js - FRONTEND (CHỈ XỬ LÝ UI HEADER VÀ GỌI API CHO SYNC/EXPORT/LOGOUT)
 // ===================================================================
 
-// assets/js/header.js
 document.addEventListener('DOMContentLoaded', () => {
     const header = document.querySelector('header');
     const menuToggle = document.getElementById('menu-toggle');
@@ -20,8 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupHeaderListeners();
-    loadNotificationsCount();
+    loadNotificationsCount();   // Lần đầu load ngay khi trang mở
     checkAuthStatus();
+
+    // TỰ ĐỘNG CẬP NHẬT BADGE MỖI 30 GIÂY (hoạt động trên mọi trang)
+    setInterval(loadNotificationsCount, 30000); // 30.000ms = 30 giây
 });
 
 function setupHeaderListeners() {
@@ -194,6 +196,30 @@ function displaySearchResults(results) {
 }
 
 // ===================================================================
+// DROPDOWN CLICK TOGGLE - Nhấn mở, nhấn lại đóng
+// ===================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const accountTrigger = document.getElementById('account-trigger');
+    const accountDropdown = document.getElementById('account-dropdown-container');
+    
+    if (accountTrigger && accountDropdown) {
+        // Toggle dropdown khi click vào tài khoản
+        accountTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            accountDropdown.classList.toggle('active');
+        });
+        
+        // Đóng dropdown khi click bên ngoài
+        document.addEventListener('click', (e) => {
+            if (!accountDropdown.contains(e.target)) {
+                accountDropdown.classList.remove('active');
+            }
+        });
+    }
+});
+
+// ===================================================================
 // NOTES - CẬP NHẬT CHÍNH XÁC THEO BACKEND HIỆN TẠI CỦA BẠN
 // ===================================================================
 // ✅ ĐÃ CÓ SẴN trong backend (bạn KHÔNG cần tạo thêm):
@@ -218,29 +244,7 @@ function displaySearchResults(results) {
 // Nếu chưa muốn làm real-time badge → cứ để 0 cũng được, không lỗi
 // ===================================================================
 
-// ===================================================================
-// DROPDOWN CLICK TOGGLE - Nhấn mở, nhấn lại đóng
-// ===================================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const accountTrigger = document.getElementById('account-trigger');
-    const accountDropdown = document.getElementById('account-dropdown-container');
-    
-    if (accountTrigger && accountDropdown) {
-        // Toggle dropdown khi click vào tài khoản
-        accountTrigger.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            accountDropdown.classList.toggle('active');
-        });
-        
-        // Đóng dropdown khi click bên ngoài
-        document.addEventListener('click', (e) => {
-            if (!accountDropdown.contains(e.target)) {
-                accountDropdown.classList.remove('active');
-            }
-        });
-    }
-});
+
 
 // ===================================================================
 // NOTES - CẬP NHẬT CHÍNH XÁC THEO BACKEND HIỆN TẠI CỦA BẠN

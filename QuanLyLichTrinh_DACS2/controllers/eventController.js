@@ -148,13 +148,13 @@ exports.createEvent = async (req, res) => {
     const newEvent = await eventService.createEvent(userId, eventData);
 
     await notificationService.createNotification({
-      userId,
-      type: 'event',
-      title: 'Sự kiện mới',
-      message: `Bạn đã tạo sự kiện "${event.title}" bắt đầu lúc ${event.start_time}`,
-      redirectUrl: '/calendar',
-      relatedId: event.event_id
-    });
+      userId,
+      type: 'event',
+      title: 'Sự kiện mới',
+      message: `Bạn đã tạo sự kiện "${newEvent.title}" bắt đầu lúc ${newEvent.start_time}`, 
+      redirectUrl: '/calendar',
+      relatedId: newEvent.event_id 
+    });
 
     res.status(201).json({
       success: true,
@@ -219,9 +219,9 @@ exports.updateEvent = async (req, res) => {
       userId,
       type: 'event',
       title: 'Cập nhật sự kiện',
-      message: `Bạn đã cập nhật sự kiện "${event.title}"`,
+      message: `Bạn đã cập nhật sự kiện "${updatedEvent.title}"`,
       redirectUrl: '/calendar',
-      relatedId: event.event_id
+      relatedId: updatedEvent.event_id
     });
 
     res.json({
@@ -252,23 +252,26 @@ exports.deleteEvent = async (req, res) => {
       });
     }
 
-    const deletedEvent = await eventService.deleteEvent(id, userId);
+    const deletedResult = await eventService.deleteEvent(id, userId);
 
-    if (!deletedEvent) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy event'
-      });
-    }
+    if (!deletedResult.deletedEvent) { // Kiểm tra nếu không tìm thấy event
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy event'
+      });
+    }
 
-    await notificationService.createNotification({
-      userId,
-      type: 'event',
-      title: 'Xóa sự kiện',
-      message: `Bạn đã xóa sự kiện "${event.title}"`,
-      redirectUrl: '/calendar',
-      relatedId: id
-    });
+    // Dùng thông tin từ object event đã xóa
+    const deletedEvent = deletedResult.deletedEvent;
+    
+    await notificationService.createNotification({
+      userId,
+      type: 'event',
+      title: 'Xóa sự kiện',
+      message: `Bạn đã xóa sự kiện "${deletedEvent.title}"`, 
+      redirectUrl: '/calendar',
+      relatedId: id
+    });
 
     res.json({
       success: true,

@@ -16,3 +16,4 @@ exports.markAllRead = async (req, res) => {
   await Notification.markAllRead(req.session.userId);
   res.json({ success: true });
 };
+
