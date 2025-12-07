@@ -90,7 +90,6 @@ body {
   align-items: center;
   gap: 20px;
   position: sticky;
-  top: 10px;
   z-index: 100;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
@@ -249,35 +248,36 @@ body {
 }
 
 .col {
-  min-width: 320px;
-  background: rgba(241, 245, 249, 0.8);
-  backdrop-filter: blur(10px);
+  min-width: 350px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   transition: var(--transition);
+  height: fit-content;
 }
 
 .col:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4 px);
 }
 
 .col-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   padding-bottom: 12px;
-  border-bottom: 3px solid var(--primary-light);
+  border-bottom: 2px solid var(--border);
   position: relative;
 }
 
 .col-header::after {
-  content: '';
+  content: none;
   position: absolute;
   bottom: -3px;
   left: 0;
@@ -288,8 +288,8 @@ body {
 }
 
 .col-header h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--text);
   letter-spacing: -0.3px;
   display: flex;

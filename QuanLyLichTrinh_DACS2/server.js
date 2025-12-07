@@ -19,6 +19,7 @@ const kanbanRoutes = require('./routes/kanbanRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 
 // Import middleware
@@ -69,6 +70,12 @@ app.use(express.static(path.join(__dirname, 'assets'), {
   lastModified: true
 }));
 
+// Serve uploads folder (avatars)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '7d', // Cache avatars 7 ngày
+  etag: true
+}));
+
 // Middleware thêm thông tin user vào views
 app.use(setUserLocals);
 
@@ -100,6 +107,7 @@ app.use('/', kanbanRoutes);
 app.use('/', notificationRoutes);
 app.use('/', timelineRoutes);
 app.use('/', reportRoutes);
+app.use('/api/profile', profileRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

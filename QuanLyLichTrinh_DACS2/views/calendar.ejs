@@ -73,8 +73,8 @@
         <div class="card my-calendar">
           <h3>My Calendars</h3>
           <div class="calendar-list">
-            <label><input type="checkbox" checked> Personal</label>
-            <label><input type="checkbox"> Work</label>
+            <label><input type="checkbox" value="Personal" checked> Personal</label>
+            <label><input type="checkbox" value="Work" checked> Work</label>
           </div>
         </div>
 
@@ -134,7 +134,7 @@
           </button>
 
           <label for="group-calendar">Group Calendar</label>
-          <select id="group-calendar" class="view-select" style="width: 100%; margin-top: 6px;">
+          <select id="group-calendar" class="view-select" style="width: 100%; margin-top: 6px; ">
             <option value="personal">Personal</option>
             <option value="team">Team</option>
             <option value="work">Work</option>
@@ -154,7 +154,6 @@
     <div class="modal-content">
       <h3 id="modalTitle">New Event</h3>
       
-      <!-- Type Selector -->
       <label>Type</label>
       <select id="eventType" class="view-select">
         <option value="event">Event</option>
@@ -162,9 +161,13 @@
         <option value="sprint">Sprint</option>
       </select>
 
-      <!-- Color Picker -->
       <label style="margin-top:10px;">Color</label>
       <input type="color" id="eventColor" value="#4285f4" style="width: 100%; height: 40px; border: none; cursor: pointer;">
+      <label for="eventCalendar" style="margin-top:10px;">Thuộc lịch:</label>
+      <select id="eventCalendar" class="view-select">
+          <option value="Personal">Cá nhân</option>
+          <option value="Work">Công việc</option>
+      </select>
 
       <input type="text" id="eventTitle" placeholder="Event title" required>
       <textarea id="eventDesc" rows="3" placeholder="Description (optional)..."></textarea>
@@ -188,33 +191,32 @@
         <button type="button" class="btn-secondary" onclick="closeEventModal()">Cancel</button>
         <button type="button" class="btn-primary" onclick="saveEvent()">Save</button>
       </div>
+      
+      </div>
+  </div>
+  <div class="modal" id="shareModal">
+    <div class="modal-content" style="width: 500px;">
+      <h3 style="text-align: left;"><i class="fas fa-share-alt"></i> Share Calendar</h3>
+      
+      <label>Invite by Email</label>
+      <input type="email" id="shareEmail" placeholder="Enter email address...">
+      <button type="button" class="btn-primary" onclick="sendShareInvite()" style="margin-bottom: 20px; width: 100%;">
+          <i class="fas fa-paper-plane"></i> Send Invitation
+      </button>
 
-      <div class="modal" id="shareModal">
-        <div class="modal-content" style="width: 500px;">
-          <h3 style="text-align: left;"><i class="fas fa-share-alt"></i> Share Calendar</h3>
-          
-          <label>Invite by Email</label>
-          <input type="email" id="shareEmail" placeholder="Enter email address...">
-          <button type="button" class="btn-primary" onclick="sendShareInvite()" style="margin-bottom: 20px; width: 100%;">
-              <i class="fas fa-paper-plane"></i> Send Invitation
+      <h4 style="margin-bottom: 10px; color: var(--text-dark); font-size: 16px;">Or Share Link</h4>
+      <div style="display: flex; gap: 10px;">
+          <input type="text" id="shareLink" readonly value="Click to generate link">
+          <button type="button" class="btn-secondary" onclick="generateShareLink()">
+              <i class="fas fa-link"></i> Generate
           </button>
+      </div>
 
-          <h4 style="margin-bottom: 10px; color: var(--text-dark); font-size: 16px;">Or Share Link</h4>
-          <div style="display: flex; gap: 10px;">
-              <input type="text" id="shareLink" readonly value="Click to generate link">
-              <button type="button" class="btn-secondary" onclick="generateShareLink()">
-                  <i class="fas fa-link"></i> Generate
-              </button>
-          </div>
-
-          <div class="modal-actions" style="justify-content: flex-end; margin-top: 20px;">
-            <button type="button" class="btn-secondary" onclick="closeShareModal()">Close</button>
-          </div>
-        </div>
+      <div class="modal-actions" style="justify-content: flex-end; margin-top: 20px;">
+        <button type="button" class="btn-secondary" onclick="closeShareModal()">Close</button>
       </div>
     </div>
   </div>
-
   <script src="/js/calendar.js"></script>
   <script src="/js/header.js"></script>
 </body>

@@ -33,17 +33,24 @@ class EmailService {
   }
 
   /**
-   * Gửi email OTP cho việc đăng ký tài khoản
+   * Gửi email OTP - Dùng cho cả đăng ký, quên mật khẩu và đổi mật khẩu
    * @param {string} email - Email người nhận
    * @param {string} otpCode - Mã OTP 6 số
    * @param {string} fullName - Tên người dùng
+   * @param {string} purpose - Mục đích: 'register', 'reset-password', hoặc 'change-password'
    */
-  async sendOTPEmail(email, otpCode, fullName) {
+  async sendOTPEmail(email, otpCode, fullName, purpose = 'register') {
+    const subjects = {
+      'register': '🔐 Mã xác thực đăng ký tài khoản',
+      'reset-password': '🔐 Mã xác thực đặt lại mật khẩu',
+      'change-password': '🔐 Mã xác thực đổi mật khẩu'
+    };
+
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'QuanLyLichTrinh <noreply@quanlylichtrinh.com>',
       to: email,
-      subject: '🔐 Mã xác thực đăng ký tài khoản',
-      html: this.getOTPEmailTemplate(otpCode, fullName),
+      subject: subjects[purpose] || subjects['register'],
+      html: this.getOTPEmailTemplate(otpCode, fullName, purpose),
     };
 
     try {
@@ -57,10 +64,33 @@ class EmailService {
   }
 
   /**
-   * Template HTML cho email OTP
+   * Template HTML cho email OTP - Dùng chung cho đăng ký, quên mật khẩu và đổi mật khẩu
    * Thiết kế đẹp, responsive, dễ đọc
    */
-  getOTPEmailTemplate(otpCode, fullName) {
+  getOTPEmailTemplate(otpCode, fullName, purpose = 'register') {
+    const messages = {
+      'register': {
+        title: 'Đăng ký tài khoản',
+        greeting: `Xin chào <strong>${fullName}</strong>,`,
+        message: `Cảm ơn bạn đã đăng ký tài khoản! Để hoàn tất quá trình đăng ký, 
+                  vui lòng sử dụng mã OTP bên dưới để xác thực email của bạn.`
+      },
+      'reset-password': {
+        title: 'Đặt lại mật khẩu',
+        greeting: `Xin chào <strong>${fullName}</strong>,`,
+        message: `Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã OTP bên dưới 
+                  để xác thực và tiếp tục quá trình đặt lại mật khẩu.`
+      },
+      'change-password': {
+        title: 'Đổi mật khẩu',
+        greeting: `Xin chào <strong>${fullName}</strong>,`,
+        message: `Bạn đã yêu cầu đổi mật khẩu. Vui lòng sử dụng mã OTP bên dưới 
+                  để xác thực và tiếp tục quá trình đổi mật khẩu.`
+      }
+    };
+
+    const content = messages[purpose] || messages['register'];
+
     return `
     <!DOCTYPE html>
     <html lang="vi">
@@ -157,12 +187,11 @@ class EmailService {
         
         <div class="content">
           <div class="greeting">
-            Xin chào <strong>${fullName}</strong>,
+            ${content.greeting}
           </div>
           
           <div class="message">
-            Cảm ơn bạn đã đăng ký tài khoản! Để hoàn tất quá trình đăng ký, 
-            vui lòng sử dụng mã OTP bên dưới để xác thực email của bạn.
+            ${content.message}
           </div>
           
           <div class="otp-box">

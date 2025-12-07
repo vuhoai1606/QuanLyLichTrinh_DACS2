@@ -68,8 +68,8 @@ body::before {
 /* ====================== LAYOUT ====================== */
 .dashboard {
   max-width: 1460px;
-  margin: 0 auto;
-  padding: 40px 32px;
+  margin: 10px auto;
+  padding: 40px 40px;
 }
 
 /* Header Dashboard */
@@ -204,11 +204,9 @@ body::before {
 .stat-icon.total { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
 
 .stat-card p { 
-  color: var(--text-muted); 
   font-size: 14px; 
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   margin-bottom: 4px;
 }
 
@@ -635,4 +633,150 @@ body::before {
 canvas#timelineChart {
     display: block;
     min-height: 300px;
+}
+
+/* ====================== MINI CALENDAR STYLE (Đã làm sạch) ====================== */
+#mini-calendar {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px dashed var(--border);
+}
+
+.card .mini-calendar-grid {
+    /* Đảm bảo GRID 7 cột hoạt động */
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 8px; 
+    text-align: center;
+    user-select: none;
+    margin-top: 15px;
+}
+
+.mini-day {
+    padding: 12px 0; /* Tăng padding để giãn ra */
+    cursor: pointer;
+    border-radius: 12px;
+    transition: var(--transition);
+    border: 2px solid var(--border); /* Viền mặc định */
+    position: relative;
+    box-sizing: border-box;
+    background: white; /* Nền trắng mặc định */
+}
+
+/* HIỆU ỨNG: Hover */
+.mini-day:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--primary-light);
+}
+
+/* ------------------- TRẠNG THÁI ACTIVE (Ngày được chọn) ------------------- */
+.mini-day.active {
+    background: var(--primary-light);
+    color: white;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+    border-color: white;
+    transform: scale(1.05); 
+    z-index: 5;
+}
+
+/* ------------------- TRẠNG THÁI TODAY (Ngày hiện tại) ------------------- */
+.mini-day.today {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.5); /* Primary Dark Shadow */
+    transform: scale(1.05);
+    border-color: white;
+    z-index: 10;
+}
+
+/* Day Name & Day Num mặc định */
+.day-name {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.8;
+    color: var(--text-light); /* Màu xám cho ngày thường */
+    margin-bottom: 2px;
+}
+
+.day-num {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text); /* Màu đen cho ngày thường */
+}
+
+/* Điều chỉnh màu sắc khi Active/Today */
+.mini-day.active .day-name,
+.mini-day.active .day-num,
+.mini-day.today .day-name,
+.mini-day.today .day-num {
+    color: white;
+    opacity: 1;
+}
+
+/* Badge */
+.mini-badge {
+    position: absolute;
+    top: -5px; /* Đẩy lên trên */
+    right: -5px; /* Đẩy ra ngoài */
+    background: var(--danger);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 50px;
+    min-width: 20px;
+    text-align: center;
+    line-height: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 2px solid white; /* Viền trắng để tách khỏi nền */
+}
+
+/* Màu Badge khi Active/Today */
+.mini-day.active .mini-badge,
+.mini-day.today .mini-badge {
+    background: white;
+    color: var(--primary-dark);
+}
+
+/* List Events cho Mini Calendar */
+#calendar-events {
+    list-style: none;
+    padding-top: 10px;
+}
+
+#calendar-events li {
+    padding: 12px 0;
+    border-bottom: 1px dotted var(--border);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    padding-left: 15px;
+}
+
+#calendar-events li:last-child {
+    border-bottom: none;
+}
+
+#calendar-events li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-dark);
+    font-size: 20px;
+    line-height: 1;
+}
+
+#calendar-events li strong {
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+}
+
+#calendar-events li small {
+    font-size: 13px;
+    color: var(--text-light);
 }

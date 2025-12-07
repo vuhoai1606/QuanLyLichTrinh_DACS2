@@ -5,6 +5,7 @@
 
 let currentMonth = new Date(); // Luôn lấy ngày thật
 let selectedEvent = null;
+let allCalendarItems = []; // ✨ KHAI BÁO BIẾN TOÀN CỤC CHUẨN XÁC ✨
 
 // ====================== TOÀN CỤC ======================
 window.loadCalendarData = function () {
@@ -33,12 +34,6 @@ window.loadCalendarData = function () {
 document.addEventListener('DOMContentLoaded', () => {
     window.loadCalendarData();
     attachEventListeners();
-
-    // ==================== AUTO REFRESH 20s ====================
-    // Tự làm mới Calendar, Upcoming Events, Insights
-    setInterval(() => {
-        if (!document.hidden) window.loadCalendarData();
-    }, 20000);
     
     // Bắt đầu cập nhật dòng thời gian mỗi phút (cho Week/Day view)
     updateCurrentTimeLine();
@@ -87,23 +82,78 @@ async function loadEvents() {
             return;
         }
 
-        const allCalendarItems = result.data;
-
-        // Render lên lịch (phân phối dữ liệu vào các view tương ứng)
-        if (viewMode === 'month') {
-            displayEventsOnMonthView(allCalendarItems);
-        } else if (viewMode === 'week') {
-            displayEventsOnWeekDayView(allCalendarItems, 7); // 7 ngày
-        } else if (viewMode === 'day') {
-            displayEventsOnWeekDayView(allCalendarItems, 1); // 1 ngày
-        }
-
+        window.allCalendarItems = result.data.map(item => ({
+        ...item,
+        // Chuẩn hóa type cho dễ lọc
+        type: item.type === 'task' ? 'task' : 'event',
+        // Gắn category cho event, giả sử task mặc định là 'work'
+        category: item.calendar_type || item.category || (item.type === 'task' ? 'Work' : 'Personal')
+        }));
+    
+        // GỌI HÀM LỌC VÀ HIỂN THỊ
+        filterAndDisplayEvents();
 
     } catch (err) {
         console.error('Lỗi tải lịch:', err);
         // alert('Không thể tải dữ liệu lịch. Vui lòng thử lại!');
     }
 }
+
+// assets/js/calendar.js
+
+// ====================== LỌC & HIỂN THỊ DỮ LIỆU ======================
+window.filterAndDisplayEvents = function (searchQuery = null) {
+    const viewMode = document.getElementById('viewMode').value;
+    const categoryChecks = document.querySelectorAll('#event-categories input[type="checkbox"]:checked');
+    const myCalendarChecks = document.querySelectorAll('.my-calendar input[type="checkbox"]:checked');
+    const calendarGrid = document.getElementById('calendar');
+
+    // 1. Lấy giá trị các bộ lọc
+    const selectedCategories = Array.from(categoryChecks).map(c => c.value);
+    const selectedCalendars = Array.from(myCalendarChecks).map(c => c.value);
+    const currentSearchValue = document.getElementById('search').value;
+    const keyword = (searchQuery !== null && typeof searchQuery === 'string')
+        ? searchQuery.toLowerCase()
+        : currentSearchValue.toLowerCase();
+
+    // 2. Lọc dữ liệu
+    const filteredEvents = allCalendarItems.filter(item => {
+        const isTask = item.type === 'task';
+        const isEvent = item.type === 'event';
+
+        // Lọc theo My Calendar (giả định 'Personal' là event, 'Work' là task)
+        const passesCalendarFilter = (
+            (isTask && selectedCalendars.includes('Work')) ||
+            (isEvent && selectedCalendars.includes('Personal'))
+        );
+        
+        if (!passesCalendarFilter) return false;
+
+        // Lọc theo Category (chỉ áp dụng cho Event, Task dùng priority)
+        if (isEvent && !selectedCategories.includes(item.category)) return false;
+
+        // Lọc theo Tìm kiếm
+        const matchesSearch = item.title.toLowerCase().includes(keyword) || 
+                              (item.description && item.description.toLowerCase().includes(keyword));
+        if (!matchesSearch) return false;
+
+        return true;
+    });
+
+    // 3. Hiển thị lại
+    if (viewMode === 'month') {
+        displayEventsOnMonthView(filteredEvents);
+    } else if (viewMode === 'week' || viewMode === 'day') {
+        const daysCount = viewMode === 'week' ? 7 : 1;
+        displayEventsOnWeekDayView(filteredEvents, daysCount);
+    }
+    
+    // Đảm bảo Year View không bị lỗi
+    if (viewMode === 'year') {
+        calendarGrid.innerHTML = ''; // Clear grid để tránh hiển thị cũ
+        renderYearView(); // Gọi lại Year View nếu cần
+    }
+};
 
 async function loadUpcomingEvents() {
     try {
@@ -200,7 +250,8 @@ function renderCalendar() {
 }
 
 function displayEventsOnMonthView(events) {
-    document.querySelectorAll('.events-list').forEach(el => el.innerHTML = '');
+    // QUAN TRỌNG: Xóa tất cả events cũ trước khi vẽ lại
+    document.querySelectorAll('.events-list').forEach(el => el.innerHTML = ''); 
 
     events.forEach(event => {
         if (!event.start_time) return;
@@ -208,13 +259,14 @@ function displayEventsOnMonthView(events) {
         const container = document.getElementById(`events-${date}`);
         if (!container) return;
 
+        // Logic màu sắc: Task dùng Priority, Event dùng Color
         const color = event.type === 'task'
             ? (event.priority === 'high' ? '#ef4444' : event.priority === 'medium' ? '#f59e0b' : '#10b981')
-            : event.color || '#4285f4'; // Dùng event.color nếu có
+            : event.color || '#4285f4';
 
         container.innerHTML += `
             <div class="event" style="background:${color};"
-                 onclick="event.stopPropagation(); selectEvent('${event.event_id || event.task_id}', ${JSON.stringify(event)})">
+                onclick="event.stopPropagation(); selectEvent('${event.event_id || event.task_id}', ${JSON.stringify(event)})">
                 ${event.title}
             </div>
         `;
@@ -236,6 +288,7 @@ function openCreateModal(dateStr = '', eventData = null) {
     document.getElementById('eventEnd').value = eventData && eventData.end_time ? eventData.end_time.slice(0,16) : '';
     document.getElementById('eventAllDay').checked = eventData ? eventData.is_all_day : false;
 
+    document.getElementById('eventCalendar').value = eventData?.calendar_type || 'Personal';
     document.getElementById('eventModal').style.display = 'flex'; // Dùng flex thay vì block để căn giữa
 }
 
@@ -261,6 +314,7 @@ async function saveEvent() {
     const allDay = document.getElementById('eventAllDay').checked;
     const type = document.getElementById('eventType').value;
     const color = document.getElementById('eventColor').value;
+    const calendar = document.getElementById('eventCalendar').value; // ✨ Lấy giá trị lịch ✨
 
     if (!title || !start) return alert('Nhập tiêu đề và thời gian bắt đầu đi bro');
 
@@ -271,7 +325,8 @@ async function saveEvent() {
         end_time: end ? (allDay ? `${end}:00` : `${end}:00`) : null, // thêm :00 nếu có
         is_all_day: allDay,
         color: color,
-        type: type || 'event'  // nếu backend yêu cầu type
+        type: type || 'event',  // nếu backend yêu cầu type
+        calendar_type: calendar // ✨ Gửi kèm loại lịch ✨
     };
 
     try {
@@ -604,21 +659,31 @@ function isSameDate(d1, d2) {
 
 // ====================== Gắn sự kiện ======================
 function attachEventListeners() {
-  document.querySelector('.create-btn').onclick = openCreateModal;
-  document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) closeEventModal(); });
-  });
-  
-  // <--- CHỖ NÀY ĐÃ ĐƯỢC CHỈNH SỬA --->
-  document.getElementById('share-calendar').onclick = openShareModal; // Gọi hàm mở modal mới
-  // <--- END CHỈNH SỬA --->
+    document.querySelector('.create-btn').onclick = openCreateModal;
+    document.querySelectorAll('.modal').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) closeEventModal(); });
+    });
+    
+    document.getElementById('share-calendar').onclick = openShareModal; 
+    document.getElementById('delete-event').onclick = deleteSelectedEvent;
+    
+    // GẮN SỰ KIỆN LỌC MỚI
 
-  // Group select – giả sử
-  document.getElementById('group-calendar').onchange = () => loadEvents(); // Reload khi đổi
-  // Search – giả sử
-  document.getElementById('search').oninput = (e) => searchEvents(e.target.value);
-  // Thêm vào cuối attachEventListeners()
-  document.getElementById('delete-event').onclick = deleteSelectedEvent;
+    // 1. My Calendars (Personal/Work)
+    document.querySelectorAll('.my-calendar input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', window.filterAndDisplayEvents);
+    });
+
+    // 2. Event Categories
+    document.querySelectorAll('#event-categories input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', window.filterAndDisplayEvents);
+    });
+
+    // 3. Search
+    document.getElementById('search').oninput = (e) => window.filterAndDisplayEvents(e.target.value);
+
+    // Group select – giả định
+    document.getElementById('group-calendar').onchange = () => loadEvents(); 
 }
 
 function searchEvents(keyword) {
@@ -735,22 +800,20 @@ function updateCurrentTimeLine() {
 // ==================== SHARE CALENDAR LOGIC ====================
 
 function openShareModal() {
-    // Giả định có một Modal với ID là 'shareModal' và các input:
-    // - input id="shareEmail"
-    // - input id="shareLink"
-    // - button onclick="shareCalendar()"
-    const shareModal = document.getElementById('shareModal');
-    if (!shareModal) {
-        alert('Tính năng Chia sẻ đang được phát triển. (Thiếu modal: shareModal)');
-        return;
-    }
-    document.getElementById('shareLink').value = 'Đang tạo link...'; // Reset link
-    document.getElementById('shareEmail').value = ''; // Reset email
-    shareModal.style.display = 'flex';
+    const shareModal = document.getElementById('shareModal');
+    if (!shareModal) {
+        alert('Tính năng Chia sẻ đang được phát triển. (Thiếu modal: shareModal)');
+        return;
+    }
+    
+    // Hiển thị Share Modal
+    document.getElementById('shareLink').value = 'Đang tạo link...'; // Reset link
+    document.getElementById('shareEmail').value = ''; // Reset email
+    shareModal.style.display = 'flex'; // ✨ Đảm bảo modal được hiển thị ✨
 }
 
 function closeShareModal() {
-    document.getElementById('shareModal').style.display = 'none';
+    document.getElementById('shareModal').style.display = 'none';
 }
 
 async function generateShareLink() {

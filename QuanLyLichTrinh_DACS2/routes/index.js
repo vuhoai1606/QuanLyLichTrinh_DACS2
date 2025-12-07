@@ -104,12 +104,17 @@ router.get('/notifications', requireAuth, (req, res) => {
 // Route hiển thị trang profile
 router.get('/profile', requireAuth, async (req, res) => {
   try {
-    const User = require('../models/User');
-    const user = await User.findById(req.session.userId);
+    const pool = require('../config/db');
+    const result = await pool.query(
+      'SELECT user_id, username, email, full_name, date_of_birth, avatar_url, gender, phone_number, created_at, updated_at, login_provider, google_id, language, is_2fa_enabled, settings FROM users WHERE user_id = $1',
+      [req.session.userId]
+    );
     
-    if (!user) {
+    if (result.rows.length === 0) {
       return res.redirect('/login');
     }
+    
+    const user = result.rows[0];
     
     res.render('profile', { 
       active: "profile",

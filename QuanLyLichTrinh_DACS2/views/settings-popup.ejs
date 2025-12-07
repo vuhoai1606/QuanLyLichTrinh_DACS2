@@ -2,7 +2,7 @@
 <div id="settings-overlay" class="settings-overlay" style="display: none;">
   <div class="settings-popup">
     <div class="settings-popup-header">
-      <h2><i class="fas fa-cog"></i>Setting</h2>
+      <h2><i class="fas fa-cog"></i> Cài đặt</h2>
       <button class="close-settings" onclick="closeSettingsPopup()">
         <i class="fas fa-times"></i>
       </button>
@@ -13,20 +13,20 @@
       <div class="setting-item">
         <div class="setting-label">
           <i class="fas fa-palette"></i>
-          <span>Interface</span>
+          <span>Giao diện</span>
         </div>
         <div class="setting-control">
           <label class="radio-option">
             <input type="radio" name="theme" value="system" checked>
-            <span>System</span>
+            <span>Hệ thống</span>
           </label>
           <label class="radio-option">
             <input type="radio" name="theme" value="light">
-            <span>Light</span>
+            <span>Sáng</span>
           </label>
           <label class="radio-option">
             <input type="radio" name="theme" value="dark">
-            <span>Dark</span>
+            <span>Tối</span>
           </label>
         </div>
       </div>
@@ -39,8 +39,8 @@
         </div>
         <div class="setting-control">
           <select id="language-select" class="language-dropdown">
-            <option value="en">English</option>
             <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
           </select>
         </div>
       </div>
@@ -49,24 +49,39 @@
       <div class="setting-item">
         <div class="setting-label">
           <i class="fas fa-bell"></i>
-          <span>Notification</span>
+          <span>Thông báo</span>
         </div>
         <div class="setting-control">
           <label class="toggle-switch">
             <input type="checkbox" id="notifications-toggle" checked>
             <span class="toggle-slider"></span>
           </label>
-          <span class="toggle-status" id="notifications-status">On</span>
+          <span class="toggle-status" id="notifications-status">Bật</span>
+        </div>
+      </div>
+
+      <!-- 2FA Setting -->
+      <div class="setting-item">
+        <div class="setting-label">
+          <i class="fas fa-shield-alt"></i>
+          <span>Xác thực 2 bước (2FA)</span>
+        </div>
+        <div class="setting-control">
+          <label class="toggle-switch">
+            <input type="checkbox" id="2fa-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-status" id="2fa-status">Tắt</span>
         </div>
       </div>
     </div>
 
     <div class="settings-popup-footer">
       <button class="btn-secondary" onclick="closeSettingsPopup()">
-        <i class="fas fa-times"></i> Close
+        <i class="fas fa-times"></i> Đóng
       </button>
       <button class="btn-primary" onclick="saveSettings()">
-        <i class="fas fa-save"></i> Save Changes
+        <i class="fas fa-save"></i> Lưu thay đổi
       </button>
     </div>
   </div>

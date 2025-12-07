@@ -162,30 +162,30 @@ class TaskService {
    * CẬP NHẬT TASK
    */
   async updateTask(taskId, userId, updateData) {
-    // Kiểm tra task có tồn tại và thuộc về user không
-    await this.getTaskById(taskId, userId);
+    // Kiểm tra task có tồn tại và thuộc về user không
+    await this.getTaskById(taskId, userId);
 
-    const {
-      title,
-      description,
-      startTime,
-      endTime,
-      priority,
-      status,
-      categoryId,
-      repeatType,
-      tags,
-      progress,
-    } = updateData;
+    const {
+      title,
+      description,
+      startTime,
+      endTime,
+      priority,
+      status,
+      repeatType,
+      progress,
+      // ✨ THÊM kanbanColumn VÀO ĐÂY ĐỂ TRÍCH XUẤT GIÁ TRỊ ✨
+      kanbanColumn
+    } = updateData;
 
-    // Validation tương tự như createTask
-    if (title !== undefined && title.trim().length === 0) {
-      throw new Error('Tiêu đề task không được để trống');
-    }
+    // Validation tương tự như createTask
+    if (title !== undefined && title.trim().length === 0) {
+      throw new Error('Tiêu đề task không được để trống');
+    }
 
     if (endTime && startTime && new Date(endTime) < new Date(startTime)) {
-      throw new Error('Thời gian kết thúc không thể trước thời gian bắt đầu');
-    }
+      throw new Error('Thời gian kết thúc không thể trước thời gian bắt đầu');
+    }
 
     if (progress !== undefined && (progress < 0 || progress > 100)) {
       throw new Error('Progress phải từ 0 đến 100');
@@ -193,50 +193,56 @@ class TaskService {
 
     // Build dynamic update query
     const updates = [];
-    const params = [taskId, userId];
-    let paramIndex = 3;
+    const params = [taskId, userId];
+    let paramIndex = 3;
 
     if (title !== undefined) {
-      updates.push(`title = $${paramIndex}`);
-      params.push(title.trim());
-      paramIndex++;
+      updates.push(`title = $${paramIndex}`);
+      params.push(title.trim());
+      paramIndex++;
+    }
+
+    if (description !== undefined) {
+      updates.push(`description = $${paramIndex}`);
+      params.push(description?.trim() || null);
+      paramIndex++;
+    }
+
+    if (startTime !== undefined) {
+      updates.push(`start_time = $${paramIndex}`);
+      params.push(startTime);
+      paramIndex++;
+    }
+
+    if (endTime !== undefined) {
+      updates.push(`end_time = $${paramIndex}`);
+      params.push(endTime);
+      paramIndex++;
+    }
+
+    if (priority !== undefined) {
+      updates.push(`priority = $${paramIndex}`);
+      params.push(priority);
+      paramIndex++;
+    }
+
+    if (status !== undefined) { // <-- Đã tồn tại trong code gốc của bạn
+      updates.push(`status = $${paramIndex}`);
+      params.push(status);
+      paramIndex++;
+    }
+
+    if (kanbanColumn !== undefined) { 
+      updates.push(`kanban_column = $${paramIndex}`);
+      params.push(kanbanColumn);
+      paramIndex++;
     }
 
-    if (description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      params.push(description?.trim() || null);
-      paramIndex++;
-    }
-
-    if (startTime !== undefined) {
-      updates.push(`start_time = $${paramIndex}`);
-      params.push(startTime);
-      paramIndex++;
-    }
-
-    if (endTime !== undefined) {
-      updates.push(`end_time = $${paramIndex}`);
-      params.push(endTime);
-      paramIndex++;
-    }
-
-    if (priority !== undefined) {
-      updates.push(`priority = $${paramIndex}`);
-      params.push(priority);
-      paramIndex++;
-    }
-
-    if (status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (repeatType !== undefined) {
-      updates.push(`repeat_type = $${paramIndex}`);
-      params.push(repeatType);
-      paramIndex++;
-    }
+    if (repeatType !== undefined) { // ĐẢM BẢO BẠN CÓ DÒNG NÀY
+      updates.push(`repeat_type = $${paramIndex}`);
+      params.push(repeatType);
+      paramIndex++;
+    }
 
     if (progress !== undefined) {
       updates.push(`progress = $${paramIndex}`);
@@ -272,11 +278,7 @@ class TaskService {
       [taskId, userId]
     );
 
-    return { 
-      success: true, 
-      message: 'Đã xóa task thành công', 
-      deletedTask: result.rows[0] 
-    };
+    return result.rows[0];
   }
 
   /**

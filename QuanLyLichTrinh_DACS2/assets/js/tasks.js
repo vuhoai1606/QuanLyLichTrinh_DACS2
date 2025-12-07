@@ -103,21 +103,18 @@ document.addEventListener('DOMContentLoaded', () => {
       li.dataset.id = task.task_id;
 
       const priorityClass = task.priority === 'high' ? 'priority-high' :
-                           task.priority === 'medium' ? 'priority-medium' : 'priority-low';
-
-      const due = task.due_date
-        ? new Date(task.due_date).toLocaleString('vi-VN')
-        : 'Chưa đặt';
+                          task.priority === 'medium' ? 'priority-medium' : 'priority-low';
 
       li.innerHTML = `
         <div class="task-main">
           <strong>${task.title}</strong>
-          <span class="task-due">Hạn: ${due}</span>
         </div>
+
         <div class="task-meta">
           <span class="priority ${priorityClass}">${task.priority || 'medium'}</span>
           <span class="status">${task.status || 'todo'}</span>
         </div>
+
         <div class="task-actions">
           <button class="btn-edit" title="Sửa"><i class="fas fa-edit"></i></button>
           <button class="btn-delete" title="Xóa"><i class="fas fa-trash"></i></button>
@@ -127,61 +124,78 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+
   // ==================== MODAL ====================
   const openModal = async (task = null) => {
-    currentEditId = task ? task.task_id : null;
-    modalTitle.textContent = task ? 'Chỉnh sửa công việc' : 'Tạo công việc mới';
+    currentEditId = task ? task.task_id : null;
+    modalTitle.textContent = task ? 'Chỉnh sửa công việc' : 'Tạo công việc mới';
 
-    inpTitle.value       = task?.title || '';
-    inpDesc.value        = task?.description || '';
-    inpDue.value         = task?.due_date ? task.due_date.slice(0,16) : '';
-    inpPriority.value    = task?.priority || 'medium';
-    inpRecurring.value   = task?.recurring || 'none';
-    inpAssign.value      = task?.assigned_to || '';
+    // ĐẢM BẢO CÁC TRƯỜNG DỮ LIỆU ĐƯỢC ĐIỀN CHÍNH XÁC TỪ OBJECT task
+    inpTitle.value       = task?.title || '';
+    inpDesc.value        = task?.description || '';
+    
+    // Hạn chót (t-due) cần lấy từ end_time của DB và cắt chuỗi để hiển thị
+    inpDue.value         = task?.end_time ? task.end_time.slice(0, 16) : ''; 
+    
+    inpPriority.value    = task?.priority || 'medium';
+    // Lặp lại (t-recurring) cần lấy từ repeat_type của DB
+    inpRecurring.value   = task?.repeat_type || 'none'; 
+    
+    inpAssign.value      = task?.assigned_to || ''; // Giữ nguyên assigned_to
 
-    // Dependency: hiện tại chưa có bảng dependency → tạm ẩn hoặc để trống
-    inpDependency.innerHTML = '<option value="">Không phụ thuộc</option>';
+    // Dependency: hiện tại chưa có bảng dependency → tạm ẩn hoặc để trống
+    inpDependency.innerHTML = '<option value="">Không phụ thuộc</option>';
 
-    ganttContainer.style.display = 'none';
-    btnViewGantt.textContent = 'Xem Gantt Chart';
+    ganttContainer.style.display = 'none';
+    btnViewGantt.textContent = 'Xem Gantt Chart';
 
-    modal.style.display = 'block';
-    overlay.style.display = 'block';
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
   };
 
   const closeModal = () => {
-    modal.style.display = 'none';
-    overlay.style.display = 'none';
-    form.reset();
-    currentEditId = null;
+    modal.style.display = 'none';
+    overlay.style.display = 'none';
+    form.reset();
+    currentEditId = null;
   };
 
   // ==================== FORM SUBMIT ====================
   form.addEventListener('submit', async e => {
-    e.preventDefault();
+      e.preventDefault();
 
-    const payload = {
-      title: inpTitle.value.trim(),
-      description: inpDesc.value.trim() || null,
-      due_date: inpDue.value || null,
-      priority: inpPriority.value,
-      recurring: inpRecurring.value,
-      assigned_to: inpAssign.value || null,
-    };
+      // BƯỚC 1: Lấy dữ liệu task hiện tại để duy trì start_time
+      let existingTask = null;
+      if (currentEditId) {
+        existingTask = tasks.find(t => t.task_id === currentEditId);
+      }
 
-    let result;
-    if (currentEditId) {
-      result = await api.update(currentEditId, payload);
-    } else {
-      result = await api.create(payload);
-    }
+      const payload = {
+        title: inpTitle.value.trim(),
+        description: inpDesc.value.trim() || null,
+        endTime: inpDue.value || null, 
+        // ĐIỀU CHỈNH QUAN TRỌNG: Duy trì start_time cũ nếu đang chỉnh sửa
+        startTime: existingTask ? existingTask.start_time : new Date().toISOString(), // Dùng start_time hiện tại hoặc giá trị cũ
+        priority: inpPriority.value,
+        repeatType: inpRecurring.value,
+        assigned_to: inpAssign.value || null,
+      };
 
-    if (result.success) {
-      await loadTasks();
-      closeModal();
-    } else {
-      alert(result.message || 'Có lỗi xảy ra');
-    }
+      let result;
+      if (currentEditId) {
+        // BƯỚC 2: Gọi update
+        result = await api.update(currentEditId, payload);
+      } else {
+        // BƯỚC 2: Gọi create
+        result = await api.create(payload);
+      }
+
+      if (result.success) {
+        await loadTasks();
+        closeModal();
+      } else {
+        alert(result.message || 'Có lỗi xảy ra');
+      }
   });
 
   // ==================== EDIT & DELETE ====================

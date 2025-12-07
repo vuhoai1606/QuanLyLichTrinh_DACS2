@@ -71,7 +71,7 @@ body::before {
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 20px;
   padding: 45px 40px;
-  width: 420px;
+  width: 500px;
   max-width: 100%;
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.6s ease-out;
@@ -96,16 +96,227 @@ body::before {
   }
 }
 
+/* === STEPS === */
+.step {
+  display: none;
+}
+
+.step.active {
+  display: block;
+  animation: fadeInStep 0.4s ease;
+}
+
+@keyframes fadeInStep {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* === ICON === */
+.icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
 /* === HEADING === */
 .forgot-card h3 {
+  margin: 0 0 10px 0;
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-dark);
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+}
+
+.subtitle {
+  color: var(--text-light);
+  font-size: 14px;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+/* === EMAIL DISPLAY === */
+.email-display {
+  background: #f0f0f0;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* === OTP INPUT GROUP === */
+.otp-input-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.otp-input {
+  width: 60px;
+  height: 70px;
+  font-size: 28px;
+  text-align: center;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  transition: all 0.3s;
+  font-weight: 600;
+  background: white;
+}
+
+.otp-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  transform: scale(1.05);
+}
+
+/* === FORM ELEMENTS === */
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 14px;
+}
+
+.form-group label i {
+  margin-right: 8px;
+  color: var(--primary);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: var(--transition);
+  background: var(--input-bg);
+  color: var(--text-dark);
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  background: white;
+}
+
+.form-group input::placeholder {
+  color: #9ca3af;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+/* === BUTTONS === */
+.btn-primary {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+  padding: 8px 16px;
+  transition: var(--transition);
+}
+
+.btn-link:hover {
+  color: #764ba2;
+}
+
+/* === TEXT ELEMENTS === */
+.text-center {
+  text-align: center;
+}
+
+.back-login {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.back-login a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.back-login a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.back-login a i {
+  margin-right: 5px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .forgot-card {
+    padding: 35px 25px;
+    width: 100%;
+  }
+  
+  .otp-input {
+    width: 45px;
+    height: 55px;
+    font-size: 24px;
+  }
+  
+  .icon {
+    font-size: 48px;
+  }
+  
+  .forgot-card h3 {
+    font-size: 24px;
+  }
 }
 
 .subtitle {

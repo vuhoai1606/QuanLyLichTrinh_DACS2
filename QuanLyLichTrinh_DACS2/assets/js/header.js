@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         header.classList.add('collapsed');
     }
 
+    
     // === CẬP NHẬT LẠI ICON MŨI TÊN ===
     if (menuToggle) {
         menuToggle.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';

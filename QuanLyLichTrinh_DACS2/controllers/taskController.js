@@ -69,7 +69,7 @@ exports.getTaskById = async (req, res) => {
 
     res.json({
       success: true,
-      data: task
+      task: task
     });
   } catch (error) {
     console.error('Error getting task:', error);
@@ -149,19 +149,23 @@ exports.updateTask = async (req, res) => {
     }
 
     const updateData = {
-      title: req.body.title,
-      description: req.body.description,
-      startTime: req.body.start_time || req.body.startTime,
-      endTime: req.body.end_time || req.body.endTime,
-      isAllDay: req.body.is_all_day || req.body.isAllDay,
-      repeatType: req.body.repeat_type || req.body.repeatType,
-      priority: req.body.priority,
-      status: req.body.status,
-      kanbanColumn: req.body.kanban_column || req.body.kanbanColumn,
-      categoryId: req.body.category_id || req.body.categoryId,
-      tags: req.body.tags,
-      progress: req.body.progress
-    };
+      title: req.body.title,
+      description: req.body.description,
+      // ĐẢM BẢO NHẬN startTime và endTime
+      startTime: req.body.start_time || req.body.startTime, // Nhận từ payload (nếu có)
+      endTime: req.body.end_time || req.body.endTime, // Nhận từ payload (từ inpDue)
+      
+      isAllDay: req.body.is_all_day || req.body.isAllDay,
+      // ĐẢM BẢO NHẬN repeatType
+      repeatType: req.body.repeat_type || req.body.repeatType, 
+      
+      priority: req.body.priority,
+      status: req.body.status,
+      kanbanColumn: req.body.kanban_column || req.body.kanbanColumn,
+      categoryId: req.body.category_id || req.body.categoryId,
+      tags: req.body.tags,
+      progress: req.body.progress
+    };
 
     // Loại bỏ các giá trị undefined
     Object.keys(updateData).forEach(key => {
@@ -183,8 +187,8 @@ exports.updateTask = async (req, res) => {
       userId,
       type: 'task',
       title: 'Cập nhật công việc',
-      message: `Bạn đã cập nhật công việc "${updatedTask.title}"`,
-      redirectUrl: '/tasks',
+      message: `Công việc "${updatedTask.title}" đã thay đổi trạng thái thành "${status}"`,
+      redirectUrl: '/kanban',
       relatedId: updatedTask.task_id
     });
 
@@ -340,9 +344,9 @@ exports.updateTaskKanbanColumn = async (req, res) => {
       userId,
       type: 'task',
       title: 'Di chuyển công việc',
-      message: `Công việc "${task.title}" đã được di chuyển đến cột "${column}"`,
+      message: `Công việc "${updatedTask.title}" đã được di chuyển đến cột "${column}"`,
       redirectUrl: '/kanban',
-      relatedId: task.task_id
+      relatedId: updatedTask.task_id
     });
 
     res.json({

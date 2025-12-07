@@ -13,90 +13,121 @@ async function loadKanban() {
 }
 
 function renderKanbanBoard(data) {
-  const board = document.getElementById('kanban-board');
-  if (!board) return;
-  board.innerHTML = '';
+  const board = document.getElementById('kanban-board');
+  if (!board) return;
+  board.innerHTML = '';
 
-  const columns = [
-    { id: 'todo', title: 'To Do', tasks: data.todo || [], color: '#f87171' },
-    { id: 'in_progress', title: 'In Progress', tasks: data.in_progress || [], color: '#fbbf24' },
-    { id: 'done', title: 'Done', tasks: data.done || [], color: '#34d399' }
-  ];
+  // Định nghĩa các cột với màu sắc
+  const columns = [
+    { id: 'todo', title: 'To Do', tasks: data.todo || [], color: '#6366f1' }, // PRIMARY (tô đậm hơn)
+    { id: 'in_progress', title: 'In Progress', tasks: data.in_progress || [], color: '#f59e0b' }, // WARNING
+    { id: 'done', title: 'Done', tasks: data.done || [], color: '#10b981' } // SUCCESS
+  ];
 
-  columns.forEach(col => {
-    const colDiv = document.createElement('div');
-    colDiv.className = 'kanban-column';
-    colDiv.innerHTML = `
-      <h3 style="background:${col.color}20; color:${col.color}; padding:8px; border-radius:8px;">
-        ${col.title} <span class="badge">${col.tasks.length}</span>
-      </h3>
-      <div class="task-list" data-column="${col.id}"></div>
-    `;
-    board.appendChild(colDiv);
+  columns.forEach(col => {
+    // 1. TẠO CẤU TRÚC CỘT CHUẨN XÁC THEO kanban.css/kanban.ejs
+    const colDiv = document.createElement('div');
+    colDiv.className = 'col'; // Sử dụng class .col
+    
+    // Tùy chỉnh màu sắc viền cột dựa trên màu định nghĩa
+    colDiv.style.borderTop = `5px solid ${col.color}`; 
+    
 
-    const taskList = colDiv.querySelector('.task-list');
-    col.tasks.forEach(task => {
-      const card = document.createElement('div');
-      card.className = 'kanban-card';
-      card.draggable = true;
-      card.dataset.id = task.task_id;
-      card.innerHTML = `
-        <strong>${escapeHtml(task.title)}</strong>
-        <p>${escapeHtml(task.description || '')}</p>
-        <div class="task-meta">
-          <span class="priority priority-${task.priority}">${task.priority}</span>
-          <small>${new Date(task.start_time).toLocaleDateString('vi-VN')}</small>
-        </div>
-      `;
-      taskList.appendChild(card);
-    });
-  });
+    // Bắt đầu xây dựng nội dung cột
+    let tasksHtml = '';
+    
+    // Thêm các Task vào danh sách
+    col.tasks.forEach(task => {
+      tasksHtml += `
+        <div class="task-card" draggable="true" data-id="${task.task_id}" onclick="openTaskModal(${task.task_id})">
+          <h4 class="task-title">${escapeHtml(task.title)}</h4>
+          <p class="task-desc">${escapeHtml(task.description || 'No description provided')}</p>
+          <div class="task-meta">
+            <span class="priority-badge priority-${task.priority}">
+              ${task.priority}
+            </span>
+            <small>Due: ${task.end_time ? new Date(task.end_time).toLocaleDateString('vi-VN') : 'N/A'}</small>
+          </div>
+        </div>
+      `;
+    });
 
-  initDragAndDrop();
+    // NỘI DUNG CỘT HOÀN CHỈNH
+    colDiv.innerHTML = `
+      <div class="col-header" style="border-bottom-color: ${col.color}">
+        <h3 style="color:${col.color};">${col.title} <span class="badge">${col.tasks.length}</span></h3>
+      </div>
+      
+      <div class="col-content task-list" data-column="${col.id}">
+        ${tasksHtml}
+        <button class="add-task-btn" data-column-id="${col.id}">
+          <i class="fas fa-plus"></i> Add Task
+        </button>
+      </div>
+    `;
+    board.appendChild(colDiv);
+  });
+
+  initDragAndDrop();
 }
+
+let draggedCard = null;
 
 function initDragAndDrop() {
-  const cards = document.querySelectorAll('.kanban-card');
+  const cards = document.querySelectorAll('.task-card');
   const lists = document.querySelectorAll('.task-list');
 
-  cards.forEach(card => {
-    card.addEventListener('dragstart', () => card.classList.add('dragging'));
-    card.addEventListener('dragend', () => card.classList.remove('dragging'));
-  });
+  // BƯỚC 1: Xử lý thẻ (Card)
+  cards.forEach(card => {
+    card.addEventListener('dragstart', () => {
+        card.classList.add('dragging');
+        draggedCard = card; // Lưu thẻ đang kéo
+    });
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        draggedCard = null; // Xóa thẻ sau khi thả
+    });
+  });
 
-  lists.forEach(list => {
-    list.addEventListener('dragover', e => e.preventDefault());
-    list.addEventListener('drop', async e => {
-      e.preventDefault();
-      const card = document.querySelector('.dragging');
-      if (!card) return;
+  // BƯỚC 2: Xử lý danh sách (List - nơi thả)
+  lists.forEach(list => {
+    list.addEventListener('dragover', e => {
+        e.preventDefault(); // Cho phép thả
+        // Cần thêm logic visual feedback tại đây nếu cần (ví dụ: đổi màu border)
+    });
 
-      const taskId = card.dataset.id;
-      const newColumn = list.dataset.column;
+    list.addEventListener('drop', async e => {
+      e.preventDefault();
+      
+      const card = draggedCard; // Dùng thẻ đã lưu
+      if (!card) return;
 
-      try {
+      // Di chuyển thẻ trong DOM trước khi gọi API (optimistic update)
+      list.appendChild(card);
+      card.classList.remove('dragging');
+      
+      const taskId = card.dataset.id;
+      const newColumn = list.dataset.column;
+
+      try {
+        // GỌI API PATCH ĐỂ CẬP NHẬT COLUMN TRONG DB
         const res = await fetch(`/api/kanban/${taskId}/move`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ column: newColumn })
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ column: newColumn })
         });
 
-        if (res.ok) {
-          loadKanban(); // reload ngay để thấy thay đổi
+        if (res.ok) {
+          loadKanban(); // Tải lại toàn bộ Kanban để đồng bộ
+        } else {
+            // Xử lý lỗi (ví dụ: alert, hoặc di chuyển thẻ về vị trí cũ nếu thất bại)
+            console.error('API Move Failed');
         }
-      } catch (err) {
-        console.error('Lỗi di chuyển task:', err);
-      }
-    });
-  });
-}
-
-// AUTO REFRESH THÔNG MINH – DỪNG KHI ẨN TAB, CHẠY LẠI KHI MỞ
-function startAutoRefresh() {
-  stopAutoRefresh(); // đảm bảo không bị trùng
-  refreshInterval = setInterval(() => {
-    if (!document.hidden) loadKanban();
-  }, 20000);
+      } catch (err) {
+        console.error('Lỗi di chuyển task:', err);
+      }
+    });
+  });
 }
 
 function stopAutoRefresh() {
@@ -104,28 +135,73 @@ function stopAutoRefresh() {
   refreshInterval = null;
 }
 
-// Khi chuyển tab
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    stopAutoRefresh();
-  } else {
-    loadKanban(); // load ngay khi quay lại
-    startAutoRefresh();
-  }
-});
-
-// KHỞI ĐỘNG
-document.addEventListener('DOMContentLoaded', () => {
-  loadKanban();
-  startAutoRefresh();
-  // initDragAndDrop() được gọi trong renderKanbanBoard()
-});
-
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
+
+// ==================== KHỞI TẠO & EVENTS ====================
+
+// Hàm gán các sự kiện cho Toolbar và Filter Bar
+function attachKanbanEventListeners() {
+    const filterStart = document.getElementById('filter-start');
+    const filterEnd = document.getElementById('filter-end');
+    const board = document.getElementById('kanban-board');
+
+    // --- APPLY FILTER ---
+    document.getElementById('apply-filter').addEventListener('click', () => {
+        const startDate = filterStart.value;
+        const endDate = filterEnd.value;
+        filterKanbanTasks(startDate, endDate);
+    });
+
+    // --- CLEAR FILTER ---
+    document.getElementById('clear-filter').addEventListener('click', () => {
+        filterStart.value = '';
+        filterEnd.value = '';
+        loadKanban(); // Tải lại toàn bộ board để xóa bộ lọc
+    });
+
+    // --- EXPORT (Placeholder) ---
+    document.querySelector('.toolbar button:nth-child(3)').addEventListener('click', () => {
+        alert('Chức năng Export đang được thực hiện...');
+        // Ở đây bạn sẽ gọi API Export hoặc tạo file CSV/JSON từ dữ liệu hiển thị
+    });
+    
+    // --- ADD COLUMN & SAVE BOARD (Placeholder) ---
+    document.getElementById('add-column').addEventListener('click', () => {
+        alert('Chức năng Thêm cột đang được phát triển.');
+    });
+    document.getElementById('save-board').addEventListener('click', () => {
+        alert('Board được tự động lưu. (Chức năng này đang được phát triển)');
+    });
+}
+
+// Hàm lọc task (gọi API với query params)
+async function filterKanbanTasks(startDate, endDate) {
+    let url = '/api/kanban?';
+    if (startDate) url += `start=${startDate}&`;
+    if (endDate) url += `end=${endDate}&`;
+
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Lỗi tải dữ liệu lọc');
+        const { success, data } = await res.json();
+        if (success) renderKanbanBoard(data);
+    } catch (err) {
+        console.error('Lỗi Filter Kanban:', err);
+    }
+}
+
+// KHỞI ĐỘNG
+document.addEventListener('DOMContentLoaded', () => {
+  loadKanban();
+  attachKanbanEventListeners();
+  // initDragAndDrop() được gọi trong renderKanbanBoard()
+});
+
+
 
 // ===================================================================
 // NOTES CHO BACKEND DEVELOPER (rất quan trọng!)

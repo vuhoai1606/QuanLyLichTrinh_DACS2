@@ -43,7 +43,7 @@ class User {
 
   // Tạo user mới
   static async create(userData) {
-    const { username, password, email, fullName, dateOfBirth } = userData;
+    const { username, password, email, fullName, dateOfBirth, gender, phoneNumber } = userData;
     
     try {
       // Mã hóa mật khẩu bằng bcrypt
@@ -51,10 +51,10 @@ class User {
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
       const result = await pool.query(
-        `INSERT INTO users (username, password_hash, email, full_name, date_of_birth) 
-         VALUES ($1, $2, $3, $4, $5) 
-         RETURNING user_id, username, email, full_name, date_of_birth, created_at`,
-        [username, passwordHash, email, fullName, dateOfBirth || null]
+        `INSERT INTO users (username, password_hash, email, full_name, date_of_birth, gender, phone_number) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         RETURNING user_id, username, email, full_name, date_of_birth, gender, phone_number, created_at`,
+        [username, passwordHash, email, fullName, dateOfBirth || null, gender || null, phoneNumber || null]
       );
 
       return result.rows[0];

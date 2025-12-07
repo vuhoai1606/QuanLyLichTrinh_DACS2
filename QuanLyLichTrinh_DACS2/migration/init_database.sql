@@ -112,7 +112,6 @@ CREATE TABLE IF NOT EXISTS events (
     color VARCHAR(7) DEFAULT '#4285F4',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    location TEXT;
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL
 );
@@ -241,22 +240,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     type notification_type_enum DEFAULT 'system',
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    redirect_url TEXT,
-    related_id INT;
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_notif ON notifications(user_id, is_read);
-
-CREATE TABLE IF NOT EXISTS sprints (
-    sprint_id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Index để tìm nhanh theo user
-CREATE INDEX IF NOT EXISTS idx_sprints_user ON sprints(user_id);

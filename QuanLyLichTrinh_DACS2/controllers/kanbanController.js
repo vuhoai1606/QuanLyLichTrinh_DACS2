@@ -28,7 +28,21 @@ exports.moveTaskToColumn = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Cột không hợp lệ' });
     }
 
-    const updatedTask = await taskService.updateTaskKanbanColumn(id, userId, column);
+    let newStatus;
+    if (column === 'todo') {
+        newStatus = 'pending';
+    } else if (column === 'in_progress') {
+        newStatus = 'in_progress';
+    } else if (column === 'done') {
+        newStatus = 'done';
+    } else {
+        newStatus = 'pending';
+    }
+
+    const updatedTask = await taskService.updateTask(id, userId, { 
+      kanbanColumn: column, // Cột Kanban (cho trang Kanban)
+      status: newStatus      // Trạng thái (cho trang Tasks List)
+    });
 
     if (!updatedTask) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy task' });
@@ -40,7 +54,7 @@ exports.moveTaskToColumn = async (req, res) => {
       type: 'task',
       title: 'Di chuyển công việc',
       message: `Công việc "${updatedTask.title}" đã được di chuyển đến cột "${column}"`,
-      redirectUrl: '/kanban',
+      redirectUrl: '/tasks',
       relatedId: updatedTask.task_id
     });
 
