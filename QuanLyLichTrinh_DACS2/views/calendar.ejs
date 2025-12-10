@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Calendar - Manage your events and tasks visually" />
-  
+  <%- include('theme-support') %>
   <link rel="stylesheet" href="/css/header.css" />
   <link rel="stylesheet" href="/css/calendar.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
@@ -16,7 +16,6 @@
 
   <div class="main-container">
 
-    <!-- Calendar Header -->
     <div class="calendar-header">
       <div class="left-controls">
         <button onclick="prevPeriod()" class="btn-secondary">
@@ -29,7 +28,6 @@
 
         <h2 id="month-year">Loading...</h2>
 
-        <!-- View Mode Selector (English) -->
         <select id="viewMode" onchange="changeView()" class="view-select">
           <option value="month">Month</option>
           <option value="week">Week</option>
@@ -41,25 +39,28 @@
       <div class="right-controls">
         <div class="search-container">
           <i class="fas fa-search search-icon"></i>
-          <input type="text" id="search" placeholder="Search events..." oninput="searchEvents(this.value)">
+          <input type="text" id="search" placeholder="Search events..." oninput="window.filterAndDisplayEvents(this.value)">
         </div>
       </div>
     </div>
 
-    <!-- Calendar Body -->
     <div class="calendar-body">
-      <!-- Main Calendar -->
       <div class="calendar-main">
-        <!-- Weekdays: Monday → Sunday (International standard)  -->
-
         <div id="calendar-wrapper">
-          <div class="calendar-grid" id="calendar">
-            <!-- Days will be rendered here by JS -->
+          <div class="weekdays" id="weekdays-header">
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+            <div>Sun</div>
           </div>
+          <div class="calendar-grid" id="calendar">
+            </div>
         </div>
       </div>
 
-      <!-- Sidebar -->
       <aside class="calendar-sidebar">
         <button class="create-btn btn-primary" onclick="openCreateModal()">
           <i class="fas fa-plus"></i> New Event
@@ -70,48 +71,38 @@
           <div id="timeInsightsContent">Loading...</div>
         </div>
 
-        <div class="card my-calendar">
-          <h3>My Calendars</h3>
-          <div class="calendar-list">
-            <label><input type="checkbox" value="Personal" checked> Personal</label>
-            <label><input type="checkbox" value="Work" checked> Work</label>
-          </div>
-        </div>
-
-        <!-- PHẦN PHÂN LOẠI SỰ KIỆN - SIÊU ĐẸP -->
-        <div class="card" style="margin-top: 16px;">
-          <h3 style="margin: 0 0 16px 0; color: #000;">
-            <i class="fas fa-tags"></i> Phân loại sự kiện
-          </h3>
-          <div id="event-categories">
+        <div class="card event-filter-card">
+          <h3><i class="fas fa-tags"></i> Event Categories</h3> 
+          
+          <div id="event-categories" style="display: flex; flex-direction: column; gap: 14px;">
             <label class="category-item">
-              <input type="checkbox" value="work" checked>
+              <input type="checkbox" value="Personal" checked> 
+              <span class="category-color" style="background:#4285f4;"></span> Personal
+            </label>
+            <label class="category-item">
+              <input type="checkbox" value="Work" checked> 
+              <span class="category-color" style="background:#f59e0b;"></span> Work
+            </label>
+
+            <div class="divider" style="margin: 10px 0;"></div>
+
+            <label class="category-item">
+              <input type="checkbox" value="Meeting" checked>
               <span class="category-color" style="background: #8b5cf6;"></span>
-              <span class="category-name">Công việc</span>
+              <span class="category-name">Meeting</span>
             </label>
             <label class="category-item">
-              <input type="checkbox" value="personal" checked>
+              <input type="checkbox" value="Birthday" checked>
               <span class="category-color" style="background: #ec4899;"></span>
-              <span class="category-name">Cá nhân</span>
+              <span class="category-name">Birthday</span>
             </label>
             <label class="category-item">
-              <input type="checkbox" value="meeting" checked>
+              <input type="checkbox" value="Holiday" checked>
               <span class="category-color" style="background: #3b82f6;"></span>
-              <span class="category-name">Họp hành</span>
-            </label>
-            <label class="category-item">
-              <input type="checkbox" value="birthday" checked>
-              <span class="category-color" style="background: #10b981;"></span>
-              <span class="category-name">Sinh nhật</span>
-            </label>
-            <label class="category-item">
-              <input type="checkbox" value="holiday" checked>
-              <span class="category-color" style="background: #f59e0b;"></span>
-              <span class="category-name">Nghỉ lễ</span>
+              <span class="category-name">Holiday</span>
             </label>
           </div>
         </div>
-
         <div class="card upcoming-events">
           <h3>Upcoming</h3>
           <ul id="upcomingList"><li>Loading...</li></ul>
@@ -134,22 +125,21 @@
           </button>
 
           <label for="group-calendar">Group Calendar</label>
-          <select id="group-calendar" class="view-select" style="width: 100%; margin-top: 6px; ">
+          <select id="group-calendar" class="view-select" onchange="loadEvents()" style="width: 100%; margin-top: 6px; ">
             <option value="personal">Personal</option>
             <option value="team">Team</option>
             <option value="work">Work</option>
           </select>
         </div>
 
-        <button class="btn-secondary" onclick="window.location.href='/timeline'" style="width:100%; margin-bottom: 15px;">
+        <!-- <button class="btn-secondary" onclick="window.location.href='/timeline'" style="width:100%; margin-bottom: 15px;">
           <i class="fas fa-chart-gantt"></i> Timeline View
-        </button>
+        </button> -->
 
       </aside>
     </div>
   </div>
 
-  <!-- Event Modal -->
   <div class="modal" id="eventModal">
     <div class="modal-content">
       <h3 id="modalTitle">New Event</h3>
@@ -161,14 +151,14 @@
         <option value="sprint">Sprint</option>
       </select>
 
-      <label style="margin-top:10px;">Color</label>
-      <input type="color" id="eventColor" value="#4285f4" style="width: 100%; height: 40px; border: none; cursor: pointer;">
-      <label for="eventCalendar" style="margin-top:10px;">Thuộc lịch:</label>
-      <select id="eventCalendar" class="view-select">
-          <option value="Personal">Cá nhân</option>
-          <option value="Work">Công việc</option>
-      </select>
-
+      <label for="eventCalendar" style="margin-top:10px;">Calendar/Category:</label>
+      <select id="eventCalendar" class="view-select">
+        <option value="Personal" data-color="#4285f4">Personal</option>
+        <option value="Work" data-color="#f59e0b">Work</option>
+        <option value="Meeting" data-color="#8b5cf6">Meeting</option>
+        <option value="Birthday" data-color="#ec4899">Birthday</option>
+        <option value="Holiday" data-color="#3b82f6">Holiday</option>
+      </select>
       <input type="text" id="eventTitle" placeholder="Event title" required>
       <textarea id="eventDesc" rows="3" placeholder="Description (optional)..."></textarea>
       
@@ -179,13 +169,9 @@
         </div>
         <div>
           <label>End</label>
-          <input type="datetime-local" id="eventEnd">
+          <input type="datetime-local" id="eventEnd"> 
         </div>
       </div>
-
-      <label class="checkbox-label">
-        <input type="checkbox" id="eventAllDay"> All day
-      </label>
 
       <div class="modal-actions">
         <button type="button" class="btn-secondary" onclick="closeEventModal()">Cancel</button>

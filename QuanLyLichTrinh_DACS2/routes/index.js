@@ -3,6 +3,14 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/authMiddleware');
 const taskService = require('../services/taskService');
 
+// Import admin routes
+const adminRoutes = require('./adminRoutes');
+router.use('/admin', adminRoutes);
+
+// Import message routes
+const messageRoutes = require('./messageRoutes');
+router.use('/api/messages', messageRoutes);
+
 // API endpoints
 // Lấy thống kê tổng quan cho dashboard
 router.get('/api/stats', requireAuth, async (req, res) => {
@@ -91,9 +99,34 @@ router.get('/timeline', requireAuth, (req, res) => {
   res.render('timeline', { active: "timeline" });
 });
 
-// Route hiển thị trang groups
+// Route hiển thị trang messages
+router.get('/messages', requireAuth, async (req, res) => {
+  try {
+    const pool = require('../config/db');
+    const result = await pool.query(
+      'SELECT user_id, username, email, full_name, avatar_url FROM users WHERE user_id = $1',
+      [req.session.userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.redirect('/login');
+    }
+    
+    const user = result.rows[0];
+    
+    res.render('messages', { 
+      active: "messages",
+      user: user
+    });
+  } catch (error) {
+    console.error('Error loading messages page:', error);
+    res.redirect('/');
+  }
+});
+
+// Route cũ giữ lại để redirect
 router.get('/groups', requireAuth, (req, res) => {
-  res.render('groups', { active: "groups" });
+  res.redirect('/messages');
 });
 
 // Route hiển thị trang notifications

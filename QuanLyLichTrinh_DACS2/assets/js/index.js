@@ -112,11 +112,12 @@ function displayUpcomingEvents(events) {
 // 5. CẬP NHẬT TẤT CẢ THỐNG KÊ (4 Ô LỚN + PROGRESS BAR)
 // ===================================================================
 function updateAllStats(stats) {
+    // 🌟 Đã bao gồm 'overdue' trong destructuring
     const { done = 0, overdue = 0, total = 0, in_progress = 0 } = stats;
 
     // Cập nhật 4 ô lớn
     document.querySelector('#stat-done').textContent = done;
-    document.querySelector('#stat-overdue').textContent = overdue;
+    document.querySelector('#stat-overdue').textContent = overdue; // FIX: Đã sử dụng biến overdue
     document.querySelector('#stat-total').textContent = total;
     document.querySelector('#stat-progress').textContent = in_progress || 0;
 

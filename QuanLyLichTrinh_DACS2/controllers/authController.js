@@ -79,6 +79,7 @@ exports.verifyOTP = async (req, res) => {
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
+    req.session.role = result.user.role || 'user'; // Lưu role
 
     delete req.session.pendingRegistration;
 
@@ -152,6 +153,7 @@ exports.login = async (req, res) => {
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
+    req.session.role = result.user.role || 'user'; // Lưu role
 
     // Xử lý "Ghi nhớ đăng nhập"
     if (rememberMe) {
@@ -161,6 +163,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       message: 'Đăng nhập thành công!',
+      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/', // Admin redirect về dashboard
       user: {
         userId: result.user.user_id,
         username: result.user.username,
@@ -213,13 +216,14 @@ exports.googleLogin = async (req, res) => {
     req.session.fullName = result.user.full_name;
     req.session.email = result.user.email;
     req.session.avatar = result.user.avatar_url; // Lưu avatar Google
+    req.session.role = result.user.role || 'user'; // Lưu role
 
     console.log('✅ Session saved. Sending response...');
 
     res.json({
       success: true,
       message: result.isNewUser ? 'Đăng ký thành công!' : 'Đăng nhập thành công!',
-      redirectUrl: '/',
+      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/', // Admin redirect về dashboard
       user: {
         userId: result.user.user_id,
         username: result.user.username,

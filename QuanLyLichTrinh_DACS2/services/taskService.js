@@ -62,7 +62,8 @@ class TaskService {
       return {
         todo: tasks.filter(t => t.kanban_column === 'todo'),
         in_progress: tasks.filter(t => t.kanban_column === 'in_progress'),
-        done: tasks.filter(t => t.kanban_column === 'done')
+        done: tasks.filter(t => t.kanban_column === 'done'),
+        overdue: tasks.filter(t => t.kanban_column === 'overdue')
       };
     }
 
@@ -96,12 +97,13 @@ class TaskService {
     const {
       title,
       description,
-      startTime,
-      endTime,
+      // Đảm bảo destructure đúng key (snake_case)
+      start_time, 
+      end_time,
       priority = 'medium',
-      status = 'pending',
-      categoryId,
+      status = 'todo',
       repeatType = 'none',
+      categoryId,
       tags = [],
       collaborators = [],
     } = taskData;
@@ -116,9 +118,8 @@ class TaskService {
     }
 
     // Validate thời gian
-    // Nếu không có startTime, dùng thời gian hiện tại
-    const taskStartTime = startTime ? new Date(startTime) : new Date();
-    const taskEndTime = endTime ? new Date(endTime) : null;
+    const taskStartTime = start_time ? new Date(start_time) : new Date();
+    const taskEndTime = end_time ? new Date(end_time) : null;
 
     if (taskEndTime && taskStartTime && taskEndTime < taskStartTime) {
       throw new Error('Thời gian kết thúc không thể trước thời gian bắt đầu');
@@ -131,7 +132,7 @@ class TaskService {
     }
 
     // Validate status
-    const validStatuses = ['pending', 'in_progress', 'done'];
+    const validStatuses = ['todo', 'in_progress', 'done', 'overdue']; 
     if (!validStatuses.includes(status)) {
       throw new Error('Status không hợp lệ');
     }
@@ -147,7 +148,7 @@ class TaskService {
         title.trim(),
         description?.trim() || null,
         taskStartTime,
-        taskEndTime,
+        taskEndTime, // <-- FIX: Sử dụng taskEndTime (không null nếu có giá trị từ form)
         priority,
         status,
         repeatType,
@@ -162,102 +163,84 @@ class TaskService {
    * CẬP NHẬT TASK
    */
   async updateTask(taskId, userId, updateData) {
-    // Kiểm tra task có tồn tại và thuộc về user không
-    await this.getTaskById(taskId, userId);
+    // Kiểm tra task có tồn tại và thuộc về user không
+    try {
+      await this.getTaskById(taskId, userId);
+    } catch (error) {
+      return null; // Trả về null nếu không tìm thấy task
+    }
 
-    const {
-      title,
-      description,
-      startTime,
-      endTime,
-      priority,
-      status,
-      repeatType,
-      progress,
-      // ✨ THÊM kanbanColumn VÀO ĐÂY ĐỂ TRÍCH XUẤT GIÁ TRỊ ✨
-      kanbanColumn
-    } = updateData;
+    const {
+      title,
+      description,
+      // 🌟 FIX: Đảm bảo chỉ destructure tên trường CSDL (snake_case)
+      start_time,
+      end_time,
+      priority,
+      status,
+      repeatType,
+      progress,
+      kanbanColumn,
+      collaborators,
+      isAllDay,
+      grace_end_time
+    } = updateData;
 
-    // Validation tương tự như createTask
-    if (title !== undefined && title.trim().length === 0) {
-      throw new Error('Tiêu đề task không được để trống');
-    }
+    // Validation
+    if (title !== undefined && title.trim().length === 0) {
+      throw new Error('Tiêu đề task không được để trống');
+    }
 
-    if (endTime && startTime && new Date(endTime) < new Date(startTime)) {
-      throw new Error('Thời gian kết thúc không thể trước thời gian bắt đầu');
-    }
+    if (end_time && start_time && new Date(end_time) < new Date(start_time)) {
+      throw new Error('Thời gian kết thúc không thể trước thời gian bắt đầu');
+    }
 
     if (progress !== undefined && (progress < 0 || progress > 100)) {
       throw new Error('Progress phải từ 0 đến 100');
     }
 
-    // Build dynamic update query
+    // Xây dựng truy vấn động an toàn
     const updates = [];
-    const params = [taskId, userId];
-    let paramIndex = 3;
+    const params = [];
+    let paramIndex = 1; // Bắt đầu từ $1
 
-    if (title !== undefined) {
-      updates.push(`title = $${paramIndex}`);
-      params.push(title.trim());
-      paramIndex++;
-    }
+    // 🌟 ĐỊNH NGHĨA HÀM TIỆN ÍCH CỤC BỘ (FIX ReferenceError: addUpdate is not defined)
+    const addUpdate = (key, value) => {
+      if (value !== undefined) {
+        updates.push(`${key} = $${paramIndex}`);
+        params.push(value);
+        paramIndex++;
+      }
+    };
 
-    if (description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      params.push(description?.trim() || null);
-      paramIndex++;
-    }
+    // 🌟 FIX: CHỈ SỬ DỤNG addUpdate và các biến đã được destructure (snake_case)
+    addUpdate('title', title !== undefined ? title.trim() : title);
+    addUpdate('description', description !== undefined ? description?.trim() || null : description);
+    addUpdate('start_time', start_time); 
+    addUpdate('end_time', end_time);     
+    addUpdate('is_all_day', isAllDay);
+    addUpdate('priority', priority);
+    addUpdate('status', status);
+    addUpdate('kanban_column', kanbanColumn);
+    addUpdate('repeat_type', repeatType);
+    addUpdate('progress', progress);
+    addUpdate('collaborators', collaborators);
+    addUpdate('grace_end_time', grace_end_time); 
 
-    if (startTime !== undefined) {
-      updates.push(`start_time = $${paramIndex}`);
-      params.push(startTime);
-      paramIndex++;
-    }
-
-    if (endTime !== undefined) {
-      updates.push(`end_time = $${paramIndex}`);
-      params.push(endTime);
-      paramIndex++;
-    }
-
-    if (priority !== undefined) {
-      updates.push(`priority = $${paramIndex}`);
-      params.push(priority);
-      paramIndex++;
-    }
-
-    if (status !== undefined) { // <-- Đã tồn tại trong code gốc của bạn
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (kanbanColumn !== undefined) { 
-      updates.push(`kanban_column = $${paramIndex}`);
-      params.push(kanbanColumn);
-      paramIndex++;
-    }
-
-    if (repeatType !== undefined) { // ĐẢM BẢO BẠN CÓ DÒNG NÀY
-      updates.push(`repeat_type = $${paramIndex}`);
-      params.push(repeatType);
-      paramIndex++;
-    }
-
-    if (progress !== undefined) {
-      updates.push(`progress = $${paramIndex}`);
-      params.push(progress);
-      paramIndex++;
-    }
+    // ⛔ ĐÃ XÓA TẤT CẢ CÁC KHỐI IF LẶP LẠI VÀ SỬ DỤNG TÊN BIẾN SAI
 
     if (updates.length === 0) {
       throw new Error('Không có dữ liệu để cập nhật');
     }
 
+    // Thêm các tham số WHERE (taskId, userId) vào cuối
+    params.push(taskId, userId);
+    
+    // Xây dựng câu lệnh cuối cùng
     const query = `
       UPDATE tasks 
       SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-      WHERE task_id = $1 AND user_id = $2
+      WHERE task_id = $${paramIndex} AND user_id = $${paramIndex + 1}
       RETURNING *
     `;
 
@@ -285,10 +268,11 @@ class TaskService {
    * CẬP NHẬT STATUS (quick action)
    */
   async updateTaskStatus(taskId, userId, newStatus) {
-    const validStatuses = ['pending', 'in_progress', 'done'];
-    if (!validStatuses.includes(newStatus)) {
-      throw new Error('Status không hợp lệ');
-    }
+    // 🌟 FIX 4: Thêm 'overdue' vào danh sách trạng thái hợp lệ trong JS
+    const validStatuses = ['todo', 'in_progress', 'done', 'overdue']; 
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error('Status không hợp lệ');
+    }
 
     await this.getTaskById(taskId, userId);
 
@@ -303,16 +287,20 @@ class TaskService {
     return result.rows[0];
   }
 
+  // taskService.js - Sửa trong hàm getTaskStatistics
+
   /**
-   * LẤY THỐNG KÊ TASKS
+   * LẤY THỐNG KÊ TASKS (FIX CÚ PHÁP SQL)
    */
-  async getTaskStatistics(userId) {
+async getTaskStatistics(userId) {
     const result = await pool.query(
       `SELECT 
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'pending') as pending,
+        COUNT(*) FILTER (WHERE status = 'todo') as todo,
         COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
         COUNT(*) FILTER (WHERE status = 'done') as done,
+        -- ✅ FIX ENUM: Đếm Trễ hạn bằng kanban_column (Varchar)
+        COUNT(*) FILTER (WHERE kanban_column = 'overdue') as overdue, 
         COUNT(*) FILTER (WHERE priority = 'high') as high_priority,
         COUNT(*) FILTER (WHERE start_time::date = CURRENT_DATE) as today
        FROM tasks

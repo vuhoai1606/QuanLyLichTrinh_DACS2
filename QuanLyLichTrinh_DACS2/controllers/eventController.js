@@ -46,6 +46,7 @@ exports.getEvents = async (req, res) => {
 exports.getEventsByDateRange = async (req, res) => {
   try {
     const userId = req.session.userId;
+    //nhận thời gian của fe khai báo
     const { year, month } = req.query;
 
     if (!userId) {
@@ -130,19 +131,20 @@ exports.createEvent = async (req, res) => {
       });
     }
 
+    // ĐÃ LOẠI BỎ isAllDay
     const eventData = {
       title: req.body.title,
       description: req.body.description,
       startTime: req.body.start_time || req.body.startTime,
       endTime: req.body.end_time || req.body.endTime,
-      isAllDay: req.body.is_all_day || req.body.isAllDay || false,
       location: req.body.location,
       locationLat: req.body.location_lat || req.body.locationLat,
       locationLng: req.body.location_lng || req.body.locationLng,
       meetingLink: req.body.meeting_link || req.body.meetingLink,
       categoryId: req.body.category_id || req.body.categoryId,
       color: req.body.color || '#3b82f6',
-      tags: req.body.tags || []
+      tags: req.body.tags || [],
+      calendarType: req.body.calendar_type // Lấy thêm calendar_type để lưu
     };
 
     const newEvent = await eventService.createEvent(userId, eventData);
@@ -184,19 +186,20 @@ exports.updateEvent = async (req, res) => {
       });
     }
 
+    
     const updateData = {
       title: req.body.title,
       description: req.body.description,
       startTime: req.body.start_time || req.body.startTime,
       endTime: req.body.end_time || req.body.endTime,
-      isAllDay: req.body.is_all_day || req.body.isAllDay,
       location: req.body.location,
       locationLat: req.body.location_lat || req.body.locationLat,
       locationLng: req.body.location_lng || req.body.locationLng,
       meetingLink: req.body.meeting_link || req.body.meetingLink,
       categoryId: req.body.category_id || req.body.categoryId,
       color: req.body.color,
-      tags: req.body.tags
+      tags: req.body.tags,
+      calendarType: req.body.calendar_type 
     };
 
     // Loại bỏ các giá trị undefined

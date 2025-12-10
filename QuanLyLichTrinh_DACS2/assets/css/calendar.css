@@ -193,7 +193,7 @@ body::after {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--glass);
+  background: #fff;
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
   padding: 32px 40px;

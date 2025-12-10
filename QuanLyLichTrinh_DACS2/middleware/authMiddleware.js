@@ -39,11 +39,13 @@ exports.setUserLocals = async (req, res, next) => {
     res.locals.userId = req.session.userId;
     res.locals.username = req.session.username;
     res.locals.fullName = req.session.fullName;
+    res.locals.userRole = req.session.role || 'user'; // Thêm role
   } else {
     res.locals.isAuthenticated = false;
     res.locals.userId = null;
     res.locals.username = null;
     res.locals.fullName = null;
+    res.locals.userRole = 'user'; 
   }
   next();
 };

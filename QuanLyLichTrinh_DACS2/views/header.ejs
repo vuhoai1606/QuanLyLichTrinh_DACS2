@@ -51,14 +51,20 @@
         <li><a href="/reports" class="nav-link <%= active === 'reports' ? 'active' : '' %>">
           <i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
 
-        <li><a href="/groups" class="nav-link <%= active === 'groups' ? 'active' : '' %>">
-          <i class="fas fa-users"></i><span>Groups</span></a></li>
+        <li><a href="/messages" class="nav-link <%= active === 'messages' ? 'active' : '' %>">
+          <i class="fas fa-comments"></i><span>Messages</span></a></li>
 
         <!-- <li><a href="/notifications" class="nav-link <%= active === 'notifications' ? 'active' : '' %>">
           <i class="fas fa-bell"></i><span>Notifications</span></a></li> -->
 
         <li><a href="/export-import" class="nav-link <%= active === 'export' ? 'active' : '' %>">
           <i class="fas fa-exchange-alt"></i><span>Export / Import</span></a></li>
+
+        <!-- ADMIN MENU - Chỉ hiện nếu user là admin -->
+        <% if (typeof userRole !== 'undefined' && userRole === 'admin') { %>
+        <li><a href="/admin/dashboard" class="nav-link <%= active === 'admin-dashboard' || active === 'admin-users' || active === 'admin-notifications' || active === 'admin-logs' ? 'active' : '' %>" style="<%= active === 'admin-dashboard' || active === 'admin-users' || active === 'admin-notifications' || active === 'admin-logs' ? '' : 'background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 700;' %>">
+          <i class="fas fa-shield-alt"></i><span>Admin Panel</span></a></li>
+        <% } %>
 
         <!-- ACCOUNT SECTION -->
         <li class="dropdown" id="account-dropdown-container">

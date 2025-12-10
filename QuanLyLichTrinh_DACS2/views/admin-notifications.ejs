@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Thông báo - Admin</title>
+  <%- include('theme-support') %>
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <%- include('header') %>
+
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <i class="fas fa-shield-alt"></i>
+        <h2>Admin Panel</h2>
+      </div>
+      
+      <nav class="admin-nav">
+        <a href="/admin/dashboard" class="admin-nav-item">
+          <i class="fas fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="/admin/users" class="admin-nav-item">
+          <i class="fas fa-users"></i>
+          <span>Quản lý Users</span>
+        </a>
+        <a href="/admin/notifications" class="admin-nav-item active">
+          <i class="fas fa-bullhorn"></i>
+          <span>Thông báo</span>
+        </a>
+        <a href="/admin/logs" class="admin-nav-item">
+          <i class="fas fa-history"></i>
+          <span>Audit Logs</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Quản lý thông báo hệ thống</h1>
+          <p>Tạo và quản lý thông báo cho người dùng</p>
+        </div>
+        <button class="btn-primary" onclick="showCreateNotificationModal()">
+          <i class="fas fa-plus"></i> Tạo thông báo mới
+        </button>
+      </div>
+
+      <!-- Notifications List -->
+      <div class="notifications-list" id="notifications-list">
+        <div class="loading">
+          <i class="fas fa-spinner fa-spin"></i> Đang tải...
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination"></div>
+    </main>
+  </div>
+
+  <!-- Create/Edit Notification Modal -->
+  <div id="notification-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Tạo thông báo hệ thống</h2>
+        <button class="modal-close" onclick="closeNotificationModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="notification-form">
+          <div class="form-group">
+            <label for="notif-title">Tiêu đề <span class="required">*</span></label>
+            <input type="text" id="notif-title" required maxlength="200">
+          </div>
+          
+          <div class="form-group">
+            <label for="notif-content">Nội dung <span class="required">*</span></label>
+            <textarea id="notif-content" rows="5" required></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="notif-type">Loại thông báo</label>
+              <select id="notif-type">
+                <option value="info">Thông tin</option>
+                <option value="warning">Cảnh báo</option>
+                <option value="urgent">Khẩn cấp</option>
+                <option value="maintenance">Bảo trì</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="notif-target">Đối tượng</label>
+              <select id="notif-target">
+                <option value="all">Tất cả người dùng</option>
+                <option value="admins">Chỉ admins</option>
+                <option value="users">Chỉ users</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="notif-start">Bắt đầu hiển thị</label>
+              <input type="datetime-local" id="notif-start">
+            </div>
+            
+            <div class="form-group">
+              <label for="notif-end">Kết thúc hiển thị (để trống = vĩnh viễn)</label>
+              <input type="datetime-local" id="notif-end">
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeNotificationModal()">Hủy</button>
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-paper-plane"></i> Tạo thông báo
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+  <script>
+    // Initialize notifications page
+    initNotificationsPage();
+  </script>
+</body>
+</html>

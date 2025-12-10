@@ -70,9 +70,15 @@ app.use(express.static(path.join(__dirname, 'assets'), {
   lastModified: true
 }));
 
-// Serve uploads folder (avatars)
+// Serve uploads folder (avatars + messages)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  maxAge: '7d', // Cache avatars 7 ngày
+  maxAge: '7d', // Cache files 7 ngày
+  etag: true
+}));
+
+// Serve locales folder (translation files)
+app.use('/locales', express.static(path.join(__dirname, 'assets', 'locales'), {
+  maxAge: '1d',
   etag: true
 }));
 
@@ -114,16 +120,15 @@ app.use((req, res, next) => {
   res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
 });
 
-// 403 handler
+// Error handler (đơn giản hóa, không dùng view)
 app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
   
-  res.status(403).render('403', {
-    title: '403 - Từ chối truy cập',
-    active: '',                   
-    userRole: req.session?.userRole || 'user',
-    fullName: req.session?.fullName || '',
-    isAuthenticated: !!req.session?.userId
+  console.error('Server error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Lỗi server',
+    error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
 

@@ -49,13 +49,13 @@ class AuthService {
 
   /**
    * VALIDATION: Kiểm tra username
-   * Yêu cầu: Ít nhất 6 ký tự, chỉ chữ cái, số và gạch dưới, không có khoảng trắng
+   * Yêu cầu: Ít nhất 5 ký tự, chỉ chữ cái, số và gạch dưới, không có khoảng trắng
    */
   validateUsername(username) {
-    if (!username || username.length < 6) {
+    if (!username || username.length < 5) {
       return {
         valid: false,
-        message: 'Tên đăng nhập phải có ít nhất 6 ký tự',
+        message: 'Tên đăng nhập phải có ít nhất 5 ký tự',
       };
     }
 

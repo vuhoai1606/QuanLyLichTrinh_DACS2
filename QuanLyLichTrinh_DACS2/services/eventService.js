@@ -112,6 +112,24 @@ class EventService {
   }
 
   /**
+   * TÌM ID CỦA CATEGORY DỰA VÀO TÊN
+   */
+  async getCategoryIdByName(userId, categoryName) {
+    // Nếu categoryName là 'Personal' hoặc 'Work' (tên mặc định), không cần tìm category_id
+    if (categoryName === 'Personal' || categoryName === 'Work') {
+      return null;
+    }
+    
+    // Tìm category_id dựa trên tên category được gửi từ frontend
+    const result = await pool.query(
+        'SELECT category_id FROM categories WHERE user_id = $1 AND category_name ILIKE $2',
+        [userId, categoryName]
+    );
+
+    return result.rows.length > 0 ? result.rows[0].category_id : null;
+  }
+
+  /**
    * TẠO EVENT MỚI
    */
   async createEvent(userId, eventData) {
@@ -121,10 +139,8 @@ class EventService {
       startTime,
       endTime,
       location,
-      categoryId,
+      categoryId, // Có thể là ID hoặc null
       repeatType = 'none',
-      notifyBefore,
-      isAllDay = false,
       meetingLink,
       tags = [],
     } = eventData;
@@ -134,11 +150,7 @@ class EventService {
       throw new Error('Tiêu đề event không được để trống');
     }
 
-    if (title.length > 255) {
-      throw new Error('Tiêu đề event không được vượt quá 255 ký tự');
-    }
-
-    // Validate thời gian
+    // Validate thời gian (isAllDay đã bị loại bỏ)
     if (!startTime || !endTime) {
       throw new Error('Vui lòng nhập thời gian bắt đầu và kết thúc');
     }
@@ -146,41 +158,20 @@ class EventService {
     if (new Date(endTime) <= new Date(startTime)) {
       throw new Error('Thời gian kết thúc phải sau thời gian bắt đầu');
     }
-
-    // Kiểm tra thời lượng event (không quá 30 ngày)
-    const duration = (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60 * 24);
-    if (duration > 30) {
-      throw new Error('Event không thể kéo dài quá 30 ngày');
+    
+    // Xử lý logic category_id: Nếu frontend gửi tên calendar_type, ta phải tìm ID
+    let finalCategoryId = categoryId;
+    if (typeof finalCategoryId === 'string' && finalCategoryId !== 'Personal' && finalCategoryId !== 'Work') {
+        finalCategoryId = await this.getCategoryIdByName(userId, finalCategoryId);
     }
-
-    // Kiểm tra conflict với events khác (tùy chọn)
-    const hasConflict = await this.checkTimeConflict(userId, startTime, endTime);
-    if (hasConflict) {
-      // Có thể warning thay vì throw error
-      console.warn('⚠️ Event này trùng thời gian với event khác');
-    }
-
-    // Validate category nếu có
-    if (categoryId) {
-      const categoryCheck = await pool.query(
-        'SELECT category_id FROM categories WHERE category_id = $1 AND user_id = $2',
-        [categoryId, userId]
-      );
-
-      if (categoryCheck.rows.length === 0) {
-        throw new Error('Category không tồn tại');
-      }
-    }
+    // Nếu vẫn không có categoryId (ví dụ: là 'Personal'/'Work' hoặc không tìm thấy), set null
 
     // Insert event
-    // services/eventService.js (Bên trong async createEvent)
-
-// Sửa lệnh INSERT:
-// Chỉ dùng $1 đến $11 (11 cột)
-      const result = await pool.query(
+    // is_all_day luôn là FALSE vì đã loại bỏ checkbox
+    const result = await pool.query(
         `INSERT INTO events (user_id, title, description, start_time, end_time, location, category_id, 
-        repeat_type, is_all_day, meeting_link, tags)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+        repeat_type, is_all_day, meeting_link, tags, calendar_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FALSE, $9, $10, $11) 
         RETURNING *`,
         [
             userId,
@@ -189,13 +180,13 @@ class EventService {
             startTime,
             endTime,
             location?.trim() || null,
-            categoryId || null,
+            finalCategoryId || null,
             repeatType,
-            isAllDay,
             meetingLink || null,
             tags,
+            eventData.calendarType || 'Personal' // Lưu loại calendar/task vào cột calendar_type
         ]
-      );
+    );
 
     return result.rows[0];
   }
@@ -215,10 +206,9 @@ class EventService {
       location,
       categoryId,
       repeatType,
-      notifyBefore,
-      isAllDay,
       meetingLink,
       tags,
+      calendarType
     } = updateData;
 
     // Validation
@@ -228,6 +218,12 @@ class EventService {
 
     if (startTime && endTime && new Date(endTime) <= new Date(startTime)) {
       throw new Error('Thời gian kết thúc phải sau thời gian bắt đầu');
+    }
+
+    // Xử lý logic category_id cho update
+    let finalCategoryId = categoryId;
+    if (typeof finalCategoryId === 'string' && finalCategoryId !== 'Personal' && finalCategoryId !== 'Work') {
+        finalCategoryId = await this.getCategoryIdByName(userId, finalCategoryId);
     }
 
     // Build dynamic update query
@@ -267,7 +263,13 @@ class EventService {
 
     if (categoryId !== undefined) {
       updates.push(`category_id = $${paramIndex}`);
-      params.push(categoryId);
+      params.push(finalCategoryId || null); // Sử dụng ID đã tìm được
+      paramIndex++;
+    }
+    
+    if (calendarType !== undefined) {
+      updates.push(`calendar_type = $${paramIndex}`);
+      params.push(calendarType); 
       paramIndex++;
     }
 
@@ -276,12 +278,9 @@ class EventService {
       params.push(repeatType);
       paramIndex++;
     }
-
-    if (isAllDay !== undefined) {
-      updates.push(`is_all_day = $${paramIndex}`);
-      params.push(isAllDay);
-      paramIndex++;
-    }
+    
+    // is_all_day luôn là FALSE
+    updates.push(`is_all_day = FALSE`);
 
     if (meetingLink !== undefined) {
       updates.push(`meeting_link = $${paramIndex}`);
@@ -314,7 +313,7 @@ class EventService {
    * XÓA EVENT
    */
   async deleteEvent(eventId, userId) {
-    const task = await this.getEventById(eventId, userId);
+    const eventToDelete = await this.getEventById(eventId, userId);
 
     const result = await pool.query(
       `DELETE FROM events 
@@ -340,9 +339,7 @@ class EventService {
       FROM events
       WHERE user_id = $1
       AND (
-        (start_time <= $2 AND end_time >= $2) OR
-        (start_time <= $3 AND end_time >= $3) OR
-        (start_time >= $2 AND end_time <= $3)
+        (start_time < $3 AND end_time > $2)
       )
     `;
 
@@ -360,7 +357,6 @@ class EventService {
   /**
    * LẤY EVENTS SẮP DIỄN RA (upcoming)
    */
-  // 1. Dùng cho: Dashboard, Sidebar "Upcoming Events", Notifications
   async getUpcomingEvents(userId, limit = 5) {
     const result = await pool.query(
       `SELECT 
@@ -378,28 +374,26 @@ class EventService {
     return result.rows;
   }
 
-  // 2. Dùng cho: Calendar (FullCalendar / custom calendar), Timeline, Kanban filter theo ngày
-  async getEventsByDateRange(userId, startDate, endDate) {
-    const result = await pool.query(
-      `SELECT 
-         e.*,
-         c.category_name,
-         c.color AS category_color
-       FROM events e
-       LEFT JOIN categories c ON e.category_id = c.category_id
-       WHERE e.user_id = $1
-         AND e.start_time >= $2
-         AND e.end_time <= $3
-       ORDER BY e.start_time ASC`,
-      [userId, startDate, endDate]
-    );
-    return result.rows;
-  }
+  /**
+   * LẤY CẢ TASK VÀ EVENT TRONG KHOẢNG THỜI GIAN
+   * Dùng cho Calendar/Timeline view
+   */
+  async getAllItemsByDateRange(userId, startDate, endDate, group = 'personal') {
+    
+    // Logic lọc theo nhóm (group)
+    let userConditions = `e.user_id = $1`;
+    
+    if (group === 'team' || group === 'work') {
+        // Mở rộng điều kiện: user_id = $1 HOẶC calendar_type = 'Work'
+        userConditions = `(e.user_id = $1 OR e.calendar_type = 'Work')`;
+    } 
 
-// THÊM HÀM NÀY Ở CUỐI: Bonus để lấy cả task + event cho timeline/calendar (không ảnh hưởng hàm cũ)
-  // services/eventService.js – SỬA HÀM getAllItemsByDateRange
-  async getAllItemsByDateRange(userId, startDate, endDate) {
+    const baseTimeCondition = `e.start_time >= $2 AND e.start_time <= $3`;
+    const taskTimeCondition = `t.start_time >= $2 AND t.start_time <= $3`;
+
+
     const query = `
+      -- ======================= 1. EVENTS ĐƯỢC SỞ HỮU/NHÓM =======================
       (SELECT 
         'event' AS type, 
         e.event_id AS id,
@@ -409,38 +403,63 @@ class EventService {
         e.end_time AS end,
         e.location,
         e.is_all_day,
+        e.calendar_type,
         c.category_name AS category,
-        c.color,
+        e.color,
         NULL AS status,
-        NULL AS priority
+        NULL AS priority -- Mặc định là TEXT
       FROM events e
       LEFT JOIN categories c ON e.category_id = c.category_id
-      WHERE e.user_id = $1
-        AND e.start_time >= $2 AND e.end_time <= $3)
+      WHERE (${userConditions}) AND ${baseTimeCondition})
 
-      UNION ALL
+      UNION 
 
+      -- ======================= 2. EVENTS ĐƯỢC CHIA SẺ VỚI USER HIỆN TẠI =======================
+      (SELECT
+        'event' AS type,
+        e.event_id AS id,
+        e.title,
+        e.description,
+        e.start_time AS start,
+        e.end_time AS end,
+        e.location,
+        e.is_all_day,
+        e.calendar_type,
+        c.category_name AS category,
+        e.color,
+        NULL AS status,
+        NULL AS priority -- Mặc định là TEXT
+      FROM events e
+      JOIN shared_events se ON e.event_id = se.event_id
+      LEFT JOIN categories c ON e.category_id = c.category_id
+      WHERE se.shared_with_user_id = $1 AND ${baseTimeCondition}
+        AND e.user_id != $1
+      )
+      
+      UNION ALL 
+
+      -- ========================= 3. TASKS CÁ NHÂN =========================
       (SELECT 
         'task' AS type,
         t.task_id AS id,
         t.title,
         t.description,
         t.start_time AS start,
-        COALESCE(t.end_time, t.start_time + INTERVAL '1 hour') AS end,  -- ← SỬA DÒNG NÀY
+        COALESCE(t.end_time, t.start_time + INTERVAL '1 hour') AS end, 
         NULL AS location,
         FALSE AS is_all_day,
-        'Task' AS category,
+        'Work' AS calendar_type, 
+        'Task' AS category, 
         CASE t.priority 
           WHEN 'high' THEN '#ef4444'
           WHEN 'medium' THEN '#f59e0b'
           ELSE '#10b981'
         END AS color,
-        t.status,
-        t.priority
+        t.status::text AS status, 
+        t.priority::text AS priority -- ✨ ĐÃ SỬA: Chuyển đổi priority_enum sang TEXT ✨
       FROM tasks t
-      WHERE t.user_id = $1
-        AND t.start_time >= $2 AND t.start_time <= $3)
-
+      WHERE t.user_id = $1 AND ${taskTimeCondition})
+      
       ORDER BY start ASC
     `;
 
