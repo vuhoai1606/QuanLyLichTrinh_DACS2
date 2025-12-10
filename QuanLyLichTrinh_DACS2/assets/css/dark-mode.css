@@ -1,0 +1,440 @@
+/* ================================================
+   GLOBAL DARK MODE STYLES
+   ================================================ */
+
+/* CSS Variables for Theme */
+:root {
+  /* Light Mode Colors (Default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #adb5bd;
+  --border-color: #dee2e6;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-lg: rgba(0, 0, 0, 0.15);
+  
+  /* Background Gradients */
+  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg-gradient-dark: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  
+  /* Brand Colors */
+  --primary: #4285F4;
+  --primary-hover: #3367D6;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+}
+
+/* Dark Mode Variables */
+body[data-theme="dark"],
+body.dark-mode {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --text-primary: #ffffff !important;
+  --text-secondary: #d1d1d1 !important;
+  --text-muted: #a0a0a0 !important;
+  --border-color: #404040;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-lg: rgba(0, 0, 0, 0.5);
+  --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+/* Light Mode - Ensure good contrast */
+body[data-theme="light"],
+body.light-mode {
+  --text-primary: #1a1a1a !important;
+  --text-secondary: #4a4a4a !important;
+  --text-muted: #6b6b6b !important;
+}
+
+/* Apply theme colors to body and main elements */
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Override animated background for dark mode */
+body.dark-mode::before,
+body[data-theme="dark"]::before {
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(30, 30, 60, 0.6), transparent 55%),
+    radial-gradient(circle at 80% 20%, rgba(60, 30, 50, 0.5), transparent 55%),
+    radial-gradient(circle at 50% 50%, rgba(40, 40, 80, 0.4), transparent 60%) !important;
+}
+
+/* Dashboard and main container */
+.dashboard,
+main {
+  color: var(--text-primary);
+}
+
+/* Headers with gradient text - adjust for dark mode */
+body.dark-mode .dash-header h1,
+body[data-theme="dark"] .dash-header h1,
+body.dark-mode h1,
+body[data-theme="dark"] h1 {
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .dash-header p,
+body[data-theme="dark"] .dash-header p,
+body.dark-mode #greeting-time,
+body[data-theme="dark"] #greeting-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Cards and Containers */
+body.dark-mode .card,
+body.dark-mode .stat-card,
+body.dark-mode .widget,
+body.dark-mode .box,
+body.dark-mode .panel,
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .stat-card,
+body[data-theme="dark"] .widget,
+body[data-theme="dark"] .box,
+body[data-theme="dark"] .panel {
+  background: rgba(45, 45, 45, 0.95) !important;
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Glass effect cards */
+body.dark-mode .glass-card,
+body[data-theme="dark"] .glass-card {
+  background: rgba(45, 45, 45, 0.7) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Inputs and Forms */
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select,
+body.dark-mode .form-control,
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] select,
+body[data-theme="dark"] .form-control {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus,
+body[data-theme="dark"] input:focus,
+body[data-theme="dark"] textarea:focus,
+body[data-theme="dark"] select:focus {
+  background-color: var(--bg-secondary);
+  border-color: var(--primary);
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder,
+body[data-theme="dark"] input::placeholder,
+body[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Buttons */
+body.dark-mode .btn-secondary,
+body.dark-mode .btn-ghost,
+body[data-theme="dark"] .btn-secondary,
+body[data-theme="dark"] .btn-ghost {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+body.dark-mode .btn-secondary:hover,
+body.dark-mode .btn-ghost:hover,
+body[data-theme="dark"] .btn-secondary:hover,
+body[data-theme="dark"] .btn-ghost:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* Tables */
+body.dark-mode table,
+body[data-theme="dark"] table {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+body.dark-mode table thead,
+body[data-theme="dark"] table thead {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+body.dark-mode table tbody tr,
+body[data-theme="dark"] table tbody tr {
+  border-bottom-color: var(--border-color);
+}
+
+body.dark-mode table tbody tr:hover,
+body[data-theme="dark"] table tbody tr:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Modals and Popups */
+body.dark-mode .modal,
+body.dark-mode .popup,
+body.dark-mode .dialog,
+body[data-theme="dark"] .modal,
+body[data-theme="dark"] .popup,
+body[data-theme="dark"] .dialog {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .popup-header,
+body[data-theme="dark"] .modal-header,
+body[data-theme="dark"] .popup-header {
+  border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .modal-footer,
+body.dark-mode .popup-footer,
+body[data-theme="dark"] .modal-footer,
+body[data-theme="dark"] .popup-footer {
+  border-top-color: var(--border-color);
+}
+
+/* Dropdowns */
+body.dark-mode .dropdown-menu,
+body[data-theme="dark"] .dropdown-menu {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+body.dark-mode .dropdown-item,
+body[data-theme="dark"] .dropdown-item {
+  color: var(--text-primary);
+}
+
+body.dark-mode .dropdown-item:hover,
+body[data-theme="dark"] .dropdown-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Sidebar and Navigation */
+body.dark-mode .sidebar,
+body.dark-mode nav,
+body.dark-mode .navbar,
+body.dark-mode header,
+body[data-theme="dark"] .sidebar,
+body[data-theme="dark"] nav,
+body[data-theme="dark"] .navbar,
+body[data-theme="dark"] header {
+  /* background-color: var(--bg-secondary); */
+  border-color: var(--border-color);
+}
+
+body.dark-mode .nav-link,
+body[data-theme="dark"] .nav-link {
+  color: var(--text-secondary);
+}
+
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active,
+body[data-theme="dark"] .nav-link:hover,
+body[data-theme="dark"] .nav-link.active {
+  color: var(--text-primary);
+}
+
+/* Scrollbars (Webkit browsers) */
+body.dark-mode ::-webkit-scrollbar,
+body[data-theme="dark"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track,
+body[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb,
+body[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover,
+body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color);
+}
+
+/* Links */
+body.dark-mode a,
+body[data-theme="dark"] a {
+  /* color: var(--primary); */
+}
+
+body.dark-mode a:hover,
+body[data-theme="dark"] a:hover {
+  color: var(--primary-hover);
+}
+
+/* Text colors - FORCE white text in dark mode */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] h4,
+body[data-theme="dark"] h5,
+body[data-theme="dark"] h6 {
+  color: #ffffff !important;
+}
+
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode div,
+body.dark-mode label,
+body.dark-mode li,
+body[data-theme="dark"] p,
+body[data-theme="dark"] span,
+body[data-theme="dark"] div,
+body[data-theme="dark"] label,
+body[data-theme="dark"] li {
+  color: #ffffff !important;
+}
+
+/* Light mode - FORCE dark text */
+/* body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode h5,
+body.light-mode h6,
+body[data-theme="light"] h1,
+body[data-theme="light"] h2,
+body[data-theme="light"] h3,
+body[data-theme="light"] h4,
+body[data-theme="light"] h5,
+body[data-theme="light"] h6 {
+  color: #1a1a1a !important;
+} */
+
+body.light-mode p,
+body.light-mode span,
+body.light-mode div:not(.card):not(.box),
+body.light-mode label,
+body.light-mode li,
+body[data-theme="light"] p,
+body[data-theme="light"] span,
+body[data-theme="light"] div:not(.card):not(.box),
+body[data-theme="light"] label,
+body[data-theme="light"] li {
+  /* color: #1a1a1a !important; */
+}
+
+/* HR dividers */
+body.dark-mode hr,
+body[data-theme="dark"] hr {
+  border-color: var(--border-color);
+}
+
+/* Smooth transitions for theme changes */
+body,
+body * {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              background 0.3s ease;
+}
+
+/* Disable transitions on buttons and interactive elements to keep them snappy */
+button,
+input,
+select,
+textarea,
+a,
+.btn {
+  transition: all 0.15s ease !important;
+}
+
+
+/* ================================================
+   BỔ SUNG - LIGHT MODE RESET & DARK MODE OVERRIDE
+   ================================================ */
+
+/* --- 1. LIGHT MODE (Mặc định trong :root) --- */
+:root {
+  /* BACKGROUNDS */
+  --bg-primary: #ffffff; /* Nền chính (Card, Modal, etc.) */
+  --bg-secondary: #f9fafb; /* Nền phụ (Body, Sidebar Light) */
+  --bg-tertiary: #f3f4f6; /* Nền tương tác (Hover, Input Background) */
+  --bg-gradient: #f5f7fb; /* Nền Body trong Light Mode (Không dùng gradient) */
+  
+  /* TEXTS */
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  
+  /* BORDERS */
+  --border-color: #e5e7eb;
+  
+  /* SHADOWS (Giữ nguyên, nhưng Dark Mode sẽ ghi đè) */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+  
+  /* GLASS EFFECT (Light Mode) */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
+}
+
+/* --- 2. DARK MODE OVERRIDE --- */
+body[data-theme="dark"],
+body.dark-mode {
+  /* BACKGROUNDS */
+  --bg-primary: #1e293b;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #334155;
+  --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Nền Dark Mode Gradient */
+  
+  /* TEXTS */
+  --text-primary: #ffffff !important;
+  --text-secondary: #e2e8f0 !important;
+  --text-muted: #94a3b8 !important;
+  
+  /* BORDERS */
+  --border-color: #475569;
+  
+  /* SHADOWS */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  
+  /* GLASS EFFECT (Dark Mode) */
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(100, 116, 139, 0.3);
+}
+
+/* Áp dụng các biến lên các thành phần cơ bản trong Light Mode */
+body[data-theme="light"],
+body.light-mode {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Áp dụng các biến lên các thành phần cơ bản trong Dark Mode */
+body[data-theme="dark"],
+body.dark-mode {
+  background: var(--bg-gradient) !important;
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%- include('theme-support') %>
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/kanban.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Kanban Board</title>
+</head>
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <div class="main-content">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <h1>Kanban Board</h1>
+      
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button id="add-column" class="btn btn-primary">
+          <i class="fas fa-plus"></i>
+          <span>Add Column</span>
+        </button>
+        <button id="save-board" class="btn btn-secondary">
+          <i class="fas fa-save"></i>
+          <span>Save Board</span>
+        </button>
+        <button class="btn btn-secondary">
+          <i class="fas fa-download"></i>
+          <span>Export</span>
+        </button>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <input type="date" id="filter-start" placeholder="Start Date">
+        <input type="date" id="filter-end" placeholder="End Date">
+        <button id="apply-filter" class="btn btn-primary">
+          <i class="fas fa-filter"></i>
+          <span>Apply Filter</span>
+        </button>
+        <button id="clear-filter" class="btn btn-clear">
+          <i class="fas fa-times"></i>
+          <span>Clear</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Kanban Container -->
+    <div class="kanban-container">
+      <div class="kanban-board" id="kanban-board">
+        <!-- Columns will be dynamically added here -->
+        <!-- Example column structure:-->
+        <div class="col">
+          <div class="col-header">
+            <h3>Column Title</h3>
+            <span class="col-count">0</span>
+            <i class="fas fa-ellipsis-h col-options"></i>
+          </div>
+          <div class="col-content" data-column="todo">
+            <button class="add-task-btn">
+              <i class="fas fa-plus"></i> Add Task
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Task Detail -->
+  <div id="task-detail-modal" class="modal">
+    <div class="modal-content">
+      <h3>Task Detail</h3>
+      <input type="text" id="task-title" placeholder="Task Title" class="input-field">
+      <textarea id="task-desc" placeholder="Description" class="input-field"></textarea>
+      <input type="date" id="task-due" class="input-field">
+      <select id="task-priority" class="input-field">
+        <option value="">Select Priority</option>
+        <option value="high">🔴 High Priority</option>
+        <option value="medium">🟡 Medium Priority</option>
+        <option value="low">🟢 Low Priority</option>
+      </select>
+      <input type="text" id="task-assignee" placeholder="Assignee Name" class="input-field">
+      <input type="number" id="task-progress" placeholder="Progress (%)" class="input-field" min="0" max="100">
+      <div class="modal-actions">
+        <button id="save-task" class="btn btn-primary">
+          <i class="fas fa-check"></i> Save
+        </button>
+        <button id="delete-task" class="btn btn-danger">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+        <button id="close-detail" class="btn btn-secondary">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Column -->
+  <div id="column-edit-modal" class="modal">
+    <div class="modal-content">
+      <h3>Edit Column</h3>
+      <input type="text" id="column-title" placeholder="Column Title" class="input-field">
+      <input type="color" id="column-color" class="input-field" value="#6366f1">
+      <div class="modal-actions">
+        <button id="save-column" class="btn btn-primary">
+          <i class="fas fa-check"></i> Save
+        </button>
+        <button id="delete-column" class="btn btn-danger">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+        <button id="close-column" class="btn btn-secondary">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/kanban.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</body>
+</html>
