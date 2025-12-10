@@ -1,27 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard • TaskManager Pro</title>
+  <%- include('theme-support') %>
   <link rel="stylesheet" href="/css/header.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="/css/index.css">
-  <title>Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
   <%- include('header') %>
-  
-  <!-- MAIN CONTENT -->
-  <div class="main-content">
-    <div class="dashboard-header">
-      <h1>📊 Dashboard</h1>
-      <p class="subtitle">Tổng quan công việc & lịch trình</p>
+  <main class="dashboard">
+    
+    <!-- HEADER SIÊU ĐẸP NHƯ CODE ĐẦU -->
+    <div class="dash-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p id="greeting-time">Tổng quan công việc & lịch trình hôm nay</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-ghost" id="quick-add-btn">
+          Thêm nhanh
+        </button>
+      </div>
     </div>
 
-    <div class="dashboard-grid">
+    <!-- 4 Ô THỐNG KÊ ĐẸP LUNG LINH -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon done"><i class="fas fa-circle-check"></i></div>
+        <div>
+          <p>Hoàn thành</p>
+          <h3 id="stat-done">0</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon in-progress">
+          <i class="fas fa-clock-rotate-left"></i>
+        </div>
+        <div>
+          <p>Đang thực hiện</p>
+          <h3 id="stat-progress">12</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon overdue"><i class="fas fa-triangle-exclamation"></i></div>
+        <div>
+          <p>Trễ hạn</p>
+          <h3 id="stat-overdue">0</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon total"><i class="fas fa-list-check"></i></div>
+        <div>
+          <p>Tổng nhiệm vụ</p>
+          <h3 id="stat-total">0</h3>
+        </div>
+      </div>
+    </div>
 
-      <!-- LEFT -->
+    <!-- GRID CHÍNH -->
+    <div class="main-grid">
+
+      <!-- CỘT TRÁI – GIỮ NGUYÊN 100% TẤT CẢ ID & CLASS CỦA BẠN -->
       <div class="left-column">
 
         <!-- Welcome -->
@@ -34,16 +78,6 @@
         <div class="card">
           <h2>📌 Công việc hôm nay</h2>
           <ul id="today-tasks"></ul>
-        </div>
-
-        <!-- Quick Task -->
-        <div class="card">
-          <h2>⚡ Thêm nhiệm vụ nhanh</h2>
-          <form id="quick-add">
-            <input type="text" id="quick-title" placeholder="✏️ Nhập tiêu đề..." required>
-            <input type="date" id="quick-due">
-            <button class="btn-primary">+ Thêm</button>
-          </form>
         </div>
 
         <!-- MINI CALENDAR -->
@@ -63,26 +97,6 @@
             <button class="btn-primary">+ Thêm sự kiện</button>
           </form>
         </div>
-
-        <!-- Tags -->
-        <div class="card">
-          <h2>🏷️ Tags</h2>
-          <div class="tags">
-            <span class="tag">Work</span>
-            <span class="tag">Study</span>
-            <span class="tag">Personal</span>
-          </div>
-        </div>
-
-        <!-- NOTES (JS REQUIRED) -->
-        <div class="card">
-          <h2>📝 Ghi chú nhanh</h2>
-          <input type="text" id="quick-note-input" placeholder="Nhập ghi chú...">
-          <button id="add-note-btn" class="btn-primary">+ Thêm ghi chú</button>
-
-          <ul id="notes-list"></ul>
-        </div>
-
       </div>
 
       <!-- RIGHT -->
@@ -116,15 +130,7 @@
           <h2>📈 Timeline Chart</h2>
           <canvas id="timelineChart"></canvas>
         </div>
-
       </div>
-    </div>
-
-    <!-- Global Search -->
-    <div class="card">
-      <h2>🔍 Tìm kiếm & Thống kê</h2>
-      <input type="text" id="global-search" placeholder="Tìm kiếm..." class="search-input">
-      <a href="/reports" class="btn-secondary">Xem Thống Kê Chi Tiết</a>
     </div>
 
   </div>

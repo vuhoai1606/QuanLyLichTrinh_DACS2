@@ -3,6 +3,14 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/authMiddleware');
 const taskService = require('../services/taskService');
 
+// Import admin routes
+const adminRoutes = require('./adminRoutes');
+router.use('/admin', adminRoutes);
+
+// Import message routes
+const messageRoutes = require('./messageRoutes');
+router.use('/api/messages', messageRoutes);
+
 // API endpoints
 // Lấy thống kê tổng quan cho dashboard
 router.get('/api/stats', requireAuth, async (req, res) => {
@@ -91,9 +99,34 @@ router.get('/timeline', requireAuth, (req, res) => {
   res.render('timeline', { active: "timeline" });
 });
 
-// Route hiển thị trang groups
+// Route hiển thị trang messages
+router.get('/messages', requireAuth, async (req, res) => {
+  try {
+    const pool = require('../config/db');
+    const result = await pool.query(
+      'SELECT user_id, username, email, full_name, avatar_url FROM users WHERE user_id = $1',
+      [req.session.userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.redirect('/login');
+    }
+    
+    const user = result.rows[0];
+    
+    res.render('messages', { 
+      active: "messages",
+      user: user
+    });
+  } catch (error) {
+    console.error('Error loading messages page:', error);
+    res.redirect('/');
+  }
+});
+
+// Route cũ giữ lại để redirect
 router.get('/groups', requireAuth, (req, res) => {
-  res.render('groups', { active: "groups" });
+  res.redirect('/messages');
 });
 
 // Route hiển thị trang notifications
@@ -102,14 +135,31 @@ router.get('/notifications', requireAuth, (req, res) => {
 });
 
 // Route hiển thị trang profile
-router.get('/profile', requireAuth, (req, res) => {
-  res.render('profile', { active: "profile" });
+router.get('/profile', requireAuth, async (req, res) => {
+  try {
+    const pool = require('../config/db');
+    const result = await pool.query(
+      'SELECT user_id, username, email, full_name, date_of_birth, avatar_url, gender, phone_number, created_at, updated_at, login_provider, google_id, language, is_2fa_enabled, settings FROM users WHERE user_id = $1',
+      [req.session.userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.redirect('/login');
+    }
+    
+    const user = result.rows[0];
+    
+    res.render('profile', { 
+      active: "profile",
+      user: user
+    });
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    res.status(500).send('Có lỗi xảy ra khi tải trang hồ sơ');
+  }
 });
 
-// Route hiển thị trang settings
-router.get('/settings', requireAuth, (req, res) => {
-  res.render('settings', { active: "settings" });
-});
+// Settings route removed - now using popup (settings-popup.ejs)
 
 // Route hiển thị trang reports
 router.get('/reports', requireAuth, (req, res) => {

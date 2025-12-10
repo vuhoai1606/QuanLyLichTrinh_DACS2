@@ -32,6 +32,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===================================================================
+    // USERNAME VALIDATION - Real-time feedback
+    // ===================================================================
+    const reqUsernameLength = document.getElementById('req-username-length');
+    const reqUsernameValid = document.getElementById('req-username-valid');
+    const reqUsernameNoSpace = document.getElementById('req-username-no-space');
+
+    usernameInput.addEventListener('input', () => {
+        const username = usernameInput.value;
+        
+        // Check length (at least 6 characters)
+        if (username.length >= 6) {
+            reqUsernameLength.style.color = '#22c55e';
+            reqUsernameLength.querySelector('i').className = 'fas fa-check-circle';
+        } else {
+            reqUsernameLength.style.color = '#94a3b8';
+            reqUsernameLength.querySelector('i').className = 'fas fa-circle';
+        }
+
+        // Check valid characters (only letters, numbers, underscore)
+        if (/^[a-zA-Z0-9_]*$/.test(username)) {
+            reqUsernameValid.style.color = '#22c55e';
+            reqUsernameValid.querySelector('i').className = 'fas fa-check-circle';
+        } else {
+            reqUsernameValid.style.color = '#94a3b8';
+            reqUsernameValid.querySelector('i').className = 'fas fa-circle';
+        }
+
+        // Check no spaces
+        if (username.length > 0 && !/\s/.test(username)) {
+            reqUsernameNoSpace.style.color = '#22c55e';
+            reqUsernameNoSpace.querySelector('i').className = 'fas fa-check-circle';
+        } else {
+            reqUsernameNoSpace.style.color = '#94a3b8';
+            reqUsernameNoSpace.querySelector('i').className = 'fas fa-circle';
+        }
+    });
+
+    // ===================================================================
     // PASSWORD VALIDATION - Real-time feedback
     // ===================================================================
     const reqLength = document.getElementById('req-length');
@@ -97,12 +135,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value;
         const dateOfBirth = dobInput.value;
         const captcha = captchaInput.value.trim();
+        const genderInput = document.querySelector('input[name="gender"]:checked');
+        const gender = genderInput ? genderInput.value : '';
+        const phoneInput = document.getElementById('register-phone');
+        const phoneNumber = phoneInput ? phoneInput.value.trim() : '';
 
         // Frontend validation
         let hasError = false;
 
         if (!username) {
             usernameError.textContent = 'Vui lòng nhập tên đăng nhập';
+            hasError = true;
+        } else if (username.length < 6) {
+            usernameError.textContent = 'Tên đăng nhập phải có ít nhất 6 ký tự';
+            hasError = true;
+        } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            usernameError.textContent = 'Tên đăng nhập chỉ chứa chữ, số và gạch dưới';
+            hasError = true;
+        } else if (/\s/.test(username)) {
+            usernameError.textContent = 'Tên đăng nhập không được chứa khoảng trắng';
             hasError = true;
         }
 
@@ -133,6 +184,15 @@ document.addEventListener('DOMContentLoaded', () => {
             hasError = true;
         }
 
+        // Validate phone number if provided (optional but must be 10 digits if entered)
+        if (phoneNumber && !/^[0-9]{10}$/.test(phoneNumber)) {
+            const phoneError = document.getElementById('phone-error');
+            if (phoneError) {
+                phoneError.textContent = 'Số điện thoại phải đúng 10 chữ số';
+                hasError = true;
+            }
+        }
+
         if (!captcha) {
             captchaError.textContent = 'Vui lòng nhập mã xác thực';
             hasError = true;
@@ -159,6 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     email,
                     password,
                     dateOfBirth,
+                    gender,
+                    phoneNumber,
                     captcha
                 })
             });
@@ -173,25 +235,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     fullName,
                     email,
                     password,
-                    dateOfBirth
+                    dateOfBirth,
+                    gender,
+                    phoneNumber
                 }));
 
                 // Chuyển đến trang nhập OTP
                 alert('✅ Mã OTP đã được gửi đến email của bạn!');
                 window.location.href = '/verify-otp';
             } else {
-                // Hiển thị lỗi
-                if (data.message.includes('Username')) {
-                    usernameError.textContent = data.message;
-                } else if (data.message.includes('Email')) {
-                    emailError.textContent = data.message;
-                } else if (data.message.includes('Captcha') || data.message.includes('captcha')) {
-                    captchaError.textContent = data.message;
+                // Hiển thị lỗi chi tiết
+                const msg = data.message || 'Có lỗi xảy ra';
+                
+                if (msg.includes('Tên đăng nhập') || msg.includes('username')) {
+                    usernameError.textContent = msg;
+                } else if (msg.includes('Mật khẩu') || msg.includes('password')) {
+                    passwordError.textContent = msg;
+                } else if (msg.includes('Email') || msg.includes('email')) {
+                    emailError.textContent = msg;
+                } else if (msg.includes('Số điện thoại') || msg.includes('phone')) {
+                    const phoneError = document.getElementById('phone-error');
+                    if (phoneError) phoneError.textContent = msg;
+                } else if (msg.includes('Họ tên') || msg.includes('fullname')) {
+                    fullNameError.textContent = msg;
+                } else if (msg.includes('Captcha') || msg.includes('captcha') || msg.includes('Mã xác thực')) {
+                    captchaError.textContent = msg;
                     // Reload captcha
                     captchaImage.src = '/api/captcha?' + Date.now();
                     captchaInput.value = '';
                 } else {
-                    alert('❌ ' + data.message);
+                    // Lỗi chung - hiển thị ở captcha error (cuối form)
+                    captchaError.textContent = msg;
                 }
             }
         } catch (error) {

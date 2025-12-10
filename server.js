@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
 require('dotenv').config();
@@ -13,6 +14,13 @@ const authRoutes = require('./routes/authRoutes');
 const indexRoutes = require('./routes/index');
 const taskRoutes = require('./routes/taskRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const calendarRoutes = require('./routes/calendarRoutes');
+const kanbanRoutes = require('./routes/kanbanRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const timelineRoutes = require('./routes/timelineRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+
 
 // Import middleware
 const { setUserLocals } = require('./middleware/authMiddleware');
@@ -31,15 +39,21 @@ app.use(express.json({ limit: '1mb' })); // Giới hạn request size
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
-// Config session - Tối ưu
+// Config session với PostgreSQL Store
 app.use(session({
+  store: new pgSession({
+    pool: pool, // Dùng PostgreSQL pool có sẵn
+    tableName: 'user_sessions', // Tên bảng lưu session
+    createTableIfMissing: true // Tự động tạo bảng nếu chưa có
+  }),
   secret: process.env.JWT_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 24 * 60 * 60 * 1000, // 24 giờ
+    maxAge: 24 * 60 * 60 * 1000, // 24 giờ (sẽ đổi thành 30 ngày nếu Remember Me)
     httpOnly: true,
-    secure: false
+    secure: false, // TODO: true khi deploy HTTPS
+    sameSite: 'strict' // Chống CSRF
   },
   rolling: true, // Gia hạn session mỗi request
   name: 'sessionId' // Đổi tên cookie mặc định
@@ -54,6 +68,18 @@ app.use(express.static(path.join(__dirname, 'assets'), {
   maxAge: '1d', // Cache static files 1 ngày
   etag: true,
   lastModified: true
+}));
+
+// Serve uploads folder (avatars + messages)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '7d', // Cache files 7 ngày
+  etag: true
+}));
+
+// Serve locales folder (translation files)
+app.use('/locales', express.static(path.join(__dirname, 'assets', 'locales'), {
+  maxAge: '1d',
+  etag: true
 }));
 
 // Middleware thêm thông tin user vào views
@@ -82,9 +108,28 @@ app.use('/', authRoutes);
 app.use('/', indexRoutes);
 app.use('/', taskRoutes);
 app.use('/', eventRoutes);
+app.use('/api/calendar', calendarRoutes);
+app.use('/', kanbanRoutes);
+app.use('/', notificationRoutes);
+app.use('/', timelineRoutes);
+app.use('/', reportRoutes);
+app.use('/api/profile', profileRoutes);
 
+// 404 handler
 app.use((req, res, next) => {
   res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
+});
+
+// Error handler (đơn giản hóa, không dùng view)
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  
+  console.error('Server error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Lỗi server',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
 });
 
 // Start server

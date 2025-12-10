@@ -20,11 +20,10 @@
 }
 
 /* Reset & Base */
-*,
-*::before,
-*::after {
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 html, body {
@@ -91,7 +90,6 @@ body {
   align-items: center;
   gap: 20px;
   position: sticky;
-  top: 10px;
   z-index: 100;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
@@ -250,35 +248,36 @@ body {
 }
 
 .col {
-  min-width: 320px;
-  background: rgba(241, 245, 249, 0.8);
-  backdrop-filter: blur(10px);
+  min-width: 350px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   transition: var(--transition);
+  height: fit-content;
 }
 
 .col:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4 px);
 }
 
 .col-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   padding-bottom: 12px;
-  border-bottom: 3px solid var(--primary-light);
+  border-bottom: 2px solid var(--border);
   position: relative;
 }
 
 .col-header::after {
-  content: '';
+  content: none;
   position: absolute;
   bottom: -3px;
   left: 0;
@@ -289,8 +288,8 @@ body {
 }
 
 .col-header h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--text);
   letter-spacing: -0.3px;
   display: flex;
@@ -659,5 +658,131 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* =========================== BỔ SUNG CHO KANBAN.JS HOẠT ĐỘNG HOÀN HẢO =========================== */
+
+/* Task Card trong cột */
+.task-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  cursor: grab;
+  transition: var(--transition);
+  border-left: 4px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-left-color: var(--primary);
+}
+
+.task-card:active {
+  cursor: grabbing;
+}
+
+.task-card.dragging {
+  opacity: 0.6;
+  transform: rotate(3deg) scale(0.98);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Tiêu đề task */
+.task-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* Mô tả task */
+.task-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+/* Meta (ngày + priority) */
+.task-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Priority Badge */
+.priority {
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.priority.high { background: #ef4444; }
+.priority.medium { background: #f59e0b; }
+.priority.low { background: #10b981; }
+
+/* Nút Add Task */
+.add-task-btn {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
+  border: 2px dashed var(--border);
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.add-task-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  border-style: solid;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Hiệu ứng khi kéo thả (SortableJS) */
+.sortable-ghost {
+  opacity: 0.4;
+  background: #e0e7ff;
+}
+
+.sortable-chosen {
+  background: #c7d2fe;
+}
+
+/* Loading & Error */
+.loading, .error {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 1.1em;
+}
+
+.error {
+  color: var(--danger);
+}
+
+/* Responsive cho task card */
+@media (max-width: 768px) {
+  .task-card {
+    padding: 14px;
+  }
+  .task-title {
+    font-size: 1rem;
   }
 }

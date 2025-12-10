@@ -39,6 +39,23 @@ router.get('/verify-otp', (req, res) => {
 });
 
 // ============================================
+// FORGOT PASSWORD FLOW
+// ============================================
+// Trang quên mật khẩu
+router.get('/forgot-password', requireGuest, (req, res) => {
+  res.render('forgot');
+});
+
+// BƯỚC 1: Verify username + email và gửi OTP
+router.post('/api/auth/forgot-password/verify', authController.forgotPasswordVerify);
+
+// BƯỚC 2: Verify OTP
+router.post('/api/auth/forgot-password/verify-otp', authController.forgotPasswordVerifyOTP);
+
+// BƯỚC 3: Reset password
+router.post('/api/auth/forgot-password/reset', authController.forgotPasswordReset);
+
+// ============================================
 // CAPTCHA - Tạo captcha SVG
 // ============================================
 router.get('/api/captcha', authController.generateCaptcha);

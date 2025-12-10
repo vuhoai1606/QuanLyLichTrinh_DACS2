@@ -4,19 +4,6 @@
 // Tất cả logic xử lý file, báo cáo, chia sẻ → nằm ở backend
 // ===================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Load header (giữ lại vì trang này vẫn dùng header)
-  fetch('header.ejs')
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById('header-placeholder')?.insertAdjacentHTML('beforeend', html);
-    })
-    .catch(err => console.error('Header load error:', err));
-
-  setupEventListeners();
-  console.log('Export-Import page loaded - Ready to connect with API');
-});
-
 // ===================================================================
 // SETUP TẤT CẢ EVENT LISTENERS
 // ===================================================================

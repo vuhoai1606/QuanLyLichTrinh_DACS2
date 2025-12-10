@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages - QuanLyLichTrinh</title>
+  <%- include('theme-support') %>
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/messages.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <div class="messages-container">
+    <!-- Sidebar: Search + Conversations -->
+    <div class="messages-sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-comments"></i> Messages</h2>
+      </div>
+
+      <!-- Search Box -->
+      <div class="search-box">
+        <div class="search-input-wrapper">
+          <i class="fas fa-search"></i>
+          <input 
+            type="text" 
+            id="search-users" 
+            class="search-input" 
+            placeholder="Tìm theo tên hoặc email..."
+            autocomplete="off"
+          >
+          <button id="clear-search" class="clear-search-btn hidden">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div id="search-results" class="search-results hidden"></div>
+      </div>
+
+      <!-- Conversations List -->
+      <div class="conversations-section">
+        <div class="section-title">
+          <span>Đoạn chat gần đây</span>
+          <span id="unread-badge" class="unread-badge hidden">0</span>
+        </div>
+        <ul id="conversations-list" class="conversations-list">
+          <!-- Conversations will be populated by JS -->
+          <li class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>Chưa có cuộc trò chuyện nào</p>
+            <small>Tìm kiếm người dùng để bắt đầu chat</small>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="chat-area">
+      <!-- Empty State -->
+      <div class="chat-empty-state">
+        <div class="empty-content">
+          <i class="fas fa-comments"></i>
+          <h2>Chào mừng đến Messages</h2>
+          <p>Chọn một cuộc trò chuyện hoặc tìm kiếm người dùng để bắt đầu nhắn tin</p>
+        </div>
+      </div>
+
+      <!-- Chat Content (hidden by default) -->
+      <div class="chat-content hidden">
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <img id="chat-avatar" class="chat-avatar" src="" alt="">
+            <div class="chat-details">
+              <h3 id="chat-name">Người dùng</h3>
+              <span id="chat-status" class="chat-status">Offline</span>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <button class="action-btn" title="Tìm kiếm trong chat">
+              <i class="fas fa-search"></i>
+            </button>
+            <button class="action-btn" title="Tùy chọn">
+              <i class="fas fa-ellipsis-v"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="chat-messages" id="chat-messages">
+          <!-- Messages will be populated by JS -->
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-area">
+          <!-- Input file ẩn -->
+          <input type="file" id="file-input" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" style="display:none;">
+
+          <!-- Các nút công cụ bên trái -->
+          <div class="input-tools">
+            <button type="button" id="attach-btn" class="input-tool-btn" title="Đính kèm file">
+              <i class="fas fa-paperclip"></i>
+            </button>
+            <!-- Nút mở emoji + picker thật (dùng API) -->
+            <button type="button" id="emoji-btn" class="input-tool-btn" title="Chèn emoji">
+              <i class="far fa-smile"></i>
+            </button>
+
+            <!-- Picker thật – đẹp như Zalo/FB -->
+            <emoji-picker id="emoji-picker" class="hidden"></emoji-picker>
+            <button type="button" id="voice-btn" class="input-tool-btn" title="Ghi âm (sắp có)">
+              <i class="fas fa-microphone"></i>
+            </button>
+          </div>
+
+          <!-- Ô nhập tin nhắn -->
+          <div class="input-wrapper">
+            <textarea 
+              id="message-input" 
+              class="message-input" 
+              placeholder="Nhập tin nhắn..." 
+              rows="1"
+              autocomplete="off"
+            ></textarea>
+          </div>
+
+          <!-- Nút gửi -->
+          <button type="button" id="send-btn" class="send-btn" title="Gửi tin nhắn (Enter)">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <% if (user) { %>
+    <script>
+      window.currentUserId = <%= user.user_id %>;
+      window.currentUser = {
+        id: <%= user.user_id %>,
+        name: '<%= user.full_name %>',
+        username: '<%= user.username %>',
+        email: '<%= user.email %>',
+        avatar: '<%= user.avatar_url || "" %>'
+      };
+    </script>
+  <% } %>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/messages.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.min.js"></script>
+</body>
+</html>

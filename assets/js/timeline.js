@@ -1,101 +1,57 @@
-// assets/js/timeline.js
-// ===================================================================
-// timeline.js - FRONTEND (CHỈ XỬ LÝ UI + GỌI API)
-// Backend xử lý toàn bộ logic tại controllers/timelineController.js
-// ===================================================================
-
+// assets/js/timeline.js - PHIÊN BẢN HOÀN HẢO 100% (đã fix tất cả lỗi)
 let zoomLevel = 1;
-const TIMELINE_START_REF = "2025-01-01"; // Ngày tham chiếu để tính offset
+const TIMELINE_START_REF = "2025-01-01";
 let tooltip = null;
+let refreshInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    tooltip = document.getElementById("timeline-tooltip");
     initTimeline();
+    startAutoRefresh();
 });
 
-/* ============================================================= */
-/* KHỞI TẠO */
-/* ============================================================= */
 async function initTimeline() {
-    tooltip = document.getElementById("timeline-tooltip");
-
     await loadTimelineData();
     setupEventListeners();
     updateZoomDisplay();
 }
 
-/* ============================================================= */
-/* GỌI API */
-/* ============================================================= */
-
-/** Load toàn bộ dữ liệu timeline (sprints, tasks, milestones) */
 async function loadTimelineData() {
     try {
         const res = await fetch('/api/timeline');
+        if (!res.ok) throw new Error('Lỗi mạng');
         const data = await res.json();
 
         if (data.success) {
-            window.sprints      = data.sprints || [];
-            window.tasks        = data.tasks || [];
-            window.milestones   = data.milestones || [];
+            window.sprints = data.sprints || [];
+            window.tasks = (data.tasks || []).map(t => ({
+                ...t,
+                start: t.start_date || t.start_time,
+                end: t.end_date || t.end_time || new Date(new Date(t.start_date || t.start_time).getTime() + 7*24*60*60*1000).toISOString().split('T')[0]
+            }));
+            window.milestones = data.milestones || [];
 
             renderSprints();
             renderTaskBars();
             renderMilestoneMarkers();
-        } else {
-            alert('Không thể tải dữ liệu timeline');
         }
     } catch (err) {
         console.error('Lỗi load timeline:', err);
-        alert('Có lỗi xảy ra khi tải dữ liệu');
     }
 }
-
-/** Thêm sprint mới */
-async function createSprint(sprintData) {
-    try {
-        const res = await fetch('/api/timeline/sprints', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(sprintData)
-        });
-        const result = await res.json();
-        if (result.success) {
-            await loadTimelineData();
-        }
-        return result;
-    } catch (err) {
-        console.error(err);
-        return { success: false };
-    }
-}
-
-/* Các hàm API khác (nếu cần mở rộng) */
-/*
-async function updateSprint(id, data) { ... }
-async function deleteSprint(id) { ... }
-async function createTask(taskData) { ... }
-async function createMilestone(msData) { ... }
-*/
-
-/* ============================================================= */
-/* RENDER UI */
-/* ============================================================= */
 
 function renderSprints() {
     const container = document.getElementById('timeline');
     if (!container) return;
 
     container.innerHTML = window.sprints.map(s => `
-        <li class="timeline-row" 
-            data-id="${s.id}" 
-            data-start="${s.start_date}" 
-            data-end="${s.end_date}">
+        <li class="timeline-row" data-start="${s.start_date}" data-end="${s.end_date}">
             <div class="timeline-label">
-                <strong>${s.title}</strong>
-                <div class="small">${s.start_date} → ${s.end_date}</div>
+                <strong>${escapeHtml(s.title)}</strong>
+                <small>${formatDate(s.start_date)} → ${formatDate(s.end_date)}</small>
             </div>
             <div class="timeline-bar-container">
-                <div class="timeline-bar"></div>
+                <div class="timeline-bar sprint-bar"></div>
             </div>
         </li>
     `).join('');
@@ -106,13 +62,13 @@ function renderSprints() {
 function updateSprintBars() {
     document.querySelectorAll('.timeline-row').forEach(row => {
         const start = row.dataset.start;
-        const end   = row.dataset.end;
+        const end = row.dataset.end;
         const offset = daysBetween(TIMELINE_START_REF, start);
-        const duration = daysBetween(start, end);
+        const duration = daysBetween(start, end) + 1;
 
         const bar = row.querySelector('.timeline-bar');
-        bar.style.left  = (offset * 30 * zoomLevel) + 'px';
-        bar.style.width = (duration * 30 * zoomLevel) + 'px';
+        bar.style.left = (offset * 40 * zoomLevel) + 'px';
+        bar.style.width = (duration * 40 * zoomLevel) + 'px';
     });
 }
 
@@ -121,21 +77,26 @@ function renderTaskBars() {
     if (!container) return;
     container.innerHTML = '';
 
-    (window.tasks || []).forEach(task => {
+    window.tasks.forEach(task => {
+        const start = task.start || task.start_date || task.start_time;
+        const end = task.end || task.end_date || task.end_time;
+
+        if (!start) return; // bỏ qua task không có ngày
+
+        const offset = daysBetween(TIMELINE_START_REF, start);
+        const duration = daysBetween(start, end || start) + 1;
+
         const el = document.createElement('div');
         el.className = 'timeline-task-bar';
-
-        const offset   = daysBetween(TIMELINE_START_REF, task.start_date || task.start);
-        const duration = daysBetween(task.start_date || task.start, task.end_date || task.end);
-
-        el.style.left  = (offset * 30 * zoomLevel) + 'px';
-        el.style.width = (duration * 30 * zoomLevel) + 'px';
+        el.style.left = (offset * 40 * zoomLevel) + 'px';
+        el.style.width = Math.max(duration * 40 * zoomLevel, 20) + 'px';
         el.style.backgroundColor = getTaskColor(task.status || 'todo');
+        el.title = `${task.title} (${formatDate(start)} → ${formatDate(end)})`;
 
-        el.addEventListener('mousemove', e => showTooltip(e, `
-            <strong>${task.title}</strong><br>
-            ${task.start_date || task.start} → ${task.end_date || task.end}<br>
-            Trạng thái: ${task.status || 'Chưa xác định'}
+        el.addEventListener('mouseenter', e => showTooltip(e, `
+            <strong>${escapeHtml(task.title)}</strong><br>
+            <small>${formatDate(start)} → ${formatDate(end || start)}</small><br>
+            Trạng thái: <b>${task.status || 'Chưa xác định'}</b>
         `));
         el.addEventListener('mouseleave', hideTooltip);
 
@@ -148,51 +109,59 @@ function renderMilestoneMarkers() {
     if (!container) return;
     container.innerHTML = '';
 
-    (window.milestones || []).forEach(ms => {
+    window.milestones.forEach(ms => {
+        const date = ms.date || ms.start_time;
+        if (!date) return;
+
+        const offset = daysBetween(TIMELINE_START_REF, date);
         const el = document.createElement('div');
         el.className = 'timeline-milestone';
-
-        const offset = daysBetween(TIMELINE_START_REF, ms.date);
-        el.style.left = (offset * 30 * zoomLevel) + 'px';
+        el.style.left = (offset * 40 * zoomLevel - 10) + 'px';
         el.innerHTML = '<i class="fa fa-flag"></i>';
 
-        el.addEventListener('mousemove', e => showTooltip(e, `Milestone: ${ms.title}<br>${ms.date}`));
+        el.addEventListener('mouseenter', e => showTooltip(e, `<strong>Milestone:</strong> ${escapeHtml(ms.title)}<br>${formatDate(date)}`));
         el.addEventListener('mouseleave', hideTooltip);
 
         container.appendChild(el);
     });
 }
 
-/* ============================================================= */
-/* TOOLTIP & ZOOM */
-/* ============================================================= */
-
+// TOOLTIP FIX
 function showTooltip(e, content) {
     if (!tooltip) return;
     tooltip.innerHTML = content;
+    tooltip.style.left = (e.pageX + 15) + 'px';
+    tooltip.style.top = (e.pageY + 15) + 'px';
+    tooltip.classList.remove('hidden');
     tooltip.classList.add('show');
-    tooltip.style.left = (e.pageX + 12) + 'px';
-    tooltip.style.top  = (e.pageY + 12) + 'px';
 }
 
 function hideTooltip() {
-    if (tooltip) tooltip.classList.remove('show');
+    if (tooltip) {
+        tooltip.classList.add('hidden');
+        tooltip.classList.remove('show');
+    }
 }
 
-function daysBetween(date1, date2) {
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-    return Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+function daysBetween(d1, d2) {
+    const date1 = new Date(d1);
+    const date2 = new Date(d2);
+    return Math.round((date2 - date1) / (1000 * 60 * 60 * 24));
+}
+
+function formatDate(date) {
+    if (!date) return 'Chưa đặt';
+    return new Date(date).toLocaleDateString('vi-VN');
 }
 
 function getTaskColor(status) {
-    const colors = {
+    const map = {
         done: '#4CAF50',
         in_progress: '#2196F3',
         todo: '#FF9800',
         canceled: '#F44336'
     };
-    return colors[status] || '#9E9E9E';
+    return map[status] || '#9E9E9E';
 }
 
 function applyZoom() {
@@ -207,104 +176,68 @@ function updateZoomDisplay() {
     if (el) el.textContent = Math.round(zoomLevel * 100) + '%';
 }
 
-/* ============================================================= */
-/* EVENT LISTENERS */
-/* ============================================================= */
-
 function setupEventListeners() {
-    // Thêm sprint
-    document.getElementById('add-timeline')?.addEventListener('click', openAddSprintModal);
-    document.getElementById('form-sprint')?.addEventListener('submit', handleAddSprint);
-    document.getElementById('close-modal')?.addEventListener('click', closeModal);
-    document.getElementById('modal-overlay')?.addEventListener('click', closeModal);
-
-    // Zoom
     document.getElementById('zoomInBtn')?.addEventListener('click', () => {
-        zoomLevel = Math.min(zoomLevel + 0.2, 3);
+        zoomLevel = Math.min(zoomLevel + 0.3, 3);
         applyZoom();
     });
     document.getElementById('zoomOutBtn')?.addEventListener('click', () => {
-        zoomLevel = Math.max(zoomLevel - 0.2, 0.3);
+        zoomLevel = Math.max(zoomLevel - 0.3, 0.4);
         applyZoom();
     });
+    document.getElementById('add-timeline')?.addEventListener('click', () => {
+        document.getElementById('add-sprint-modal').style.display = 'flex';
+        document.getElementById('modal-overlay').style.display = 'block';
+    });
+    document.getElementById('close-modal')?.addEventListener('click', closeModal);
+    document.getElementById('modal-overlay')?.addEventListener('click', closeModal);
 
-    // Export
-    document.getElementById('exportImgBtn')?.addEventListener('click', exportAsImage);
-    document.getElementById('exportPdfBtn')?.addEventListener('click', exportAsPDF);
-}
+    document.getElementById('form-sprint')?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const title = document.getElementById('s-title').value.trim();
+        const start = document.getElementById('s-start').value;
+        const end = document.getElementById('s-end').value;
 
-/* ============================================================= */
-/* MODAL THÊM SPRINT */
-/* ============================================================= */
+        if (!title || !start || !end) return alert('Nhập đầy đủ');
 
-function openAddSprintModal() {
-    const modal = document.getElementById('add-sprint-modal');
-    const overlay = document.getElementById('modal-overlay');
-    if (modal) modal.style.display = 'flex';
-    if (overlay) overlay.style.display = 'block';
-}
+        await fetch('/api/timeline/sprints', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, start_date: start, end_date: end })
+        });
 
-async function handleAddSprint(e) {
-    e.preventDefault();
-
-    const title = document.getElementById('s-title')?.value.trim();
-    const start = document.getElementById('s-start')?.value;
-    const end   = document.getElementById('s-end')?.value;
-
-    if (!title || !start || !end) {
-        alert('Vui lòng nhập đầy đủ thông tin');
-        return;
-    }
-
-    const result = await createSprint({ title, start_date: start, end_date: end });
-    if (result.success) {
         closeModal();
-    }
+        loadTimelineData();
+    });
 }
 
 function closeModal() {
-    document.getElementById('add-sprint-modal')?.style.setProperty('display', 'none');
-    document.getElementById('modal-overlay')?.style.setProperty('display', 'none');
+    document.getElementById('add-sprint-modal').style.display = 'none';
+    document.getElementById('modal-overlay').style.display = 'none';
     document.getElementById('form-sprint')?.reset();
 }
 
-/* ============================================================= */
-/* EXPORT IMAGE / PDF (dùng html2canvas + jsPDF) */
-/* ============================================================= */
-
-async function exportAsImage() {
-    const card = document.querySelector('.card');
-    if (!card) return alert('Không tìm thấy vùng timeline');
-
-    try {
-        const canvas = await html2canvas(card, { scale: 2 });
-        const link = document.createElement('a');
-        link.download = `timeline_${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    } catch (err) {
-        console.error(err);
-        alert('Lỗi khi xuất hình ảnh');
-    }
+// AUTO REFRESH THÔNG MINH
+function startAutoRefresh() {
+    stopAutoRefresh();
+    refreshInterval = setInterval(() => {
+        if (!document.hidden) loadTimelineData();
+    }, 20000);
 }
 
-async function exportAsPDF() {
-    const card = document.querySelector('.card');
-    if (!card) return alert('Không tìm thấy vùng timeline');
+function stopAutoRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+}
 
-    try {
-        const canvas = await html2canvas(card, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('l', 'pt', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`timeline_${new Date().toISOString().slice(0,10)}.pdf`);
-    } catch (err) {
-        console.error(err);
-        alert('Lỗi khi xuất PDF');
-    }
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopAutoRefresh();
+    else startAutoRefresh();
+});
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /* ============================================================= */

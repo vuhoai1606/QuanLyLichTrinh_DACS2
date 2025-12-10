@@ -24,6 +24,7 @@ async function seedUsers() {
         email: 'admin@example.com',
         fullName: 'Administrator',
         dateOfBirth: '1990-01-01',
+        role: 'admin'
       },
       {
         username: 'user1',
@@ -31,6 +32,7 @@ async function seedUsers() {
         email: 'user1@example.com',
         fullName: 'Nguyễn Văn A',
         dateOfBirth: '2000-05-15',
+        role: 'user'
       },
       {
         username: 'user2',
@@ -38,6 +40,7 @@ async function seedUsers() {
         email: 'user2@example.com',
         fullName: 'Trần Thị B',
         dateOfBirth: '1998-08-20',
+        role: 'user'
       },
     ];
 
@@ -57,9 +60,10 @@ async function seedUsers() {
             full_name, 
             date_of_birth,
             is_email_verified,
-            login_provider
+            login_provider,
+            role
           )
-          VALUES ($1, $2, $3, $4, $5, TRUE, 'local')
+          VALUES ($1, $2, $3, $4, $5, TRUE, 'local', $6)
           ON CONFLICT (username) DO NOTHING
           RETURNING user_id, username`,
           [
@@ -68,6 +72,7 @@ async function seedUsers() {
             user.email,
             user.fullName,
             user.dateOfBirth,
+            user.role
           ]
         );
 
@@ -75,7 +80,8 @@ async function seedUsers() {
           console.log(`✅ Đã tạo user: ${user.username}`);
           console.log(`   📧 Email: ${user.email}`);
           console.log(`   🔑 Password: ${user.password}`);
-          console.log(`   👤 ID: ${result.rows[0].user_id}\n`);
+          console.log(`   👤 Role: ${user.role}`);
+          console.log(`   🆔  ID: ${result.rows[0].user_id}\n`);
         } else {
           console.log(`⚠️  User ${user.username} đã tồn tại, bỏ qua\n`);
         }

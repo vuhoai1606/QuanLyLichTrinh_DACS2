@@ -13,7 +13,7 @@ const svgCaptcha = require('svg-captcha');
  */
 exports.initiateRegistration = async (req, res) => {
   try {
-    const { username, password, email, fullName, dateOfBirth, captcha } = req.body;
+    const { username, password, email, fullName, dateOfBirth, gender, phoneNumber, captcha } = req.body;
 
     // Kiểm tra captcha
     if (!req.session.captcha || !captcha || req.session.captcha.toLowerCase() !== captcha.toLowerCase()) {
@@ -25,13 +25,15 @@ exports.initiateRegistration = async (req, res) => {
 
     delete req.session.captcha;
 
-    // Gọi service để gửi OTP
-    const result = await authService.initiateRegistration({
+    // Gọi service để gửi OTP (truyền req để lưu vào session)
+    const result = await authService.initiateRegistration(req, {
       username,
       password,
       email,
       fullName,
       dateOfBirth,
+      gender,
+      phoneNumber,
     });
 
     // Lưu thông tin tạm vào session
@@ -41,6 +43,8 @@ exports.initiateRegistration = async (req, res) => {
       email,
       fullName,
       dateOfBirth,
+      gender,
+      phoneNumber,
     };
 
     res.json(result);
@@ -68,12 +72,14 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    const result = await authService.completeRegistration(pendingReg, otpCode);
+    // Verify OTP từ session thay vì database
+    const result = await authService.completeRegistration(req, pendingReg, otpCode);
 
     // Tự động đăng nhập
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
+    req.session.role = result.user.role || 'user'; // Lưu role
 
     delete req.session.pendingRegistration;
 
@@ -109,7 +115,8 @@ exports.resendOTP = async (req, res) => {
       });
     }
 
-    const result = await authService.resendOTP(pendingReg.email);
+    // Gửi lại OTP qua session
+    const result = await authService.resendOTP(req, pendingReg.email, pendingReg.fullName);
     res.json(result);
   } catch (error) {
     console.error('Lỗi resend OTP:', error);
@@ -146,6 +153,7 @@ exports.login = async (req, res) => {
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
+    req.session.role = result.user.role || 'user'; // Lưu role
 
     // Xử lý "Ghi nhớ đăng nhập"
     if (rememberMe) {
@@ -155,6 +163,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       message: 'Đăng nhập thành công!',
+      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/', // Admin redirect về dashboard
       user: {
         userId: result.user.user_id,
         username: result.user.username,
@@ -205,13 +214,16 @@ exports.googleLogin = async (req, res) => {
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
+    req.session.email = result.user.email;
+    req.session.avatar = result.user.avatar_url; // Lưu avatar Google
+    req.session.role = result.user.role || 'user'; // Lưu role
 
     console.log('✅ Session saved. Sending response...');
 
     res.json({
       success: true,
       message: result.isNewUser ? 'Đăng ký thành công!' : 'Đăng nhập thành công!',
-      redirectUrl: '/',
+      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/', // Admin redirect về dashboard
       user: {
         userId: result.user.user_id,
         username: result.user.username,
@@ -346,4 +358,198 @@ exports.showVerifyOTPPage = (req, res) => {
     title: 'Xác thực OTP',
     email: req.session.pendingRegistration.email,
   });
+};
+
+/**
+ * ========================================
+ * FORGOT PASSWORD FLOW
+ * ========================================
+ */
+
+/**
+ * BƯỚC 1: Verify username + email và gửi OTP
+ */
+exports.forgotPasswordVerify = async (req, res) => {
+  try {
+    const { username, email } = req.body;
+    
+    if (!username || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập đầy đủ tên đăng nhập và email'
+      });
+    }
+    
+    const pool = require('../config/db');
+    const crypto = require('crypto');
+    const emailService = require('../services/emailService');
+    
+    // Kiểm tra username và email có khớp không
+    const result = await pool.query(
+      'SELECT user_id, username, email, full_name FROM users WHERE username = $1 AND email = $2',
+      [username, email]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tên đăng nhập hoặc email không đúng'
+      });
+    }
+    
+    const user = result.rows[0];
+    
+    // Generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+    
+    // Lưu OTP vào session
+    req.session.forgotPasswordOTP = {
+      otp: otp,
+      expires: otpExpires.getTime(),
+      userId: user.user_id,
+      username: user.username,
+      email: user.email
+    };
+    
+    // Gửi OTP qua email sử dụng emailService
+    await emailService.sendOTPEmail(email, otp, user.full_name, 'reset-password');
+    
+    return res.json({
+      success: true,
+      message: 'Mã OTP đã được gửi đến email của bạn'
+    });
+    
+  } catch (error) {
+    console.error('Error in forgotPasswordVerify:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Có lỗi xảy ra khi xử lý yêu cầu'
+    });
+  }
+};
+
+/**
+ * BƯỚC 2: Verify OTP
+ */
+exports.forgotPasswordVerifyOTP = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập mã OTP'
+      });
+    }
+    
+    // Check OTP from session
+    const otpData = req.session.forgotPasswordOTP;
+    if (!otpData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không tìm thấy mã OTP. Vui lòng yêu cầu gửi lại'
+      });
+    }
+    
+    // Verify OTP
+    if (otpData.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã OTP không đúng'
+      });
+    }
+    
+    // Check expiration
+    if (Date.now() > otpData.expires) {
+      delete req.session.forgotPasswordOTP;
+      return res.status(400).json({
+        success: false,
+        message: 'Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại'
+      });
+    }
+    
+    // Mark OTP as verified
+    req.session.forgotPasswordOTP.verified = true;
+    
+    return res.json({
+      success: true,
+      message: 'Xác thực OTP thành công'
+    });
+    
+  } catch (error) {
+    console.error('Error in forgotPasswordVerifyOTP:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Có lỗi xảy ra khi xác minh OTP'
+    });
+  }
+};
+
+/**
+ * BƯỚC 3: Reset password
+ */
+exports.forgotPasswordReset = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    
+    if (!newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập mật khẩu mới'
+      });
+    }
+    
+    // Validate password
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu phải có ít nhất 6 ký tự'
+      });
+    }
+    
+    if (!/\d/.test(newPassword) || !/[a-zA-Z]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu phải có cả chữ và số'
+      });
+    }
+    
+    // Check OTP verification
+    const otpData = req.session.forgotPasswordOTP;
+    if (!otpData || !otpData.verified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng xác thực OTP trước'
+      });
+    }
+    
+    const pool = require('../config/db');
+    const bcrypt = require('bcrypt');
+    
+    // Hash new password
+    const saltRounds = 10;
+    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+    
+    // Update password in database
+    await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
+      [newPasswordHash, otpData.userId]
+    );
+    
+    // Clear OTP from session
+    delete req.session.forgotPasswordOTP;
+    
+    return res.json({
+      success: true,
+      message: 'Đổi mật khẩu thành công'
+    });
+    
+  } catch (error) {
+    console.error('Error in forgotPasswordReset:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Có lỗi xảy ra khi đổi mật khẩu'
+    });
+  }
 };

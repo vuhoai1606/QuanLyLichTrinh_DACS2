@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%- include('theme-support') %>
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/kanban.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -55,44 +56,27 @@
         <!-- Example column structure:-->
         <div class="col">
           <div class="col-header">
-            <h3>
-              To Do
-              <span class="badge">5</span>
-            </h3>
-            <button class="btn-edit">
-              <i class="fas fa-ellipsis-v"></i>
+            <h3>Column Title</h3>
+            <span class="col-count">0</span>
+            <i class="fas fa-ellipsis-h col-options"></i>
+          </div>
+          <div class="col-content" data-column="todo">
+            <button class="add-task-btn">
+              <i class="fas fa-plus"></i> Add Task
             </button>
           </div>
-          <div class="card-list">
-            <div class="card-item">
-              <h4>Task Title</h4>
-              <p>Task description goes here...</p>
-              <div class="card-progress">
-                <div class="card-progress-inner" style="width: 60%"></div>
-              </div>
-              <span class="priority-badge priority-high">
-                <i class="fas fa-circle"></i> High
-              </span>
-              <small>
-                <i class="far fa-clock"></i> Due: Jan 15, 2024
-              </small>
-            </div>
-          </div>
-          <button class="add-task-btn">
-            <i class="fas fa-plus"></i> Add Task
-          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Task Details -->
+  <!-- Modal: Task Detail -->
   <div id="task-detail-modal" class="modal">
     <div class="modal-content">
-      <h3>Task Details</h3>
+      <h3>Task Detail</h3>
       <input type="text" id="task-title" placeholder="Task Title" class="input-field">
-      <textarea id="task-desc" placeholder="Task Description" class="input-field textarea"></textarea>
-      <input type="datetime-local" id="task-due" class="input-field">
+      <textarea id="task-desc" placeholder="Description" class="input-field"></textarea>
+      <input type="date" id="task-due" class="input-field">
       <select id="task-priority" class="input-field">
         <option value="">Select Priority</option>
         <option value="high">🔴 High Priority</option>

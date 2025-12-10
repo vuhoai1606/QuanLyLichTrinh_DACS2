@@ -17,7 +17,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "migrate": "node migration/runMigration.js && node migration/runUpdate.js",
+    "migrate": "node migration/runMigration.js && node migration/runUpdate.js && node migration/run_create_sessions.js && node migration/run_add_profile_fields.js && node migration/run_add_2fa.js",
+    "update": "node migration/run_add_profile_fields.js && node migration/run_add_2fa.js",
     "seed": "node seeder/index.js",
     "setup": "npm run migrate && npm run seed",
     "dev": "nodemon server.js",
@@ -26,6 +27,7 @@
   "dependencies": {
     "bcrypt": "6.0.0",
     "compression": "1.8.1",
+    "connect-pg-simple": "10.0.0",
     "cookie-parser": "1.4.7",
     "dotenv": "17.2.3",
     "ejs": "3.1.10",
@@ -33,6 +35,7 @@
     "express-session": "1.18.2",
     "express-validator": "7.3.1",
     "google-auth-library": "10.5.0",
+    "multer": "2.0.2",
     "nodemailer": "7.0.10",
     "pg": "8.16.3",
     "svg-captcha": "1.4.0"

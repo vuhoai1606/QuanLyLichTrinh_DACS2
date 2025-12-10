@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%- include('theme-support') %>
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/tasks.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -29,7 +30,6 @@
           <input type="text" id="search" placeholder="Tìm kiếm...">
           <select id="filter-status">
             <option value="all">Tất cả trạng thái</option>
-            <option value="todo">Đang làm</option>
             <option value="in_progress">Đang tiến hành</option>
             <option value="done">Hoàn thành</option>
             <option value="canceled">Bị hủy</option>
@@ -85,8 +85,11 @@
           <label for="t-desc">Mô tả</label>
           <textarea id="t-desc" placeholder="Nhập mô tả chi tiết"></textarea>
 
-          <label for="t-due">Hạn chót</label>
-          <input type="datetime-local" id="t-due" required>
+          <label for="t-start">Bắt đầu</label>
+          <input type="datetime-local" id="t-start" required>
+          
+          <label for="t-end">Kết thúc</label>
+          <input type="datetime-local" id="t-end">
 
           <label for="t-priority">Mức độ ưu tiên</label>
           <select id="t-priority" required>
