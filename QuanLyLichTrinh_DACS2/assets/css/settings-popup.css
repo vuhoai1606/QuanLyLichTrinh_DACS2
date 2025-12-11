@@ -2,16 +2,24 @@
 
 .settings-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  inset: 0;
+  background: rgba(0,0,0,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   animation: fadeIn 0.2s ease-out;
+  isolation: isolate;
+}
+
+.settings-overlay .notification-toast {
+  position: absolute !important;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  display: inline-flex !important;
+  flex: none !important;
 }
 
 @keyframes fadeIn {
@@ -375,3 +383,4 @@ body[data-theme="dark"] .settings-popup-footer {
     width: 100%;
   }
 }
+

@@ -157,24 +157,65 @@ function applyTheme(theme) {
 }
 
 // Notification helper for settings popup
+let currentNotification = null; // Đảm bảo chỉ hiển thị 1 thông báo tại một thời điểm
+
 function showNotificationPopup(message, type = 'info') {
+  // Xóa thông báo cũ nếu đang tồn tại
+  if (currentNotification && currentNotification.parentNode) {
+    currentNotification.remove();
+  }
+
   const notification = document.createElement('div');
-  notification.className = `settings-notification settings-notification-${type}`;
+  currentNotification = notification;
+
+  // Xác định icon và màu nền theo type
+  let iconClass = 'fa-info-circle';
+  let bgColor = '#3b82f6'; // info (xanh dương)
+
+  if (type === 'success') {
+    iconClass = 'fa-check-circle';
+    bgColor = '#22c55e'; // xanh lá
+  } else if (type === 'error') {
+    iconClass = 'fa-exclamation-circle';
+    bgColor = '#ef4444'; // đỏ
+  }
+
   notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 20px;
-    background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};
+    position: fixed !important;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    max-width: 320px;
+    min-height: 56px;
+    height: auto !important;
+
+    background: ${bgColor};
     color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    z-index: 10001;
-    animation: slideInRight 0.3s ease-out;
-    display: flex;
+
+    border-radius: 40px;
+    padding: 12px 24px;
+
+    display: inline-flex !important;
     align-items: center;
+    justify-content: center;
     gap: 10px;
+
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: center;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    z-index: 999999;   /* đảm bảo cao hơn overlay */
+
+    pointer-events: none;
+    user-select: none;
+    overflow: hidden;
+
+    animation: fadeInScale 0.35s ease-out;
   `;
+
   
   const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
   notification.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
