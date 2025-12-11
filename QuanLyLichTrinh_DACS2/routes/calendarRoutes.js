@@ -9,14 +9,13 @@ const nodemailer = require('nodemailer'); // Cần thư viện nodemailer
 
 // === CẤU HÌNH SMTP CỦA BẠN (QUAN TRỌNG) ===
 let transporter = nodemailer.createTransport({
-    // Cấu hình cho Gmail
-    service: 'gmail', 
-    auth: {
-        // ĐỊA CHỈ EMAIL GỬI (Đã xác nhận từ bạn)
-        user: "tien.dinhcong2006@gmail.com", 
-        // ✨ DÁN MẬT KHẨU ỨNG DỤNG ĐÃ TẠO VÀO ĐÂY (NHỚ XÓA CÁC KHOẢNG TRẮNG) ✨
-        pass: "aezuijnizfpbvaic" 
-    }
+    // Cấu hình cho Gmail
+    service: 'gmail', 
+    auth: {
+        // ĐỊA CHỈ EMAIL GỬI (Đã xác nhận từ bạn)
+        user: "tien.dinhcong2006@gmail.com", 
+        pass: "aezuijnizfpbvaic" 
+    }
 });
 // ============================================
 
@@ -25,28 +24,28 @@ router.use(requireAuth);
 
 // API lấy cả Task + Event trong khoảng thời gian
 router.get('/items', async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const { start, end, group } = req.query; 
+  try {
+   const userId = req.session.userId;
+   const { start, end, group } = req.query; 
 
-    if (!start || !end) {
-      return res.status(400).json({ success: false, message: 'Thiếu tham số start hoặc end' });
-    }
+    if (!start || !end) {
+      return res.status(400).json({ success: false, message: 'Thiếu tham số start hoặc end' });
+    }
 
-    const items = await eventService.getAllItemsByDateRange(userId, start, end, group); 
+   const items = await eventService.getAllItemsByDateRange(userId, start, end, group); 
 
-    res.json({ success: true, data: items });
+   res.json({ success: true, data: items });
 
-  } catch (error) {
-    console.error('Error fetching calendar items:', error);
-    res.status(500).json({ success: false, message: 'Lỗi server khi lấy dữ liệu lịch', error: error.message });
-  }
+   } catch (error) {
+   console.error('Error fetching calendar items:', error);
+   res.status(500).json({ success: false, message: 'Lỗi server khi lấy dữ liệu lịch', error: error.message });
+  }
 });
 
 // API Insights
 router.get('/insights', async (req, res) => {
-  try {
-    const userId = req.session.userId;
+   try {
+    const userId = req.session.userId;
     // ... (Logic tính toán Insights đã được xác nhận đúng) ...
     
     // TÍNH TOÁN TỔNG GIỜ HỌP TUẦN NÀY (Giữ nguyên)
@@ -105,10 +104,10 @@ router.get('/insights', async (req, res) => {
       insights: { weekly_meetings_hours, tomorrow_free_hours }
     });
 
-  } catch (error) {
-    console.error('Lỗi tính Insights:', error);
-    res.status(500).json({ success: false, message: 'Không thể tính insights', error: error.message });
-  }
+  } catch (error) {
+    console.error('Lỗi tính Insights:', error);
+    res.status(500).json({ success: false, message: 'Không thể tính insights', error: error.message });
+  }
 });
 
 // THÊM HÀM HELPER TÌM USER ID TỪ EMAIL
@@ -150,37 +149,36 @@ async function insertShareRecord(eventId, senderId, receiverId, permission) {
 
 // API tạo link chia sẻ 
 router.post('/share-link', async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    
-    // Tạo uniqueToken bằng Buffer và Base64
-    const sourceData = `${userId}${Date.now()}`; 
-    const uniqueToken = Buffer.from(sourceData).toString('base64').slice(0, 16); 
-    
-    const shareUrl = `${req.protocol}://${req.get('host')}/calendar/share/${uniqueToken}`;
+  try {
+    const userId = req.session.userId;
 
-    res.json({ success: true, message: 'Link chia sẻ đã được tạo', shareUrl: shareUrl });
-  } catch (error) {
-    console.error('Lỗi tạo link chia sẻ:', error);
-    res.status(500).json({ success: false, message: 'Lỗi server khi tạo link' });
-  }
+    // Tạo uniqueToken bằng Buffer và Base64
+    const sourceData = `${userId}${Date.now()}`; 
+    const uniqueToken = Buffer.from(sourceData).toString('base64').slice(0, 16); 
+    const shareUrl = `${req.protocol}://${req.get('host')}/calendar/share/${uniqueToken}`;
+
+    res.json({ success: true, message: 'Link chia sẻ đã được tạo', shareUrl: shareUrl });
+  } catch (error) {
+    console.error('Lỗi tạo link chia sẻ:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server khi tạo link' });
+  }
 });
 
 // API gửi lời mời qua email 
 router.post('/share-invite', async (req, res) => {
-  const { invite_email, permissions } = req.body; 
-  const userId = req.session.userId; // Người gửi 
+  const { invite_email, permissions } = req.body; 
+  const userId = req.session.userId; // Người gửi 
   
   // Lấy địa chỉ email người gửi từ cấu hình transporter
   const senderEmail = transporter.options.auth.user; 
-  
-  if (!invite_email || !permissions) {
-    return res.status(400).json({ success: false, message: 'Thiếu email hoặc quyền truy cập' });
-  }
 
-  if (!invite_email.includes('@')) {
-     return res.status(400).json({ success: false, message: 'Địa chỉ email không hợp lệ' });
-  }
+  if (!invite_email || !permissions) {
+   return res.status(400).json({ success: false, message: 'Thiếu email hoặc quyền truy cập' });
+  }
+
+   if (!invite_email.includes('@')) {
+    return res.status(400).json({ success: false, message: 'Địa chỉ email không hợp lệ' });
+  }
 
   // 1. TÌM USER ID CỦA NGƯỜI NHẬN
   const receiverId = await getUserIdByEmail(invite_email);

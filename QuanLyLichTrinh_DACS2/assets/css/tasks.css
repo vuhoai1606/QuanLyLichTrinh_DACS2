@@ -101,6 +101,19 @@ body::before {
   overflow-x: hidden;
 }
 
+.dashboard-header {
+  margin-bottom: clamp(20px, 3vw, 32px);
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.subtitle {
+  font-size: clamp(14px, 2.5vw, 16px);
+  margin-top: 8px;
+  word-wrap: break-word;
+}
+
 /* ===========================
    CONTAINER cho nội dung chính
 =========================== */
@@ -297,7 +310,6 @@ select:focus {
 
 .task-meta {
   font-size: clamp(14px, 2vw, 16px);
-  color: var(--text-light);
   line-height: 1.7;
   word-wrap: break-word;
   overflow-wrap: break-word;

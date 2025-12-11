@@ -23,16 +23,16 @@
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  box-sizing: border-box; 
 }
 
-/* FIXED: Thêm overflow-x: hidden cho html */
 html {
-  height: auto;
+  height: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* FIXED: Ngăn scroll ngang toàn trang */
-  scroll-behavior: smooth; /* FIXED: Smooth scroll */
+  overflow-x: hidden; 
+  scroll-behavior: smooth;
+  width: 100%; 
 }
 
 html,
@@ -42,7 +42,6 @@ body {
   padding: 0;
 }
 
-/* FIXED: Thêm max-width và overflow-x */
 body {
   font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   background: var(--bg-gradient);
@@ -52,9 +51,9 @@ body {
   display: block;
   min-height: 100vh;
   width: 100%;
-  max-width: 100vw; /* FIXED: Ngăn body vượt viewport */
+  max-width: 100vw; 
   position: relative;
-  overflow-x: hidden; /* FIXED: Ngăn scroll ngang */
+  overflow-x: hidden; 
 }
 
 /* Animated Background */
@@ -92,10 +91,9 @@ body::before {
 /* =========================== 
    Topbar 
 =========================== */
-/* FIXED: Thêm flex-wrap và max-width */
 .topbar {
   height: 72px;
-  padding: 0 32px;
+  padding: 0 clamp(16px, 3vw, 32px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -104,48 +102,67 @@ body::before {
   border-bottom: 1px solid rgba(230, 238, 248, 0.8);
   margin: 0;
   width: 100%;
-  max-width: 100%; /* FIXED: Ngăn topbar overflow */
+  max-width: 100%; 
+  box-sizing: border-box; 
   position: sticky;
   top: 0;
   z-index: 100;
   box-shadow: 0 2px 12px rgba(0,0,0,0.03);
-  flex-wrap: wrap; /* FIXED: Cho phép wrap trên mobile */
-  gap: 12px; /* FIXED: Gap giữa items */
+  flex-wrap: wrap;
+  gap: 12px;
+  overflow: hidden; 
 }
 
-/* FIXED: Responsive font-size */
 .dashboard-header {
-  font-size: clamp(20px, 3.5vw, 28px); /* FIXED: Responsive */
+  font-size: clamp(20px, 3.5vw, 28px);
   font-weight: 800;
   color: #fff;
   letter-spacing: -0.5px;
   text-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 100%; 
+  word-wrap: break-word; 
 }
 
-/* FIXED: Responsive font-size */
+.main-content > .dashboard-header {
+  margin-bottom: clamp(20px, 3vw, 32px);
+  padding: 0; 
+  width: 100%; 
+  max-width: 100%; 
+}
+
+.main-content > .dashboard-header h1 {
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+  max-width: 100%; 
+  word-wrap: break-word; 
+}
+
 .subtitle {
-  font-size: clamp(18px, 3vw, 26px); /* FIXED: Responsive */
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.3px;
+  font-size: clamp(14px, 2vw, 16px); 
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: 0;
+  max-width: 100%;
+  word-wrap: break-word; 
 }
 
 /* =========================== 
    Card & Components 
 =========================== */
-/* FIXED: Thêm max-width và width */
 .card {
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 24px;
+  padding: clamp(16px, 3vw, 24px); 
   transition: var(--transition);
   border: 1px solid rgba(230, 238, 248, 0.6);
   position: relative;
-  overflow: hidden;
-  width: 100%; /* FIXED: Đảm bảo responsive */
-  max-width: 100%; /* FIXED: Ngăn overflow */
-  box-sizing: border-box; /* FIXED: Bao gồm padding */
+  overflow: hidden; 
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box; 
 }
 
 .card::before {
@@ -170,7 +187,6 @@ body::before {
   opacity: 1;
 }
 
-/* FIXED: Thêm white-space */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -186,7 +202,9 @@ body::before {
   cursor: pointer;
   transition: var(--transition);
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
-  white-space: nowrap; /* FIXED: Ngăn text wrap */
+  white-space: nowrap;
+  box-sizing: border-box; /* FIXED: Inclut padding */
+  max-width: 100%; /* FIXED: Ne dépasse jamais */
 }
 
 .btn:hover {
@@ -199,12 +217,12 @@ body::before {
   transform: translateY(0);
 }
 
-/* FIXED: Thêm max-width và box-sizing */
+/* FIXED: Inputs 100% responsive */
 .input,
 textarea,
 select {
   width: 100%;
-  max-width: 100%; /* FIXED: Ngăn overflow */
+  max-width: 100%; 
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
   border-radius: 10px;
@@ -213,7 +231,7 @@ select {
   color: #111827;
   transition: var(--transition);
   font-family: inherit;
-  box-sizing: border-box; /* FIXED: Bao gồm padding */
+  box-sizing: border-box; 
 }
 
 .input:focus,
@@ -232,57 +250,63 @@ select:focus {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
-  word-wrap: break-word; /* FIXED: Wrap text dài */
+  word-wrap: break-word;
+  overflow-wrap: break-word; 
+  max-width: 100%; 
 }
 
 /* =========================== 
    Main Content 
 =========================== */
-/* FIXED: Thêm width và box-sizing */
 .main-content {
-  padding: 32px;
+  padding: clamp(16px, 3vw, 32px); 
   max-width: 1600px;
-  width: 100%; /* FIXED: Đảm bảo responsive */
+  width: 100%;
   margin: 0 auto;
-  box-sizing: border-box; /* FIXED: Bao gồm padding */
+  box-sizing: border-box;
+  overflow-x: hidden; 
 }
 
 /* =========================== 
    Dashboard Layout 
 =========================== */
-/* FIXED: Responsive grid columns */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(500px, 100%), 1fr)); /* FIXED: Auto-fit responsive */
-  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr)); 
+  gap: clamp(20px, 3vw, 32px); 
   align-items: stretch;
-  width: 100%; /* FIXED: Full width */
-  max-width: 100%; /* FIXED: Ngăn overflow */
+  width: 100%;
+  max-width: 100%; 
+  box-sizing: border-box;
 }
 
-/* FIXED: Thêm max-width */
+/* FIXED: Cards dans grid contrôlées */
 .dashboard-grid .card {
   width: 100%;
-  max-width: 100%; /* FIXED: Ngăn overflow */
+  max-width: 100%;
+  min-width: 0; 
   min-height: 380px;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 /* =========================== 
    Card Header 
 =========================== */
-/* FIXED: Responsive font-size và flex-wrap */
+
 .card h2 {
-  font-size: clamp(18px, 2.5vw, 22px); /* FIXED: Responsive */
+  font-size: clamp(18px, 2.5vw, 22px);
   color: #1f2937;
-  margin: 0 0 24px 0;
+  margin: 0 0 clamp(16px, 2vw, 24px) 0; 
   font-weight: 700;
   letter-spacing: -0.3px;
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap; /* FIXED: Wrap nếu cần */
+  flex-wrap: wrap;
+  max-width: 100%; 
+  word-wrap: break-word;
 }
 
 .card h2::before {
@@ -291,59 +315,67 @@ select:focus {
   height: 24px;
   background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
   border-radius: 2px;
-  flex-shrink: 0; /* FIXED: Không cho shrink */
+  flex-shrink: 0;
 }
-
-/* FIXED: Thêm max-width */
+/* =========================== 
+   Charts
+=========================== */
 canvas {
-  max-width: 100%;
-  width: 100%; /* FIXED: Full width */
-  height: auto;
+  max-width: 100% !important;
+  width: 100% !important;
+  height: auto !important; 
   margin-bottom: 20px;
   background: var(--bg);
+  display: block; 
 }
 
-/* FIXED: Responsive height */
 .chart-container {
   position: relative;
   width: 100%;
-  max-width: 100%; /* FIXED: Ngăn overflow */
-  height: clamp(240px, 30vw, 280px); /* FIXED: Responsive height */
+  max-width: 100%; 
+  height: clamp(220px, 30vw, 280px); 
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden; 
+  box-sizing: border-box;
+  margin-bottom: clamp(16px, 2vw, 20px); 
+}
+
+.card .chart-container + .chart-container {
+  margin-top: clamp(16px, 2vw, 20px); 
 }
 
 /* =========================== 
    Report Actions 
 =========================== */
-/* FIXED: Thêm width */
+
 .report-actions {
   display: flex;
-  gap: 16px;
-  margin-top: 20px;
+  gap: clamp(12px, 2vw, 16px); 
+  margin-top: clamp(16px, 2vw, 20px); 
   flex-wrap: wrap;
-  width: 100%; /* FIXED: Full width */
-  max-width: 100%; /* FIXED: Ngăn overflow */
+  width: 100%;
+  max-width: 100%; 
+  box-sizing: border-box;
 }
 
-/* FIXED: Thêm width và flex-wrap */
 .form-group {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
+  gap: clamp(10px, 2vw, 12px); 
+  margin-top: clamp(16px, 2vw, 20px); 
   align-items: stretch;
-  flex-wrap: wrap; /* FIXED: Wrap trên mobile */
-  width: 100%; /* FIXED: Full width */
-  max-width: 100%; /* FIXED: Ngăn overflow */
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%; 
+  box-sizing: border-box;
 }
 
-/* FIXED: Thêm min-width và max-width */
 input[type="email"] {
-  flex: 1;
-  min-width: min(250px, 100%); /* FIXED: Responsive min-width */
-  max-width: 100%; /* FIXED: Ngăn overflow */
+  flex: 1 1 auto; 
+  min-width: 0; 
+  max-width: 100%; 
   padding: 12px 18px;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
@@ -351,7 +383,7 @@ input[type="email"] {
   background: #fafafa;
   transition: var(--transition);
   font-family: inherit;
-  box-sizing: border-box; /* FIXED: Bao gồm padding */
+  box-sizing: border-box; 
 }
 
 input[type="email"]:focus {
@@ -384,6 +416,8 @@ input[type="email"]::placeholder {
   gap: 8px;
   box-shadow: 0 4px 12px rgba(79,70,229,0.25);
   white-space: nowrap;
+  box-sizing: border-box;
+  max-width: 100%; 
 }
 
 .btn-primary:hover {
@@ -411,6 +445,8 @@ input[type="email"]::placeholder {
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
+  box-sizing: border-box;
+  max-width: 100%; 
 }
 
 .btn-secondary:hover {
@@ -440,52 +476,52 @@ input[type="email"]::placeholder {
 }
 
 /* =========================== 
-   Responsive 
+   Responsive Breakpoints
 =========================== */
-/* FIXED: Cải thiện responsive breakpoints */
 @media (max-width: 1200px) {
   .main-content {
-    padding: 24px 20px; /* FIXED: Giảm padding ngang */
+    padding: clamp(16px, 2.5vw, 24px); 
   }
   
   .dashboard-grid {
-    gap: 24px;
-    grid-template-columns: repeat(auto-fit, minmax(min(450px, 100%), 1fr)); /* FIXED: Giảm min-width */
+    gap: clamp(16px, 2.5vw, 24px); 
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
   }
 
   .topbar {
-    padding: 0 24px; /* FIXED: Giảm padding */
+    padding: 0 clamp(16px, 2.5vw, 24px);
   }
 }
 
 @media (max-width: 900px) {
   .dashboard-grid {
-    grid-template-columns: 1fr; /* FIXED: Stack thành 1 cột */
-    gap: 20px;
+    grid-template-columns: 1fr; 
+    gap: clamp(16px, 2.5vw, 20px);
   }
 
   .card {
     width: 100%;
-    padding: 20px;
-    min-height: auto; /* FIXED: Auto height trên mobile */
+    max-width: 100%; 
+    padding: clamp(16px, 2.5vw, 20px);
+    min-height: auto;
   }
 
   .topbar {
-    height: auto; /* FIXED: Auto height */
-    min-height: 64px; /* FIXED: Min height */
-    padding: 12px 20px; /* FIXED: Padding đều */
+    height: auto;
+    min-height: 64px;
+    padding: 12px clamp(12px, 2vw, 20px);
   }
 
   .dashboard-header {
-    font-size: 24px;
+    font-size: clamp(20px, 4vw, 24px);
   }
 
   .subtitle {
-    font-size: 22px;
+    font-size: clamp(14px, 2.5vw, 16px);
   }
 
   .main-content {
-    padding: 20px 16px;
+    padding: clamp(16px, 2.5vw, 20px);
   }
 
   .report-actions {
@@ -493,7 +529,6 @@ input[type="email"]::placeholder {
     gap: 12px;
   }
 
-  /* FIXED: Stack form-group */
   .form-group {
     flex-direction: column;
     gap: 12px;
@@ -501,55 +536,62 @@ input[type="email"]::placeholder {
 
   input[type="email"] {
     width: 100%;
-    min-width: auto; /* FIXED: Reset min-width */
+    max-width: 100%; 
+    min-width: 0;
   }
 
-  /* FIXED: Full width buttons */
   .btn-primary,
   .btn-secondary {
     width: 100%;
+    max-width: 100%; 
     justify-content: center;
   }
 
-  /* FIXED: Giảm chart height */
   .chart-container {
-    height: 240px;
+    height: clamp(200px, 30vw, 240px);
   }
 }
 
 @media (max-width: 640px) {
   .card {
-    padding: 16px; /* FIXED: Giảm padding */
+    padding: clamp(12px, 2vw, 16px);
   }
 
   .card h2 {
-    font-size: 18px;
-    margin-bottom: 16px; /* FIXED: Giảm margin */
+    font-size: clamp(16px, 3vw, 18px);
+    margin-bottom: clamp(12px, 2vw, 16px);
   }
 
   .chart-container {
-    height: 220px; /* FIXED: Giảm height hơn */
+    height: clamp(180px, 35vw, 220px);
   }
 
   .topbar {
     height: auto;
     min-height: 60px;
-    padding: 10px 16px;
+    padding: 10px clamp(12px, 2vw, 16px);
   }
 
   .dashboard-header {
-    font-size: 20px;
+    font-size: clamp(18px, 4vw, 20px);
   }
 
   .subtitle {
-    font-size: 18px;
+    font-size: clamp(13px, 2.5vw, 14px);
   }
 
   .main-content {
-    padding: 16px 12px; /* FIXED: Giảm padding */
+    padding: clamp(12px, 2vw, 16px);
   }
 
-  /* FIXED: Giảm padding buttons */
+  .main-content > .dashboard-header {
+    margin-bottom: clamp(16px, 2.5vw, 20px);
+  }
+
+  .main-content > .dashboard-header h1 {
+    font-size: clamp(20px, 4.5vw, 28px);
+  }
+
   .btn-primary,
   .btn-secondary {
     padding: 10px 20px;
@@ -557,7 +599,7 @@ input[type="email"]::placeholder {
   }
 
   input[type="email"] {
-    padding: 10px 14px; /* FIXED: Giảm padding */
+    padding: 10px 14px;
     font-size: 13px;
   }
 
@@ -567,39 +609,42 @@ input[type="email"]::placeholder {
 
   .form-group {
     gap: 10px;
-    margin-top: 16px; /* FIXED: Giảm margin */
+    margin-top: clamp(12px, 2vw, 16px);
   }
 }
 
-/* FIXED: Thêm breakpoint cho mobile rất nhỏ */
 @media (max-width: 400px) {
   .main-content {
-    padding: 12px 8px;
+    padding: clamp(8px, 2vw, 12px);
   }
 
   .card {
-    padding: 12px;
+    padding: clamp(10px, 2vw, 12px);
   }
 
   .topbar {
-    padding: 8px 12px;
+    padding: 8px clamp(8px, 2vw, 12px);
     min-height: 56px;
   }
 
   .dashboard-header {
-    font-size: 18px;
+    font-size: clamp(16px, 4vw, 18px);
   }
 
   .subtitle {
-    font-size: 16px;
+    font-size: clamp(12px, 2.5vw, 14px);
+  }
+
+  .main-content > .dashboard-header h1 {
+    font-size: clamp(18px, 5vw, 24px);
   }
 
   .card h2 {
-    font-size: 16px;
+    font-size: clamp(14px, 3vw, 16px);
   }
 
   .chart-container {
-    height: 200px;
+    height: clamp(160px, 40vw, 200px);
   }
 
   .btn-primary,
@@ -609,7 +654,7 @@ input[type="email"]::placeholder {
   }
 
   .dashboard-grid {
-    gap: 16px;
+    gap: clamp(12px, 2vw, 16px);
   }
 }
 
@@ -629,14 +674,13 @@ input[type="email"]::placeholder {
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
   border-radius: 10px;
-  transition: background 0.3s ease; /* FIXED: Thêm transition */
+  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, var(--primary-dark), var(--secondary-color));
 }
 
-/* FIXED: Firefox scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--primary-color) #f1f5f9;
@@ -645,7 +689,6 @@ input[type="email"]::placeholder {
 /* =========================== 
    Touch Device Optimization
 =========================== */
-/* FIXED: Tắt hover effects trên touch devices */
 @media (hover: none) and (pointer: coarse) {
   .card:hover {
     transform: none;
@@ -700,7 +743,6 @@ input[type="email"]::placeholder {
 /* =========================== 
    Accessibility
 =========================== */
-/* FIXED: Focus visible cho keyboard navigation */
 *:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -718,7 +760,6 @@ textarea:focus-visible {
 /* =========================== 
    Reduced Motion
 =========================== */
-/* FIXED: Tôn trọng prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -733,13 +774,13 @@ textarea:focus-visible {
 /* =========================== 
    Images & Media
 =========================== */
-/* FIXED: Đảm bảo media responsive */
 img, 
 video, 
 iframe,
 svg {
   max-width: 100%;
   height: auto;
+  display: block;
 }
 
 /* =========================== 
@@ -753,4 +794,42 @@ svg {
 ::-moz-selection {
   background: rgba(99, 102, 241, 0.2);
   color: var(--primary-dark);
+}
+
+/* =========================== 
+   RÈGLES GLOBALES ANTI-DÉBORDEMENT
+=========================== */
+.main-content *,
+.card *,
+.dashboard-grid *,
+.topbar * {
+  max-width: 100%; 
+  box-sizing: border-box;
+}
+
+p, span, div, h1, h2, h3, h4, h5, h6, li, a {
+  word-wrap: break-word; 
+  overflow-wrap: break-word;
+  hyphens: auto; 
+}
+
+table {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+  box-sizing: border-box;
+}
+
+pre, code {
+  max-width: 100%;
+  overflow-x: auto;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+}
+
+.fa, .fas, .far, .fal, .fab {
+  flex-shrink: 0; 
+  max-width: 1.5em; 
 }

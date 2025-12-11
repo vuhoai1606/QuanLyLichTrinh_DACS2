@@ -303,7 +303,7 @@ body[data-theme="dark"] h6 {
   color: #ffffff !important;
 }
 
-body.dark-mode p,
+/* body.dark-mode p,
 body.dark-mode span,
 body.dark-mode div,
 body.dark-mode label,
@@ -314,7 +314,7 @@ body[data-theme="dark"] div,
 body[data-theme="dark"] label,
 body[data-theme="dark"] li {
   color: #ffffff !important;
-}
+} */
 
 /* Light mode - FORCE dark text */
 /* body.light-mode h1,
