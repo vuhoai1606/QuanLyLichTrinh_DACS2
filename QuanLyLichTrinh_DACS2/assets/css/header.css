@@ -63,26 +63,48 @@
   --spacing-2xl: 40px;
 }
 
+/* FIXED: Ngăn overflow toàn trang */
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  width: 100%;
+  max-width: 100vw;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* FIXED: Ngăn scroll ngang */
+  width: 100%;
+  max-width: 100vw; /* FIXED: Giới hạn width */
+  box-sizing: border-box;
+}
+
+/* FIXED: Đảm bảo tất cả elements tính box-sizing đúng */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 /* ============================
    SIDEBAR CONTAINER
    ============================ */
 header {
   width: var(--sidebar-width);
-  height: 100vh;
+  height: 100vh; /* FIXED: 100vh thay vì fixed height */
+  max-height: 100vh; /* FIXED: Đảm bảo không vượt viewport */
   position: fixed !important;
   top: 0;
   left: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--spacing-lg) var(--spacing-md);
-  /* background: var(--sidebar-bg); */
+  padding: clamp(16px, 2vw, 24px) clamp(12px, 1.5vw, 16px); /* FIXED: Responsive padding */
   backdrop-filter: blur(24px);
   box-shadow: var(--shadow-xl);
   z-index: 9999;
   transition: var(--transition-base);
-  overflow: hidden;
+  overflow-x: hidden; /* FIXED: Ngăn scroll ngang */
+  overflow-y: auto; /* FIXED: Cho phép scroll dọc nếu nội dung dài */
   border-right: 1px solid var(--glass-border);
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
 }
 
@@ -130,42 +152,23 @@ header::after {
   z-index: 1;
 }
 
-/* ĐẨY TOÀN BỘ NỘI DUNG (không cần class .main-content nữa) */
+/* FIXED: Push content bên phải sidebar với transition mượt */
 body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
   margin-left: var(--sidebar-width) !important;
   transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   min-height: 100vh;
   box-sizing: border-box;
-  padding: 24px;
-  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+  padding: clamp(16px, 2vw, 24px); /* FIXED: Responsive padding */
+  width: calc(100% - var(--sidebar-width)); /* FIXED: Đảm bảo width chính xác */
+  max-width: calc(100vw - var(--sidebar-width)); /* FIXED: Không vượt viewport */
+  overflow-x: hidden; /* FIXED: Ngăn overflow */
 }
 
-/* Khi sidebar thu gọn → nội dung tự động sát vào */
-/* header.collapsed ~ *:not(header):not(script):not(style):not(link):not(meta):not(title) {
+/* FIXED: Khi sidebar collapsed */
+header.collapsed ~ *:not(header):not(script):not(style):not(link):not(meta):not(title) {
   margin-left: var(--sidebar-collapsed) !important;
-} */
-
-/* Tablet & Mobile */
-@media (max-width: 1024px) {
-  header {
-    width: var(--sidebar-collapsed);
-  }
-  body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
-    margin-left: var(--sidebar-collapsed) !important;
-  }
-}
-
-@media (max-width: 768px) {
-  header {
-    transform: translateX(-100%);
-  }
-  header.mobile-open {
-    transform: translateX(0);
-  }
-  body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
-    margin-left: 0 !important;
-    padding: 16px;
-  }
+  width: calc(100% - var(--sidebar-collapsed)); /* FIXED: Recalculate width */
+  max-width: calc(100vw - var(--sidebar-collapsed));
 }
 
 /* ============================
@@ -175,43 +178,46 @@ body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
   display: flex;
   align-items: center;
   padding: var(--spacing-xs) 0;
-  gap: var(--spacing-md);
+  gap: clamp(8px, 1.5vw, 16px); /* FIXED: Responsive gap */
   z-index: 2;
   width: 100%;
   box-sizing: border-box;
   position: relative;
+  flex-shrink: 0; /* FIXED: Không cho shrink */
 }
 
 /* ROW TOP - Menu Toggle + Logo + App Name */
 .row-top {
   justify-content: flex-start;
-  gap: 14px;
+  gap: clamp(10px, 1.5vw, 14px); /* FIXED: Responsive gap */
   flex-wrap: nowrap;
   width: 100%;
   margin-bottom: 12px;
+  min-height: 48px; /* FIXED: Đảm bảo chiều cao tối thiểu */
 }
 
 /* ROW BOTTOM - Notification + Sync buttons */
 .row-bottom {
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 1.5vw, 12px); /* FIXED: Responsive gap */
   width: 100%;
   padding: 8px 0 16px;
   flex-wrap: nowrap;
+  min-height: 46px; /* FIXED: Đảm bảo chiều cao tối thiểu */
 }
 
 /* ============================
    MENU TOGGLE - FIXED POSITION
    ============================ */
 .menu-toggle {
-  width: 42px;
-  height: 42px;
-  background: rgba(255,255,255,0.1);
+  width: clamp(38px, 5vw, 42px); /* FIXED: Responsive size */
+  height: clamp(38px, 5vw, 42px);
+  background: var(--text-disabled);
   border: 1.5px solid rgba(255,255,255,0.18);
   border-radius: var(--radius-md);
   color: #fff;
-  font-size: 18px;
+  font-size: clamp(16px, 2vw, 18px); /* FIXED: Responsive font */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -241,12 +247,13 @@ body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: clamp(10px, 1.5vw, 14px); /* FIXED: Responsive gap */
   min-width: 0;
   flex: 1;
   position: relative;
   z-index: 2;
   animation: slideDown 0.6s ease-out;
+  overflow: hidden; /* FIXED: Ngăn overflow */
 }
 
 @keyframes slideDown {
@@ -255,8 +262,8 @@ body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
 }
 
 header .logo {
-  width: 48px;
-  height: 48px;
+  width: clamp(40px, 6vw, 48px); /* FIXED: Responsive size */
+  height: clamp(40px, 6vw, 48px);
   border-radius: var(--radius-lg);
   object-fit: cover;
   box-shadow: 0 6px 20px rgba(99,102,241,0.45);
@@ -297,19 +304,22 @@ header .logo:hover::before {
 }
 
 .app-name {
-  font-size: 19px;
+  font-size: clamp(16px, 2vw, 19px); /* FIXED: Responsive font */
   font-weight: 700;
   font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   letter-spacing: -0.02em;
   white-space: nowrap;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%);
+  background: var(--text-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 2px 10px rgba(0,0,0,0.4);
   transition: var(--transition-base);
   position: relative;
+  overflow: hidden; /* FIXED: Ngăn text overflow */
+  text-overflow: ellipsis; /* FIXED: Hiển thị ... khi text dài */
+  max-width: calc(100% - 60px); /* FIXED: Giới hạn width */
 }
 
 .app-name::after {
@@ -344,13 +354,12 @@ header.collapsed .app-name {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  height: 46px;
-  padding: 0 18px;
+  gap: clamp(8px, 1.5vw, 10px); /* FIXED: Responsive gap */
+  height: clamp(42px, 5.5vw, 46px); /* FIXED: Responsive height */
+  padding: 0 clamp(14px, 2vw, 18px); /* FIXED: Responsive padding */
   border-radius: var(--radius-md);
   font-weight: 600;
-  font-size: 14px;
-  /* color: white; */
+  font-size: clamp(13px, 1.5vw, 14px); /* FIXED: Responsive font */
   border: none;
   cursor: pointer;
   transition: var(--transition-base);
@@ -360,14 +369,15 @@ header.collapsed .app-name {
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  white-space: nowrap; /* FIXED: Ngăn text wrap */
 }
 
 /* Notification button */
 .action-btn.notif-btn {
-  background: var(--glass-bg);
   border: 1.5px solid var(--glass-border);
   color: var(--text-primary);
-  width: 46px;
+  width: clamp(42px, 5.5vw, 46px); /* FIXED: Responsive width */
+  height: clamp(42px, 5.5vw, 46px); /* FIXED: Square button */
   padding: 0;
 }
 
@@ -391,6 +401,7 @@ header.collapsed .app-name {
 .action-btn.sync-btn {
   background: linear-gradient(135deg, #4285F4 0%, #3367d6 100%);
   box-shadow: 0 6px 18px rgba(66,133,244,0.4);
+  max-width: 100%; /* FIXED: Không vượt container */
 }
 
 .action-btn.sync-btn::before {
@@ -416,9 +427,10 @@ header.collapsed .app-name {
 }
 
 .action-btn i {
-  font-size: 25px;
+  font-size: clamp(20px, 3vw, 25px); /* FIXED: Responsive icon */
   transition: var(--transition-fast);
-  color: #fff;
+  color: var(--text-primary);
+  flex-shrink: 0; /* FIXED: Icon không shrink */
 }
 
 .action-btn:hover i {
@@ -429,11 +441,13 @@ header.collapsed .app-name {
   white-space: nowrap;
   font-weight: 600;
   letter-spacing: 0.01em;
+  overflow: hidden; /* FIXED: Ngăn overflow */
+  text-overflow: ellipsis; /* FIXED: Hiển thị ... */
 }
 
 /* Collapsed state for buttons */
 header.collapsed .action-btn.sync-btn {
-  width: 46px;
+  width: clamp(42px, 5.5vw, 46px); /* FIXED: Responsive width */
   padding: 0;
   justify-content: center;
 }
@@ -459,7 +473,7 @@ header.collapsed .action-btn .btn-text {
   color: #fff;
   padding: 10px 18px;
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: clamp(12px, 1.5vw, 13px); /* FIXED: Responsive font */
   font-weight: 600;
   white-space: nowrap;
   opacity: 0;
@@ -470,6 +484,7 @@ header.collapsed .action-btn .btn-text {
   border: 1px solid rgba(99,102,241,0.4);
   box-shadow: 0 12px 35px rgba(0,0,0,0.5);
   letter-spacing: 0.02em;
+  max-width: 200px; /* FIXED: Giới hạn width tooltip */
 }
 
 .action-btn[data-tooltip]::before {
@@ -513,12 +528,13 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
    NAVBAR & LINKS
    ============================ */
 .navbar {
-  margin-top: 24px;
+  margin-top: clamp(16px, 2vw, 24px); /* FIXED: Responsive margin */
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 2;
   padding-right: 4px;
+  min-height: 0; /* FIXED: Cho phép flex shrink */
 }
 
 .nav-menu {
@@ -527,7 +543,7 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(12px, 1.5vw, 16px); /* FIXED: Responsive gap */
 }
 
 .nav-menu li {
@@ -552,17 +568,19 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: clamp(10px, 1.5vw, 14px); /* FIXED: Responsive gap */
+  padding: clamp(12px, 1.5vw, 14px) clamp(12px, 1.5vw, 16px); /* FIXED: Responsive padding */
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-weight: 500;
-  font-size: 14px;
+  font-size: clamp(13px, 1.5vw, 14px); /* FIXED: Responsive font */
   text-decoration: none;
   transition: var(--transition-fast);
   background: transparent;
   position: relative;
   overflow: hidden;
+  width: 100%; /* FIXED: Full width của parent */
+  box-sizing: border-box;
 }
 
 /* Left accent bar */
@@ -587,11 +605,12 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
 }
 
 .nav-link i {
-  width: 22px;
-  font-size: 18px;
+  width: clamp(20px, 2.5vw, 22px); /* FIXED: Responsive width */
+  font-size: clamp(16px, 2vw, 18px); /* FIXED: Responsive font */
   text-align: center;
   transition: var(--transition-fast);
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  flex-shrink: 0; /* FIXED: Icon không shrink */
 }
 
 .nav-link span {
@@ -601,6 +620,7 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
   text-overflow: ellipsis;
   font-weight: 500;
   letter-spacing: -0.01em;
+  min-width: 0; /* FIXED: Cho phép shrink */
 }
 
 .nav-link:hover {
@@ -637,10 +657,10 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
   right: 6px;
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;
-  font-size: 11px;
+  font-size: clamp(10px, 1.2vw, 11px); /* FIXED: Responsive font */
   font-weight: 700;
-  min-width: 20px;
-  height: 20px;
+  min-width: clamp(18px, 2.5vw, 20px); /* FIXED: Responsive size */
+  height: clamp(18px, 2.5vw, 20px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -673,9 +693,9 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  /* background: var(--primary-800); */
   backdrop-filter: blur(20px);
-  min-width: 200px;
+  min-width: clamp(180px, 25vw, 200px); /* FIXED: Responsive width */
+  max-width: 90vw; /* FIXED: Không vượt viewport */
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--glass-border);
@@ -700,44 +720,11 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
   border-bottom: 8px solid var(--primary-800);
 }
 
-.dropdown-content a {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: 12px var(--spacing-md);
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  transition: var(--transition-fast);
-  position: relative;
-  border-left: 3px solid transparent;
-}
-
-.dropdown-content a::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--nav-hover);
-  opacity: 0;
-  transition: var(--transition-fast);
-}
-
-.dropdown-content a:hover {
-  background: var(--glass-bg);
-  color: var(--accent-primary);
-  border-left-color: var(--accent-primary);
-  padding-left: 20px;
-}
-
-.dropdown-content a:hover::before {
-  opacity: 1;
-}
-
 .dropdown-content a i {
   width: 20px;
   text-align: center;
-  font-size: 16px;
+  font-size: clamp(15px, 2vw, 16px); /* FIXED: Responsive icon */
+  flex-shrink: 0; /* FIXED: Icon không shrink */
 }
 
 /* Show dropdown - ONLY toggle with .active class */
@@ -757,13 +744,14 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
 
 /* User Avatar */
 .user-avatar {
-  width: 36px;
-  height: 36px;
+  width: clamp(32px, 4vw, 36px); /* FIXED: Responsive size */
+  height: clamp(32px, 4vw, 36px);
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--accent-primary);
   box-shadow: 0 4px 12px rgba(99,102,241,0.4);
   transition: var(--transition-bounce);
+  flex-shrink: 0; /* FIXED: Không shrink */
 }
 
 .user-avatar:hover {
@@ -785,12 +773,13 @@ header.collapsed .dropdown-content {
   bottom: 0;
   margin-left: 8px;
   margin-bottom: 0;
+  right: auto; /* FIXED: Override right positioning */
 }
 
 header.collapsed .nav-link,
 header.collapsed .dropbtn {
   justify-content: center;
-  padding: 14px;
+  padding: clamp(12px, 1.5vw, 14px); /* FIXED: Responsive padding */
 }
 
 header.collapsed .nav-link {
@@ -800,7 +789,7 @@ header.collapsed .nav-link {
 }
 
 header.collapsed .nav-link i {
-  font-size: 24px;
+  font-size: clamp(20px, 3vw, 24px); /* FIXED: Responsive font */
 }
 
 header.collapsed .nav-link:hover {
@@ -828,25 +817,78 @@ header.collapsed .nav-link:hover {
   background: transparent;
 }
 
+/* FIXED: Scrollbar cho header */
+header::-webkit-scrollbar {
+  width: 6px;
+}
+
+header::-webkit-scrollbar-thumb {
+  background: rgba(99,102,241,0.4);
+  border-radius: var(--radius-full);
+  transition: background 0.3s;
+}
+
+header::-webkit-scrollbar-thumb:hover {
+  background: rgba(99,102,241,0.6);
+}
+
+header::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* ============================
    MAIN CONTENT AREA
    ============================ */
 .main-content {
-  /* flex: 1; */
   min-width: 0;
-  margin-left: var(--sidebar-width);   /* 280px ban đầu */
+  margin-left: var(--sidebar-width);
   transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 20px;
-  /* background: var(--bg-gradient); */
+  padding: clamp(16px, 2vw, 20px); /* FIXED: Responsive padding */
+  width: calc(100% - var(--sidebar-width)); /* FIXED: Chính xác width */
+  max-width: calc(100vw - var(--sidebar-width)); /* FIXED: Không vượt viewport */
+  box-sizing: border-box;
+  overflow-x: hidden; /* FIXED: Ngăn overflow */
 }
 
 header.collapsed ~ .main-content {
   margin-left: var(--sidebar-collapsed);
+  width: calc(100% - var(--sidebar-collapsed)); /* FIXED: Recalculate */
+  max-width: calc(100vw - var(--sidebar-collapsed));
 }
 
 /* ============================
    RESPONSIVE DESIGN
    ============================ */
+
+/* FIXED: Large Desktop (1400px+) - Giữ nguyên */
+@media (min-width: 1400px) {
+  header {
+    width: var(--sidebar-width);
+  }
+  
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title),
+  .main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    max-width: calc(100vw - var(--sidebar-width));
+  }
+}
+
+/* FIXED: Desktop & Laptop (1025px - 1399px) */
+@media (min-width: 1025px) and (max-width: 1399px) {
+  header {
+    width: min(var(--sidebar-width), 260px); /* FIXED: Giảm width một chút */
+  }
+  
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title),
+  .main-content {
+    margin-left: min(var(--sidebar-width), 260px);
+    width: calc(100% - min(var(--sidebar-width), 260px));
+    max-width: calc(100vw - min(var(--sidebar-width), 260px));
+  }
+}
+
+/* FIXED: Tablet Landscape (769px - 1024px) - Auto collapse */
 @media (max-width: 1024px) {
   header {
     width: var(--sidebar-collapsed);
@@ -860,27 +902,206 @@ header.collapsed ~ .main-content {
   }
   
   .action-btn.sync-btn {
-    width: 46px;
+    width: clamp(42px, 5.5vw, 46px);
     padding: 0;
   }
   
+  .row-top {
+    justify-content: center; /* FIXED: Center items khi collapsed */
+  }
+  
+  .row-bottom {
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title),
   .main-content {
-    margin-left: var(--sidebar-collapsed);
+    margin-left: var(--sidebar-collapsed) !important;
+    width: calc(100% - var(--sidebar-collapsed)) !important;
+    max-width: calc(100vw - var(--sidebar-collapsed)) !important;
   }
 }
 
+/* FIXED: Tablet Portrait & Large Mobile (481px - 768px) - Hidden by default */
 @media (max-width: 768px) {
   header {
     transform: translateX(-100%);
     transition: transform 0.3s ease;
+    width: min(var(--sidebar-width), 280px); /* FIXED: Giới hạn width */
+    box-shadow: none; /* FIXED: Ẩn shadow khi hide */
   }
   
   header.mobile-open {
     transform: translateX(0);
+    box-shadow: var(--shadow-xl), 4px 0 24px rgba(0,0,0,0.3); /* FIXED: Shadow khi show */
   }
   
+  /* FIXED: Overlay khi sidebar mở trên mobile */
+  header.mobile-open::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 100%;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: -1;
+    animation: fadeIn 0.3s ease;
+  }
+  
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title),
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: clamp(12px, 2vw, 16px); /* FIXED: Padding nhỏ hơn */
+  }
+  
+  /* FIXED: Nút hamburger cho mobile */
+  .mobile-menu-toggle {
+    display: block;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 9998;
+    width: 44px;
+    height: 44px;
+    background: var(--accent-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+    transition: var(--transition-base);
+  }
+  
+  .mobile-menu-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+/* FIXED: Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+  header {
+    width: min(var(--sidebar-width), 260px); /* FIXED: Sidebar nhỏ hơn */
+    padding: 16px 12px; /* FIXED: Padding nhỏ hơn */
+  }
+  
+  header.mobile-open {
+    width: 85vw; /* FIXED: 85% viewport width */
+    max-width: 280px;
+  }
+  
+  .menu-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .logo {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  .app-name {
+    font-size: 16px;
+  }
+  
+  .action-btn {
+    height: 40px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+  
+  .action-btn.notif-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .action-btn i {
+    font-size: 18px;
+  }
+  
+  .nav-link {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 10px;
+  }
+  
+  .nav-link i {
+    font-size: 16px;
+    width: 18px;
+  }
+  
+  .nav-menu {
+    gap: 10px;
+  }
+  
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title),
+  .main-content {
+    padding: 12px; /* FIXED: Padding tối thiểu */
+  }
+}
+
+/* FIXED: Extra Small Mobile (max-width: 360px) */
+@media (max-width: 360px) {
+  header.mobile-open {
+    width: 90vw; /* FIXED: 90% viewport trên màn hình cực nhỏ */
+    max-width: 260px;
+  }
+  
+  .app-name {
+    font-size: 14px;
+  }
+  
+  .action-btn {
+    height: 38px;
+    padding: 0 12px;
+  }
+  
+  .action-btn.notif-btn {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .nav-link {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title),
+  .main-content {
+    padding: 10px; /* FIXED: Padding cực nhỏ */
+  }
+}
+
+/* FIXED: Landscape orientation trên mobile */
+@media (max-height: 600px) and (orientation: landscape) {
+  header {
+    padding: 12px 10px; /* FIXED: Giảm vertical padding */
+  }
+  
+  .row-top {
+    margin-bottom: 8px;
+  }
+  
+  .row-bottom {
+    padding: 6px 0 10px;
+  }
+  
+  .navbar {
+    margin-top: 12px;
+  }
+  
+  .nav-menu {
+    gap: 8px;
+  }
+  
+  .nav-link {
+    padding: 8px 12px;
   }
 }
 
@@ -894,6 +1115,17 @@ header.collapsed ~ .main-content {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(99,102,241,0.2);
+}
+
+/* FIXED: Focus visible trên mobile */
+@media (max-width: 768px) {
+  .nav-link:focus-visible,
+  .action-btn:focus-visible,
+  .dropbtn:focus-visible,
+  .menu-toggle:focus-visible {
+    outline-width: 3px; /* FIXED: Outline dày hơn cho touch */
+    outline-offset: 3px;
+  }
 }
 
 /* ============================
@@ -924,7 +1156,18 @@ header::after {
   will-change: opacity;
 }
 
-/* Reduce motion preference */
+/* FIXED: Tối ưu performance trên mobile */
+@media (max-width: 768px) {
+  header,
+  .nav-link,
+  .menu-toggle,
+  .logo,
+  .action-btn {
+    will-change: auto; /* FIXED: Tắt will-change trên mobile để tiết kiệm memory */
+  }
+}
+
+/* FIXED: Tắt animations trên thiết bị yếu */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -933,5 +1176,178 @@ header::after {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  
+  header::before {
+    animation: none !important;
+  }
+  
+  .notif-badge {
+    animation: none !important;
+  }
+  
+  .logo::before {
+    animation: none !important;
+  }
 }
 
+/* FIXED: Tối ưu hover effects trên touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .nav-link:hover,
+  .action-btn:hover,
+  .menu-toggle:hover,
+  .logo:hover,
+  .user-avatar:hover {
+    transform: none; /* FIXED: Tắt transform trên touch */
+  }
+  
+  /* FIXED: Giữ lại active states */
+  .nav-link:active {
+    background: var(--nav-hover);
+    transform: scale(0.98);
+  }
+  
+  .action-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .menu-toggle:active {
+    transform: scale(0.95);
+  }
+}
+
+/* FIXED: Print styles */
+@media print {
+  header {
+    display: none !important; /* FIXED: Ẩn sidebar khi print */
+  }
+  
+  body > *:not(header):not(script):not(style):not(link):not(meta):not(title),
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}
+
+/* FIXED: High contrast mode */
+@media (prefers-contrast: high) {
+  header {
+    border-right-width: 2px;
+  }
+  
+  .nav-link,
+  .action-btn,
+  .menu-toggle {
+    border-width: 2px;
+  }
+  
+  .nav-link::before {
+    width: 4px;
+  }
+}
+
+/* FIXED: Dark mode adjustments (nếu cần) */
+@media (prefers-color-scheme: dark) {
+  /* Sidebar đã dark sẵn, không cần thay đổi */
+}
+
+/* FIXED: Đảm bảo dropdown không bị overflow viewport */
+.dropdown-content {
+  max-height: calc(100vh - 100px); /* FIXED: Giới hạn height */
+  overflow-y: auto; /* FIXED: Scroll nếu quá dài */
+}
+
+.dropdown-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb {
+  background: rgba(99,102,241,0.4);
+  border-radius: var(--radius-full);
+}
+
+/* FIXED: Đảm bảo tooltips không overflow viewport */
+@media (max-width: 768px) {
+  .action-btn[data-tooltip]::after {
+    max-width: calc(100vw - 40px); /* FIXED: Không vượt viewport */
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+  
+  .action-btn[data-tooltip]::before {
+    display: none; /* FIXED: Ẩn arrow trên mobile */
+  }
+  
+  .action-btn:hover[data-tooltip]::after {
+    transform: translateY(8px);
+  }
+}
+
+/* FIXED: Sticky positioning cho header rows */
+.row-top,
+.row-bottom {
+  position: sticky;
+  background: inherit;
+  z-index: 10;
+}
+
+.row-top {
+  top: 0;
+}
+
+/* FIXED: Đảm bảo navbar có space phù hợp */
+.navbar {
+  padding-top: 8px;
+  padding-bottom: 16px;
+}
+
+/* FIXED: Mobile menu toggle button (cần thêm vào HTML) */
+.mobile-menu-toggle {
+  display: none; /* FIXED: Ẩn trên desktop */
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: flex; /* FIXED: Hiện trên mobile */
+    align-items: center;
+    justify-content: center;
+  }
+} 
+.dropdown-content a {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: clamp(10px, 1.5vw, 12px) var(--spacing-md); /* FIXED: Responsive padding */
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: clamp(13px, 1.5vw, 14px); /* FIXED: Responsive font */
+  font-weight: 500;
+  transition: var(--transition-fast);
+  position: relative;
+  border-left: 3px solid transparent;
+  white-space: nowrap; /* FIXED: Ngăn text wrap */
+  overflow: hidden; /* FIXED: Ngăn overflow */
+  text-overflow: ellipsis; /* FIXED: Hiển thị ... */
+}
+
+.dropdown-content a::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--nav-hover);
+  opacity: 0;
+  transition: var(--transition-fast);
+}
+
+.dropdown-content a:hover {
+  background: var(--glass-bg);
+  color: var(--accent-primary);
+  border-left-color: var(--accent-primary);
+  padding-left: 20px;
+}
+
+.dropdown-content a:hover::before {
+  opacity: 1;
+}
