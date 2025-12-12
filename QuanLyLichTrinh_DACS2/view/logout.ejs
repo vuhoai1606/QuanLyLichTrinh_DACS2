@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/logout.css">
+  <title>Logout</title>
+</head>
+<body>
+  <!-- Header -->
+  <%- include('header') %>
+
+  <!-- Nội dung chính -->
+  <div class="main-content">
+    <div class="logout-container">
+      <i class="fas fa-check-circle" style="font-size: 48px; color: #4CAF50; margin-bottom: 20px;"></i>
+      <h1>Đăng xuất thành công ✅</h1>
+      <p>Bạn đã rời khỏi hệ thống. Hẹn gặp lại bạn lần sau 👋</p>
+      <a href="index.html" class="btn-primary">Về trang chủ</a>  <!-- Thay login.html thành index.html -->
+    </div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/logout.js"></script>
+</body>
+</html>

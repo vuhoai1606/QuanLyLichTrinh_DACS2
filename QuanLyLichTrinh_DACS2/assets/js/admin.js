@@ -151,6 +151,9 @@ function initUsersPage() {
   console.log('👥 Initializing users page...');
   loadUsers();
   
+  // ✅ SOCKET.IO - Realtime updates
+  initSocketIO();
+  
   // Search with debounce
   const searchInput = document.getElementById('search-input');
   if (searchInput) {
@@ -182,6 +185,58 @@ function initUsersPage() {
       loadUsers();
     });
   }
+}
+
+// ✅ SOCKET.IO - Initialize realtime connection
+function initSocketIO() {
+  const socket = io();
+  
+  socket.on('connect', () => {
+    console.log('🔌 Socket.IO connected:', socket.id);
+  });
+  
+  // Event: User mới đăng ký
+  socket.on('new-user-registered', (data) => {
+    console.log('📢 New user registered:', data);
+    showToast(`✨ User mới: ${data.username} (${data.email})`, 'info');
+    
+    // Reload users list
+    loadUsers(currentPage);
+  });
+  
+  // Event: User được cấp quyền admin (legacy)
+  socket.on('user-promoted', (data) => {
+    console.log('📢 User promoted:', data);
+    showToast(`🔑 ${data.username} đã được cấp quyền admin`, 'success');
+    
+    // Reload page để apply quyền mới
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  });
+  
+  // ✅ NEW EVENTS - Auto reload user list
+  socket.on('role-changed', (data) => {
+    console.log('📢 Role changed:', data);
+    showToast(`🔄 ${data.username} đã được thay đổi quyền thành ${data.newRole}`, 'info');
+    loadUsers(currentPage); // Auto reload table
+  });
+  
+  socket.on('user-banned', (data) => {
+    console.log('📢 User banned:', data);
+    showToast(`🚫 ${data.username} đã bị khóa tài khoản`, 'warning');
+    loadUsers(currentPage); // Auto reload table
+  });
+  
+  socket.on('account-deleted', (data) => {
+    console.log('📢 Account deleted:', data);
+    showToast(`🗑️ ${data.username} đã bị xóa tài khoản`, 'error');
+    loadUsers(currentPage); // Auto reload table
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('🔌 Socket.IO disconnected');
+  });
 }
 
 async function loadUsers(page = 1) {
@@ -242,7 +297,7 @@ function renderUsersTable(users) {
       <td>${escapeHtml(user.email)}</td>
       <td>${escapeHtml(user.full_name || '-')}</td>
       <td><span class="badge ${user.role}">${user.role}${isRootAdmin ? ' <i class="fas fa-shield-alt" title="Root Admin"></i>' : ''}</span></td>
-      <td><span class="badge ${user.is_active ? 'active' : 'banned'}">${user.is_active ? 'Hoạt động' : 'Đã khóa'}</span></td>
+      <td><span class="badge ${!user.is_banned ? 'active' : 'banned'}">${!user.is_banned ? 'Hoạt động' : 'Đã khóa'}</span></td>
       <td>${formatDate(user.created_at)}</td>
       <td>${user.last_login_at ? formatDate(user.last_login_at) : 'Chưa đăng nhập'}</td>
       <td>
@@ -259,11 +314,11 @@ function renderUsersTable(users) {
               <i class="fas fa-user-minus"></i>
             </button>
           ` : ''}
-          ${!isRootAdmin && user.is_active ? `
+          ${!isRootAdmin && !user.is_banned ? `
             <button class="action-btn" onclick="confirmBanUser(${user.user_id}, '${escapeHtml(user.username)}')" title="Khóa tài khoản">
               <i class="fas fa-ban"></i>
             </button>
-          ` : !isRootAdmin && !user.is_active ? `
+          ` : !isRootAdmin && user.is_banned ? `
             <button class="action-btn" onclick="confirmUnbanUser(${user.user_id}, '${escapeHtml(user.username)}')" title="Mở khóa">
               <i class="fas fa-unlock"></i>
             </button>
@@ -296,8 +351,8 @@ async function viewUserDetail(userId) {
             <p><strong>Email:</strong> ${escapeHtml(user.email)}</p>
             <p><strong>Họ tên:</strong> ${escapeHtml(user.full_name || '-')}</p>
             <p><strong>Role:</strong> <span class="badge ${user.role}">${user.role}</span></p>
-            <p><strong>Trạng thái:</strong> <span class="badge ${user.is_active ? 'active' : 'banned'}">${user.is_active ? 'Hoạt động' : 'Đã khóa'}</span></p>
-            ${user.banned_reason ? `<p><strong>Lý do khóa:</strong> ${escapeHtml(user.banned_reason)}</p>` : ''}
+            <p><strong>Trạng thái:</strong> <span class="badge ${!user.is_banned ? 'active' : 'banned'}">${!user.is_banned ? 'Hoạt động' : 'Đã khóa'}</span></p>
+            ${user.ban_reason ? `<p><strong>Lý do khóa:</strong> ${escapeHtml(user.ban_reason)}</p>` : ''}
           </div>
           
           <div class="detail-section">
@@ -342,15 +397,22 @@ function closeUserModal() {
 function confirmGrantAdmin(userId, username) {
   showActionModal(
     'Cấp quyền Admin',
-    `Bạn có chắc muốn cấp quyền admin cho <strong>${username}</strong>?`,
+    `Bạn có chắc muốn cấp quyền admin cho <strong>${username}</strong>?<br><small style="color: #dc2626;">⚠️ Sau khi cấp quyền, trang sẽ tự động reload.</small>`,
     async () => {
       try {
-        const res = await fetch(`/admin/api/users/${userId}/grant-admin`, { method: 'POST' });
+        const res = await fetch(`/admin/api/users/${userId}/promote`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
         const data = await res.json();
         
         if (data.success) {
           showToast(data.message, 'success');
-          loadUsers(currentPage);
+          
+          // ✅ Reload page sau 1.5s để apply quyền mới
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         } else {
           showToast(data.message, 'error');
         }
@@ -603,11 +665,14 @@ function confirmDeleteNotification(notificationId) {
     'Bạn có chắc muốn xóa thông báo này?',
     async () => {
       try {
-        const res = await fetch(`/admin/api/notifications/${notificationId}`, { method: 'DELETE' });
+        const res = await fetch(`/admin/api/notifications/${notificationId}`, { 
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
         const data = await res.json();
         
         if (data.success) {
-          showToast(data.message, 'success');
+          showToast('Đã xóa thông báo thành công', 'success');
           loadNotifications();
         } else {
           showToast(data.message, 'error');
@@ -624,6 +689,8 @@ function confirmDeleteNotification(notificationId) {
 // AUDIT LOGS
 // ===================================
 
+let selectedLogIds = new Set();
+
 function initLogsPage() {
   console.log('📜 Initializing logs page...');
   loadLogs();
@@ -632,8 +699,34 @@ function initLogsPage() {
   const actionFilter = document.getElementById('action-filter');
   if (actionFilter) {
     actionFilter.addEventListener('change', () => {
+      selectedLogIds.clear();
+      updateSelectedCount();
       loadLogs();
     });
+  }
+
+  // Select All checkbox
+  const selectAllCheckbox = document.getElementById('select-all-logs');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', (e) => {
+      const checkboxes = document.querySelectorAll('.log-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+        const logId = parseInt(cb.dataset.logId);
+        if (e.target.checked) {
+          selectedLogIds.add(logId);
+        } else {
+          selectedLogIds.delete(logId);
+        }
+      });
+      updateSelectedCount();
+    });
+  }
+
+  // Delete selected button
+  const deleteBtn = document.getElementById('delete-selected-btn');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', confirmDeleteSelectedLogs);
   }
 }
 
@@ -667,18 +760,93 @@ function renderLogs(logs) {
   
   container.innerHTML = logs.map(log => `
     <div class="log-item">
-      <div class="log-header">
-        <span class="log-action"><i class="fas fa-shield-alt"></i> ${getActionLabel(log.action_type)}</span>
-        <span class="log-time">${formatDate(log.created_at)}</span>
+      <div class="log-checkbox-container">
+        <input type="checkbox" class="log-checkbox" data-log-id="${log.log_id}" ${selectedLogIds.has(log.log_id) ? 'checked' : ''}>
       </div>
-      <div class="log-description">${escapeHtml(log.description)}</div>
-      <div class="log-meta">
-        <span><i class="fas fa-user"></i> Admin: <strong>${escapeHtml(log.admin_username)}</strong></span>
-        ${log.target_username ? `<span><i class="fas fa-bullseye"></i> Target: <strong>${escapeHtml(log.target_username)}</strong></span>` : ''}
-        ${log.ip_address ? `<span><i class="fas fa-network-wired"></i> IP: ${log.ip_address}</span>` : ''}
+      <div class="log-content">
+        <div class="log-header">
+          <span class="log-action"><i class="fas fa-shield-alt"></i> ${getActionLabel(log.action_type)}</span>
+          <span class="log-time">${formatDate(log.created_at)}</span>
+        </div>
+        <div class="log-description">${escapeHtml(log.description)}</div>
+        <div class="log-meta">
+          <span><i class="fas fa-user"></i> Admin: <strong>${escapeHtml(log.admin_username)}</strong></span>
+          ${log.target_username ? `<span><i class="fas fa-bullseye"></i> Target: <strong>${escapeHtml(log.target_username)}</strong></span>` : ''}
+          ${log.ip_address ? `<span><i class="fas fa-network-wired"></i> IP: ${log.ip_address}</span>` : ''}
+        </div>
       </div>
     </div>
   `).join('');
+
+  // Add event listeners to checkboxes
+  document.querySelectorAll('.log-checkbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const logId = parseInt(e.target.dataset.logId);
+      if (e.target.checked) {
+        selectedLogIds.add(logId);
+      } else {
+        selectedLogIds.delete(logId);
+      }
+      updateSelectedCount();
+    });
+  });
+}
+
+function updateSelectedCount() {
+  const count = selectedLogIds.size;
+  const deleteBtn = document.getElementById('delete-selected-btn');
+  const countSpan = document.getElementById('selected-count');
+  
+  if (countSpan) countSpan.textContent = count;
+  if (deleteBtn) deleteBtn.style.display = count > 0 ? 'block' : 'none';
+  
+  // Update select all checkbox
+  const selectAllCheckbox = document.getElementById('select-all-logs');
+  const allCheckboxes = document.querySelectorAll('.log-checkbox');
+  if (selectAllCheckbox && allCheckboxes.length > 0) {
+    const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+    selectAllCheckbox.checked = allChecked;
+  }
+}
+
+function confirmDeleteSelectedLogs() {
+  if (selectedLogIds.size === 0) {
+    showToast('Vui lòng chọn ít nhất 1 log để xóa', 'warning');
+    return;
+  }
+
+  showActionModal(
+    'Xóa logs đã chọn',
+    `Bạn có chắc muốn xóa <strong>${selectedLogIds.size}</strong> log(s) đã chọn?<br>
+    <span style="color: #ef4444;">Hành động này không thể hoàn tác!</span>`,
+    deleteSelectedLogs
+  );
+}
+
+async function deleteSelectedLogs() {
+  try {
+    const logIds = Array.from(selectedLogIds);
+    const res = await fetch('/admin/api/logs/delete-multiple', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ logIds })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showToast(`Đã xóa ${data.deletedCount} log(s) thành công`, 'success');
+      selectedLogIds.clear();
+      updateSelectedCount();
+      closeActionModal();
+      loadLogs();
+    } else {
+      showToast(data.message || 'Lỗi xóa logs', 'error');
+    }
+  } catch (error) {
+    console.error('❌ Error deleting logs:', error);
+    showToast('Lỗi xóa logs', 'error');
+  }
 }
 
 function getActionLabel(actionType) {

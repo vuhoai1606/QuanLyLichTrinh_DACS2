@@ -75,6 +75,10 @@ exports.verifyOTP = async (req, res) => {
     // Verify OTP từ session thay vì database
     const result = await authService.completeRegistration(req, pendingReg, otpCode);
 
+    // Cập nhật last_login_at
+    const pool = require('../config/db');
+    await pool.query('UPDATE users SET last_login_at = NOW() WHERE user_id = $1', [result.user.user_id]);
+
     // Tự động đăng nhập
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
@@ -82,6 +86,18 @@ exports.verifyOTP = async (req, res) => {
     req.session.role = result.user.role || 'user'; // Lưu role
 
     delete req.session.pendingRegistration;
+
+    // ✅ EMIT SOCKET.IO - Thông báo admin có user mới
+    if (global.io) {
+      global.io.emit('new-user-registered', {
+        userId: result.user.user_id,
+        username: result.user.username,
+        fullName: result.user.full_name,
+        email: result.user.email,
+        createdAt: new Date()
+      });
+      console.log('📢 [SOCKET] Emitted new-user-registered event');
+    }
 
     res.json({
       success: true,
@@ -149,6 +165,23 @@ exports.login = async (req, res) => {
     // Gọi service để login
     const result = await authService.login(username, password);
 
+    // ✅ KIỂM TRA TÀI KHOẢN BỊ KHÓA
+    if (result.user.is_banned) {
+      const banReason = result.user.ban_reason || 'Không có lý do cụ thể';
+      console.log(`🔴 [LOGIN] User "${username}" cố đăng nhập nhưng bị khóa - Reason: ${banReason}`);
+      
+      return res.status(403).json({
+        success: false,
+        accountBanned: true,
+        message: `Tài khoản đã bị khóa. Lý do: ${banReason}`,
+        banReason: banReason
+      });
+    }
+
+    // Cập nhật last_login_at
+    const pool = require('../config/db');
+    await pool.query('UPDATE users SET last_login_at = NOW() WHERE user_id = $1', [result.user.user_id]);
+
     // Lưu vào session
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
@@ -211,6 +244,23 @@ exports.googleLogin = async (req, res) => {
       email: result.user.email
     });
 
+    // ✅ KIỂM TRA TÀI KHOẢN BỊ KHÓA
+    if (result.user.is_banned) {
+      const banReason = result.user.ban_reason || 'Không có lý do cụ thể';
+      console.log(`🔴 [GOOGLE-LOGIN] User "${result.user.email}" cố đăng nhập nhưng bị khóa`);
+      
+      return res.status(403).json({
+        success: false,
+        accountBanned: true,
+        message: `Tài khoản đã bị khóa. Lý do: ${banReason}`,
+        banReason: banReason
+      });
+    }
+
+    // Cập nhật last_login_at
+    const pool = require('../config/db');
+    await pool.query('UPDATE users SET last_login_at = NOW() WHERE user_id = $1', [result.user.user_id]);
+
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
@@ -250,15 +300,22 @@ exports.googleLogin = async (req, res) => {
  */
 exports.logout = async (req, res) => {
   try {
+    // Lưu session ID trước khi destroy
+    const sessionId = req.sessionID;
+    
     req.session.destroy((err) => {
       if (err) {
+        console.error('Session destroy error:', err);
         return res.status(500).json({
           success: false,
           message: 'Có lỗi khi đăng xuất',
         });
       }
 
-      res.clearCookie('connect.sid');
+      // Clear tất cả cookies liên quan đến session
+      res.clearCookie('connect.sid', { path: '/' });
+      res.clearCookie('connect.sid'); // Clear without path as fallback
+      
       res.json({
         success: true,
         message: 'Đăng xuất thành công',

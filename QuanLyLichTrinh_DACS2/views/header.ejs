@@ -23,10 +23,10 @@
     </div>
 
     <!-- Sync with Google -->
-    <button id="googleSyncBtn" class="action-btn sync-btn" data-tooltip="Sync with Google">
+    <!-- <button id="googleSyncBtn" class="action-btn sync-btn" data-tooltip="Sync with Google">
       <i class="fas fa-sync"></i>
       <span class="btn-text">Sync with Google</span>
-    </button>
+    </button> -->
   </div>
 
   <!-- Menu điều hướng -->
@@ -56,14 +56,26 @@
 
         <!-- <li><a href="/notifications" class="nav-link <%= active === 'notifications' ? 'active' : '' %>">
           <i class="fas fa-bell"></i><span>Notifications</span></a></li> -->
-<!-- 
-        <li><a href="/export-import" class="nav-link <%= active === 'export' ? 'active' : '' %>">
+
+        <!-- <li><a href="/export-import" class="nav-link <%= active === 'export' ? 'active' : '' %>">
           <i class="fas fa-exchange-alt"></i><span>Export / Import</span></a></li> -->
 
-        <!-- ADMIN MENU - Chỉ hiện nếu user là admin -->
+        <!-- ADMIN PANEL DROPDOWN - Chỉ hiện nếu user là admin -->
         <% if (typeof userRole !== 'undefined' && userRole === 'admin') { %>
-        <li><a href="/admin/dashboard" class="nav-link <%= active === 'admin-dashboard' || active === 'admin-users' || active === 'admin-notifications' || active === 'admin-logs' ? 'active' : '' %>" style="<%= active === 'admin-dashboard' || active === 'admin-users' || active === 'admin-notifications' || active === 'admin-logs' ? '' : 'background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 700;' %>">
-          <i class="fas fa-shield-alt"></i><span>Admin Panel</span></a></li>
+        <li class="dropdown" id="admin-dropdown-container">
+          <a class="nav-link dropbtn <%= active === 'admin-dashboard' || active === 'admin-users' || active === 'admin-notifications' || active === 'admin-logs' ? 'active' : '' %>" id="admin-trigger" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 700;">
+              <i class="fas fa-shield-alt"></i>
+              <span>Admin Panel</span>
+              <i class="fas fa-caret-down"></i>
+          </a>
+
+          <div class="dropdown-content" id="admin-dropdown">
+            <a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="/admin/users"><i class="fas fa-users"></i> Quản lý Users</a>
+            <a href="/admin/notifications"><i class="fas fa-bullhorn"></i> Thông báo</a>
+            <a href="/admin/logs"><i class="fas fa-history"></i> Audit Logs</a>
+          </div>
+        </li>
         <% } %>
 
         <!-- ACCOUNT SECTION -->

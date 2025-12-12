@@ -2,12 +2,6 @@
 const taskService = require('../services/taskService');
 const notificationService = require('../services/notificationService');
 const pool = require('../config/db');
-/**
- * TASK CONTROLLER - Đã tái cấu trúc sử dụng Services
- * ====================================================
- * Controller chỉ xử lý HTTP request/response
- * Business logic đã chuyển sang taskService
- */
 
 // Lấy danh sách tasks của user với filters
 exports.getTasks = async (req, res) => {
@@ -97,7 +91,6 @@ exports.createTask = async (req, res) => {
     const taskData = {
       title: req.body.title,
       description: req.body.description || null,
-      // 🌟 FIX LỖI DATA FLOW: Chỉ sử dụng start_time và end_time (snake_case)
       start_time: req.body.start_time || new Date().toISOString(),
       end_time: req.body.end_time || null, 
       
@@ -139,7 +132,6 @@ exports.createTask = async (req, res) => {
 };
 
 // Cập nhật task
-// CẬP NHẬT TASK – ĐÃ SỬA HOÀN TOÀN ĐÚNG TÊN CỘT CỦA BẠN (end_time, start_time)
 exports.updateTask = async (req, res) => {
   try {
     const taskId = req.params.id;
@@ -223,7 +215,6 @@ exports.deleteTask = async (req, res) => {
       });
     }
 
-    // DÙNG chính deletedTask (có title) để tạo notification → đẹp hơn!
     await notificationService.createNotification({
       userId,
       type: 'task',
@@ -316,10 +307,10 @@ exports.updateTaskKanbanColumn = async (req, res) => {
       });
     }
 
-    // 🌟 KHẮC PHỤC: Tăng cường kiểm tra hợp lệ
+    // KHẮC PHỤC: Tăng cường kiểm tra hợp lệ
     const validColumns = ['todo', 'in_progress', 'done', 'overdue'];
     if (!column || typeof column !== 'string' || !validColumns.includes(column)) { 
-      // 💡 Thêm column để dễ dàng debug
+      // Thêm column để dễ dàng debug
       console.error(`Lỗi 400: Cột Kanban nhận được không hợp lệ: ${column}`); 
       return res.status(400).json({
         success: false,
@@ -329,18 +320,17 @@ exports.updateTaskKanbanColumn = async (req, res) => {
     
     let newStatus; 
     
-    // ... (Logic tính newStatus giữ nguyên)
     if (column === 'done') {
         newStatus = 'done';
     } else if (column === 'in_progress') {
         newStatus = 'in_progress';
     } else if (column === 'overdue') {
-        newStatus = 'overdue'; // Vẫn phải là 'overdue' để Task List hiển thị
+        newStatus = 'overdue'; 
     } else {
         newStatus = 'todo';
     }
     
-    // 🌟 CẬP NHẬT: Tạo updateData chỉ với các trường cần thiết
+    // CẬP NHẬT: Tạo updateData chỉ với các trường cần thiết
     const updateData = { 
       kanbanColumn: column,
       status: newStatus, // Bắt buộc phải gửi để Task List đồng bộ
@@ -448,8 +438,6 @@ exports.confirmTaskComplete = async (req, res) => {
     const taskId = req.params.id;
     const userId = req.session.userId;
 
-    // 🌟 LƯU Ý: Nếu cột grace_end_time không tồn tại trong CSDL, dòng này sẽ lỗi DB. 
-    // Giả định bạn sẽ thêm cột này hoặc chấp nhận lỗi tại đây.
     const { rows } = await pool.query(
       'SELECT end_time, grace_end_time, title FROM tasks WHERE task_id = $1 AND user_id = $2', 
       [taskId, userId]
@@ -466,14 +454,13 @@ exports.confirmTaskComplete = async (req, res) => {
     if (!graceEnd) {
       graceEnd = new Date(task.end_time); 
       graceEnd.setMinutes(graceEnd.getMinutes() + 5);
-      // 🌟 LƯU Ý: Dòng này cũng sẽ lỗi nếu cột grace_end_time không có trong CSDL.
       await pool.query(
         'UPDATE tasks SET grace_end_time = $1 WHERE task_id = $2',
         [graceEnd, taskId]
       );
     }
     
-    // Chuyển về Done (Loại bỏ is_overdue = FALSE)
+    // Chuyển về Done
     if (now <= graceEnd) {
       await pool.query(
         `UPDATE tasks 
@@ -490,9 +477,7 @@ exports.confirmTaskComplete = async (req, res) => {
       });
       res.json({ success: true, action: 'confirm_ok' });
     } else {
-      // Quá thời gian ân hạn, chuyển về Overdue (Loại bỏ is_overdue = TRUE)
       await pool.query(
-        // 🌟 FIX: Cập nhật status thành 'overdue' khi chuyển cột Kanban sang 'overdue'
         `UPDATE tasks SET kanban_column = 'overdue', status = 'overdue' WHERE task_id = $1`, 
         [taskId]
       );
@@ -506,8 +491,8 @@ exports.confirmTaskComplete = async (req, res) => {
     }
   } catch (err) {
     console.error('Lỗi confirm complete:', err);
-    // 🌟 Thêm kiểm tra lỗi DB cho grace_end_time
-    if (err.code === '42703') { // Lỗi cột không tồn tại
+    // Thêm kiểm tra lỗi DB cho grace_end_time
+    if (err.code === '42703') { 
         return res.status(500).json({ success: false, message: 'Lỗi CSDL: Cột grace_end_time không tồn tại.' });
     }
     res.status(500).json({ success: false, message: 'Lỗi server' });

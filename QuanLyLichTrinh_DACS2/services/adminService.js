@@ -29,8 +29,8 @@ class AdminService {
       let query = `
         SELECT 
           u.user_id, u.username, u.email, u.full_name, u.role, 
-          u.is_active, u.created_at, u.last_login_at, u.login_provider,
-          u.banned_at, u.banned_reason,
+          u.is_banned, u.created_at, u.last_login_at, u.login_provider,
+          u.ban_date, u.ban_reason,
           uas.total_tasks, uas.total_events, uas.total_messages_sent
         FROM users u
         LEFT JOIN user_activity_stats uas ON u.user_id = uas.user_id
@@ -56,9 +56,9 @@ class AdminService {
       
       // Status filter
       if (status === 'active') {
-        query += ` AND u.is_active = TRUE`;
+        query += ` AND u.is_banned = FALSE`;
       } else if (status === 'banned') {
-        query += ` AND u.is_active = FALSE`;
+        query += ` AND u.is_banned = TRUE`;
       }
       
       // Count total (trước khi LIMIT)
@@ -205,6 +205,18 @@ class AdminService {
       );
       
       await client.query('COMMIT');
+      
+      // ✅ EMIT SOCKET.IO - Thu hồi quyền admin (auto reload về role user)
+      if (global.io) {
+        global.io.emit('role-changed', {
+          userId: targetUserId,
+          username: user.username,
+          newRole: 'user',
+          oldRole: 'admin'
+        });
+        console.log(`📢 [SOCKET] Emitted role-changed event for user ${user.username} (ID: ${targetUserId}) - Revoked admin`);
+      }
+      
       return { success: true, message: 'Đã thu hồi quyền admin' };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -235,15 +247,19 @@ class AdminService {
         throw new Error('Không thể khóa tài khoản admin gốc');
       }
       
-      if (!user.is_active) {
+      if (user.is_banned) {
         throw new Error('Tài khoản đã bị khóa');
       }
       
-      // Khóa tài khoản
-      await client.query(
-        'UPDATE users SET is_active = FALSE, banned_at = NOW(), banned_reason = $1 WHERE user_id = $2',
+      console.log(`🔴 [BAN USER] Banning user ${user.username} (ID: ${targetUserId}) - Reason: ${reason}`);
+      
+      // Khóa tài khoản (cập nhật cả 2 cột để đồng bộ)
+      const updateResult = await client.query(
+        'UPDATE users SET is_banned = TRUE, is_active = FALSE, ban_date = NOW(), ban_reason = $1 WHERE user_id = $2 RETURNING user_id, username, is_banned, ban_reason, ban_date',
         [reason, targetUserId]
       );
+      
+      console.log('🔴 [BAN USER] Update result:', updateResult.rows[0]);
       
       // Tạo audit log
       await client.query(
@@ -253,12 +269,23 @@ class AdminService {
           'ban_user',
           targetUserId,
           `Khóa tài khoản ${user.username}: ${reason}`,
-          JSON.stringify({ reason, banned_at: new Date().toISOString() }),
+          JSON.stringify({ reason, ban_date: new Date().toISOString() }),
           ipAddress
         ]
       );
       
       await client.query('COMMIT');
+      
+      // ✅ EMIT SOCKET.IO - Thông báo user bị ban NGAY LẬP TỨC
+      if (global.io) {
+        global.io.emit('user-banned', {
+          userId: targetUserId,
+          username: user.username,
+          banReason: reason
+        });
+        console.log(`📢 [SOCKET] Emitted user-banned event for user ${user.username}`);
+      }
+      
       return { success: true, message: 'Đã khóa tài khoản' };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -283,13 +310,13 @@ class AdminService {
       }
       
       const user = userCheck.rows[0];
-      if (user.is_active) {
+      if (!user.is_banned) {
         throw new Error('Tài khoản chưa bị khóa');
       }
       
-      // Mở khóa
+      // Mở khóa (cập nhật cả 2 cột để đồng bộ)
       await client.query(
-        'UPDATE users SET is_active = TRUE, banned_at = NULL, banned_reason = NULL WHERE user_id = $1',
+        'UPDATE users SET is_banned = FALSE, is_active = TRUE, ban_date = NULL, ban_reason = NULL WHERE user_id = $1',
         [targetUserId]
       );
       
@@ -318,6 +345,74 @@ class AdminService {
   }
 
   /**
+   * 7b. CẤP QUYỀN ADMIN
+   */
+  async promoteToAdmin(adminId, targetUserId, ipAddress = null) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      const userCheck = await client.query('SELECT * FROM users WHERE user_id = $1', [targetUserId]);
+      if (userCheck.rows.length === 0) {
+        throw new Error('Không tìm thấy người dùng');
+      }
+      
+      const user = userCheck.rows[0];
+      
+      // PROTECT ROOT ADMIN
+      if (user.email === 'vuth.24it@vku.udn.vn') {
+        throw new Error('Tài khoản admin gốc không cần cấp quyền');
+      }
+      
+      if (user.role === 'admin') {
+        throw new Error('Tài khoản đã là admin');
+      }
+      
+      console.log(`🔑 [PROMOTE] Promoting user ${user.username} (ID: ${targetUserId}) to admin`);
+      
+      // Cấp quyền admin
+      await client.query(
+        'UPDATE users SET role = $1 WHERE user_id = $2',
+        ['admin', targetUserId]
+      );
+      
+      // Tạo audit log
+      await client.query(
+        'SELECT create_admin_log($1, $2, $3, $4, $5, $6)',
+        [
+          adminId,
+          'promote_to_admin',
+          targetUserId,
+          `Cấp quyền admin cho ${user.username}`,
+          JSON.stringify({ promoted_at: new Date().toISOString() }),
+          ipAddress
+        ]
+      );
+      
+      await client.query('COMMIT');
+      
+      // ✅ EMIT SOCKET.IO - Bắn tín hiệu role_changed cho user được cấp quyền (auto reload)
+      if (global.io) {
+        global.io.emit('role-changed', {
+          userId: targetUserId,
+          username: user.username,
+          newRole: 'admin',
+          oldRole: 'user'
+        });
+        console.log(`📢 [SOCKET] Emitted role-changed event for user ${user.username} (ID: ${targetUserId}) - Promoted to admin`);
+      }
+      
+      return { success: true, message: 'Đã cấp quyền admin' };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ promoteToAdmin error:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * 8. XÓA NGƯỜI DÙNG (SOFT DELETE - chuyển thành inactive thay vì xóa hẳn)
    */
   async deleteUser(adminId, targetUserId, reason, ipAddress = null) {
@@ -337,10 +432,7 @@ class AdminService {
         throw new Error('Không thể xóa tài khoản admin gốc');
       }
       
-      // Xóa HARD - CASCADE sẽ xóa tất cả dữ liệu liên quan
-      await client.query('DELETE FROM users WHERE user_id = $1', [targetUserId]);
-      
-      // Tạo audit log
+      // ✅ TẠO AUDIT LOG TRƯỚC KHI XÓA USER (để tránh FK constraint error)
       await client.query(
         'SELECT create_admin_log($1, $2, $3, $4, $5, $6)',
         [
@@ -358,7 +450,24 @@ class AdminService {
         ]
       );
       
+      // Set target_user_id to NULL in admin_logs before deleting (fix foreign key constraint)
+      await client.query('UPDATE admin_logs SET target_user_id = NULL WHERE target_user_id = $1', [targetUserId]);
+      
+      // Xóa HARD - CASCADE sẽ xóa tất cả dữ liệu liên quan
+      await client.query('DELETE FROM users WHERE user_id = $1', [targetUserId]);
+      
       await client.query('COMMIT');
+      
+      // ✅ EMIT SOCKET.IO - Thông báo user bị xóa (auto logout)
+      if (global.io) {
+        global.io.emit('account-deleted', {
+          userId: targetUserId,
+          username: user.username,
+          reason: reason
+        });
+        console.log(`📢 [SOCKET] Emitted account-deleted event for user ${user.username} (ID: ${targetUserId})`);
+      }
+      
       return { success: true, message: 'Đã xóa tài khoản' };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -453,15 +562,27 @@ class AdminService {
   }
 
   /**
-   * 11. XÓA/VÔ HIỆU HÓA THÔNG BÁO HỆ THỐNG
+   * 11. XÓA THÔNG BÁO HỆ THỐNG (XÓA HOÀN TOÀN)
    */
   async deleteSystemNotification(adminId, notificationId, ipAddress = null) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       
-      // Vô hiệu hóa thay vì xóa
-      await client.query('UPDATE system_notifications SET is_active = FALSE WHERE notification_id = $1', [notificationId]);
+      // Lấy thông tin notification trước khi xóa (để audit log)
+      const notifResult = await client.query(
+        'SELECT title, content FROM system_notifications WHERE notification_id = $1',
+        [notificationId]
+      );
+      
+      if (notifResult.rows.length === 0) {
+        throw new Error('Không tìm thấy thông báo');
+      }
+      
+      const { title, content } = notifResult.rows[0];
+      
+      // XÓA HOÀN TOÀN khỏi database
+      await client.query('DELETE FROM system_notifications WHERE notification_id = $1', [notificationId]);
       
       // Audit log
       await client.query(
@@ -470,18 +591,18 @@ class AdminService {
           adminId,
           'delete_notification',
           null,
-          `Xóa thông báo hệ thống #${notificationId}`,
-          JSON.stringify({ notification_id: notificationId }),
+          `Xóa vĩnh viễn thông báo "${title}"`,
+          JSON.stringify({ notification_id: notificationId, title, content }),
           ipAddress
         ]
       );
       
       await client.query('COMMIT');
-      return { success: true, message: 'Đã xóa thông báo' };
+      return { success: true, message: 'Đã xóa thông báo vĩnh viễn' };
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('❌ deleteSystemNotification error:', error);
-      throw new Error('Lỗi xóa thông báo');
+      throw new Error(error.message || 'Lỗi xóa thông báo');
     } finally {
       client.release();
     }
@@ -545,7 +666,51 @@ class AdminService {
   }
 
   /**
-   * 13. THỐNG KÊ HOẠT ĐỘNG THEO THỜI GIAN (cho charts)
+   * 13. XÓA NHIỀU AUDIT LOGS CÙNG LÚC
+   */
+  async deleteMultipleLogs(adminId, logIds, ipAddress = null) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Xóa logs
+      const result = await client.query(
+        'DELETE FROM admin_logs WHERE log_id = ANY($1::int[])',
+        [logIds]
+      );
+      
+      const deletedCount = result.rowCount;
+      
+      // Tạo audit log cho hành động xóa logs
+      await client.query(
+        'SELECT create_admin_log($1, $2, $3, $4, $5, $6)',
+        [
+          adminId,
+          'delete_logs',
+          null,
+          `Xóa ${deletedCount} audit log(s)`,
+          JSON.stringify({ logIds, deletedCount }),
+          ipAddress
+        ]
+      );
+      
+      await client.query('COMMIT');
+      return { 
+        success: true, 
+        message: `Đã xóa ${deletedCount} log(s) thành công`,
+        deletedCount 
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ deleteMultipleLogs error:', error);
+      throw new Error('Lỗi xóa logs');
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * 14. THỐNG KÊ HOẠT ĐỘNG THEO THỜI GIAN (cho charts)
    */
   async getActivityStats(days = 7) {
     try {
@@ -563,6 +728,45 @@ class AdminService {
     } catch (error) {
       console.error('❌ getActivityStats error:', error);
       throw new Error('Lỗi lấy thống kê hoạt động');
+    }
+  }
+
+  /**
+   * 14. LẤY SYSTEM NOTIFICATIONS ĐANG ACTIVE CHO USER
+   * Lấy thông báo đang hiển thị (trong thời gian start_date -> end_date)
+   * Lọc theo target_users (all/admins/users)
+   */
+  async getActiveSystemNotifications(userRole = 'user') {
+    try {
+      const query = `
+        SELECT 
+          notification_id,
+          title,
+          content,
+          notification_type,
+          start_date,
+          end_date,
+          target_users,
+          created_at
+        FROM system_notifications
+        WHERE 
+          is_active = TRUE
+          AND (start_date IS NULL OR start_date <= NOW())
+          AND (end_date IS NULL OR end_date >= NOW())
+          AND (
+            target_users = 'all' 
+            OR (target_users = 'admins' AND $1 = 'admin')
+            OR (target_users = 'users' AND $1 = 'user')
+          )
+        ORDER BY created_at DESC
+        LIMIT 10
+      `;
+      
+      const result = await pool.query(query, [userRole]);
+      return result.rows;
+    } catch (error) {
+      console.error('❌ getActiveSystemNotifications error:', error);
+      throw new Error('Lỗi lấy thông báo hệ thống');
     }
   }
 }

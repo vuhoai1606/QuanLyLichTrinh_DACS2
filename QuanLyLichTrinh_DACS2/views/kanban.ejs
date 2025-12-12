@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/kanban.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
   <title>Kanban Board</title>
 </head>
 <body>
@@ -19,8 +21,8 @@
       <h1>Kanban Board</h1>
       
       <!-- Toolbar -->
-      <!-- <div class="toolbar">
-        <button id="add-column" class="btn btn-primary">
+      <div class="toolbar">
+        <!-- <button id="add-column" class="btn btn-primary">
           <i class="fas fa-plus"></i>
           <span>Add Column</span>
         </button>
@@ -31,8 +33,8 @@
         <button class="btn btn-secondary">
           <i class="fas fa-download"></i>
           <span>Export</span>
-        </button>
-      </div> -->
+        </button> -->
+      </div>
 
       <!-- Filter Bar -->
       <div class="filter-bar">
@@ -122,5 +124,7 @@
   <script src="/js/header.js"></script>
   <script src="/js/kanban.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <!-- ✅ BANNED LISTENER - Auto logout when admin bans user -->
+  <script src="/js/banned-listener.js"></script>
 </body>
 </html>

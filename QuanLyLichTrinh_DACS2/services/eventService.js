@@ -150,7 +150,7 @@ class EventService {
       throw new Error('Tiêu đề event không được để trống');
     }
 
-    // Validate thời gian (isAllDay đã bị loại bỏ)
+    // Validate thời gian 
     if (!startTime || !endTime) {
       throw new Error('Vui lòng nhập thời gian bắt đầu và kết thúc');
     }

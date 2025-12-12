@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quên mật khẩu - Quản Lý Lịch Trình</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .icon {
+            text-align: center;
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .email-display {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .otp-input-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .otp-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .otp-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 15px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .countdown {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .back-login {
+            margin-top: 20px;
+        }
+
+        .back-login a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-login a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: #ef4444;
+            font-size: 13px;
+            display: block;
+            margin-top: 6px;
+            min-height: 20px;
+            font-weight: 500;
+        }
+
+        small {
+            color: #666;
+            font-size: 13px;
+        }
+
+        #password-match {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- BƯỚC 1: Nhập username và email -->
+        <div id="step-1" class="step active">
+            <div class="icon">🔒</div>
+            <h1>Quên mật khẩu</h1>
+            <p class="subtitle">Nhập tên đăng nhập và email để xác thực tài khoản.</p>
+
+            <form id="verify-form" novalidate>
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" placeholder="Nhập tên đăng nhập">
+                    <span class="error error-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Nhập email đã đăng ký">
+                    <span class="error email-error"></span>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    Gửi mã OTP
+                </button>
+
+                <p class="text-center back-login">
+                    <a href="/login">← Quay lại đăng nhập</a>
+                </p>
+            </form>
+        </div>
+
+        <!-- BƯỚC 2: Nhập OTP -->
+        <div id="step-2" class="step">
+            <div class="icon">🔐</div>
+            <h1>Xác thực OTP</h1>
+            <p class="subtitle">Mã OTP đã được gửi đến email của bạn</p>
+            <p class="email-display" id="email-display"></p>
+
+            <form id="otp-form" novalidate>
+                <div class="otp-input-group">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" />
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" />
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" />
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" />
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" />
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" />
+                </div>
+                <span class="error otp-error"></span>
+
+                <button type="submit" class="btn-primary">
+                    Xác nhận OTP
+                </button>
+
+                <button type="button" id="resend-otp" class="btn-secondary">
+                    Gửi lại mã OTP
+                </button>
+
+                <p class="text-center" style="margin-top: 20px; color: #666; font-size: 13px;">
+                    Mã OTP hết hạn sau: <span id="countdown" class="countdown">5:00</span>
+                </p>
+
+                <p class="text-center back-login">
+                    <a href="javascript:void(0)" id="back-to-step1">← Quay lại</a>
+                </p>
+            </form>
+        </div>
+
+        <!-- BƯỚC 3: Đổi mật khẩu -->
+        <div id="step-3" class="step">
+            <div class="icon">✅</div>
+            <h1>Đặt lại mật khẩu</h1>
+            <p class="subtitle">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+
+            <form id="reset-form" novalidate>
+                <div class="form-group">
+                    <label for="new-password">Mật khẩu mới</label>
+                    <input type="password" id="new-password" placeholder="Tối thiểu 6 ký tự">
+                    <small>Tối thiểu 6 ký tự, có chữ và số</small>
+                    <span class="error error-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Xác nhận mật khẩu</label>
+                    <input type="password" id="confirm-password" placeholder="Nhập lại mật khẩu">
+                    <small id="password-match" style="display: none;"></small>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    Đổi mật khẩu
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/forgot.js?v=<%= Date.now() %>"></script>
+</body>
+</html>

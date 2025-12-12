@@ -56,7 +56,6 @@ function renderKanbanBoard(data) {
             `;
       });
     
-    // ... (phần tạo colDiv.innerHTML giữ nguyên)
     colDiv.innerHTML = `
       <div class="col-header" style="border-bottom-color: ${col.color}">
         <h3 style="color:${col.color};">${col.title} <span class="badge">${col.tasks.length}</span></h3>

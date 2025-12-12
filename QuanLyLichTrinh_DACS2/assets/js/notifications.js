@@ -1,5 +1,4 @@
 // assets/js/notifications.js
-// ĐÃ SỬA HOÀN HẢO - GỌI ĐÚNG POST /read & /read-all (KHÔNG CÒN PATCH /mark)
 document.addEventListener('DOMContentLoaded', () => {
     const notiList = document.getElementById('noti-list');
     const markAllBtn = document.getElementById('mark-read');
@@ -83,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Lấy danh sách thông báo */
     async function loadNotifications(isRefresh = false) {
         try {
-            const res = await fetch('/api/notifications');
+            const res = await fetch('/api/notifications', { method: 'GET' });
             const data = await res.json();
 
             if (data.success) {

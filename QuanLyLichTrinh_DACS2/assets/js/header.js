@@ -20,10 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupHeaderListeners();
+    setupDropdowns(); // Setup dropdowns (Account + Admin Panel)
     loadNotificationsCount();   // Lần đầu load ngay khi trang mở
     checkAuthStatus();
 
-    // TỰ ĐỘNG CẬP NHẬT BADGE MỖI 30 GIÂY (hoạt động trên mọi trang)
+    // TỰ ĐỘNG CẬP NHẬT BADGE MỔI 30 GIÂY (hoạt động trên mọi trang)
     setInterval(loadNotificationsCount, 30000); // 30.000ms = 30 giây
 });
 
@@ -197,11 +198,16 @@ function displaySearchResults(results) {
 }
 
 // ===================================================================
-// DROPDOWN CLICK TOGGLE - Nhấn mở, nhấn lại đóng
+// DROPDOWN SETUP - Gộp vào 1 function để gọi từ DOMContentLoaded chính
 // ===================================================================
-document.addEventListener('DOMContentLoaded', () => {
+function setupDropdowns() {
+    // Account Dropdown
     const accountTrigger = document.getElementById('account-trigger');
     const accountDropdown = document.getElementById('account-dropdown-container');
+    
+    // Admin Dropdown
+    const adminTrigger = document.getElementById('admin-trigger');
+    const adminDropdown = document.getElementById('admin-dropdown-container');
     
     if (accountTrigger && accountDropdown) {
         // Toggle dropdown khi click vào tài khoản
@@ -209,65 +215,35 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             e.stopPropagation();
             accountDropdown.classList.toggle('active');
+            
+            // Đóng admin dropdown nếu đang mở
+            if (adminDropdown) {
+                adminDropdown.classList.remove('active');
+            }
         });
-        
-        // Đóng dropdown khi click bên ngoài
-        document.addEventListener('click', (e) => {
-            if (!accountDropdown.contains(e.target)) {
+    }
+    
+    if (adminTrigger && adminDropdown) {
+        // Toggle dropdown khi click vào admin panel
+        adminTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            adminDropdown.classList.toggle('active');
+            
+            // Đóng account dropdown nếu đang mở
+            if (accountDropdown) {
                 accountDropdown.classList.remove('active');
             }
         });
     }
-});
-
-// ===================================================================
-// NOTES - CẬP NHẬT CHÍNH XÁC THEO BACKEND HIỆN TẠI CỦA BẠN
-// ===================================================================
-// ✅ ĐÃ CÓ SẴN trong backend (bạn KHÔNG cần tạo thêm):
-//    - /api/logout (POST)           → authController.logout
-//    - /api/check-auth (GET)        → authController.checkAuth
-//    - /api/notifications/count     → bạn cần thêm 1 route nhỏ (rất dễ)
-// 
-// ❌ CHƯA CÓ trong backend (bạn cần tạo thêm để header hoạt động đầy đủ):
-//    - /api/sync/google             → Sync Google Calendar
-//    - /api/export/quick            → Quick export CSV
-//    - /api/search                  → Global search (tasks + events)
-//    - /api/notifications/count     → Đếm thông báo chưa đọc
-//
-// Gợi ý nhanh để thêm /api/notifications/count (nếu bạn muốn hoàn thiện ngay):
-// Trong routes/notificationRoutes.js (hoặc thêm vào authRoutes.js)
-// 
-// router.get('/api/notifications/count', requireAuth, async (req, res) => {
-//   const count = await Notification.countUnread(req.session.userId);
-//   res.json({ success: true, count });
-// });
-//
-// Nếu chưa muốn làm real-time badge → cứ để 0 cũng được, không lỗi
-// ===================================================================
-
-
-
-// ===================================================================
-// NOTES - CẬP NHẬT CHÍNH XÁC THEO BACKEND HIỆN TẠI CỦA BẠN
-// ===================================================================
-// ✅ ĐÃ CÓ SẴN trong backend (bạn KHÔNG cần tạo thêm):
-//    - /api/logout (POST)           → authController.logout
-//    - /api/check-auth (GET)        → authController.checkAuth
-//    - /api/notifications/count     → bạn cần thêm 1 route nhỏ (rất dễ)
-// 
-// ❌ CHƯA CÓ trong backend (bạn cần tạo thêm để header hoạt động đầy đủ):
-//    - /api/sync/google             → Sync Google Calendar
-//    - /api/export/quick            → Quick export CSV
-//    - /api/search                  → Global search (tasks + events)
-//    - /api/notifications/count     → Đếm thông báo chưa đọc
-//
-// Gợi ý nhanh để thêm /api/notifications/count (nếu bạn muốn hoàn thiện ngay):
-// Trong routes/notificationRoutes.js (hoặc thêm vào authRoutes.js)
-// 
-// router.get('/api/notifications/count', requireAuth, async (req, res) => {
-//   const count = await Notification.countUnread(req.session.userId);
-//   res.json({ success: true, count });
-// });
-//
-// Nếu chưa muốn làm real-time badge → cứ để 0 cũng được, không lỗi
-// ===================================================================
+    
+    // Đóng dropdown khi click bên ngoài
+    document.addEventListener('click', (e) => {
+        if (accountDropdown && !accountDropdown.contains(e.target)) {
+            accountDropdown.classList.remove('active');
+        }
+        if (adminDropdown && !adminDropdown.contains(e.target)) {
+            adminDropdown.classList.remove('active');
+        }
+    });
+}

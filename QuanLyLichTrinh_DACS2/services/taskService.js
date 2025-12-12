@@ -57,7 +57,6 @@ class TaskService {
     const result = await pool.query(query, params);
     const tasks = result.rows;
 
-  // QUAN TRỌNG: ĐOẠN NÀY PHẢI ĐẶT TRƯỚC return
     if (groupByKanban) {
       return {
         todo: tasks.filter(t => t.kanban_column === 'todo'),
@@ -97,7 +96,6 @@ class TaskService {
     const {
       title,
       description,
-      // Đảm bảo destructure đúng key (snake_case)
       start_time, 
       end_time,
       priority = 'medium',
@@ -148,11 +146,11 @@ class TaskService {
         title.trim(),
         description?.trim() || null,
         taskStartTime,
-        taskEndTime, // <-- FIX: Sử dụng taskEndTime (không null nếu có giá trị từ form)
+        taskEndTime,
         priority,
         status,
         repeatType,
-        'todo', // Default kanban column
+        'todo',
       ]
     );
 
@@ -173,7 +171,6 @@ class TaskService {
     const {
       title,
       description,
-      // 🌟 FIX: Đảm bảo chỉ destructure tên trường CSDL (snake_case)
       start_time,
       end_time,
       priority,
@@ -204,7 +201,7 @@ class TaskService {
     const params = [];
     let paramIndex = 1; // Bắt đầu từ $1
 
-    // 🌟 ĐỊNH NGHĨA HÀM TIỆN ÍCH CỤC BỘ (FIX ReferenceError: addUpdate is not defined)
+    // 🌟 ĐỊNH NGHĨA HÀM TIỆN ÍCH CỤC BỘ
     const addUpdate = (key, value) => {
       if (value !== undefined) {
         updates.push(`${key} = $${paramIndex}`);
@@ -213,7 +210,7 @@ class TaskService {
       }
     };
 
-    // 🌟 FIX: CHỈ SỬ DỤNG addUpdate và các biến đã được destructure (snake_case)
+    // 🌟 FIX: CHỈ SỬ DỤNG addUpdate và các biến đã được destructure 
     addUpdate('title', title !== undefined ? title.trim() : title);
     addUpdate('description', description !== undefined ? description?.trim() || null : description);
     addUpdate('start_time', start_time); 
@@ -226,8 +223,6 @@ class TaskService {
     addUpdate('progress', progress);
     addUpdate('collaborators', collaborators);
     addUpdate('grace_end_time', grace_end_time); 
-
-    // ⛔ ĐÃ XÓA TẤT CẢ CÁC KHỐI IF LẶP LẠI VÀ SỬ DỤNG TÊN BIẾN SAI
 
     if (updates.length === 0) {
       throw new Error('Không có dữ liệu để cập nhật');
@@ -287,19 +282,16 @@ class TaskService {
     return result.rows[0];
   }
 
-  // taskService.js - Sửa trong hàm getTaskStatistics
-
   /**
-   * LẤY THỐNG KÊ TASKS (FIX CÚ PHÁP SQL)
+   * LẤY THỐNG KÊ TASKS
    */
-async getTaskStatistics(userId) {
+  async getTaskStatistics(userId) {
     const result = await pool.query(
       `SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE status = 'todo') as todo,
         COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
         COUNT(*) FILTER (WHERE status = 'done') as done,
-        -- ✅ FIX ENUM: Đếm Trễ hạn bằng kanban_column (Varchar)
         COUNT(*) FILTER (WHERE kanban_column = 'overdue') as overdue, 
         COUNT(*) FILTER (WHERE priority = 'high') as high_priority,
         COUNT(*) FILTER (WHERE start_time::date = CURRENT_DATE) as today
@@ -327,7 +319,6 @@ async getTaskStatistics(userId) {
     return result.rows;
   }
 
-  // THÊM HÀM MỚI Ở CUỐI FILE (không ảnh hưởng gì đến code cũ)
   async getTasksByDateRangeForCalendar(userId, startDate, endDate) {
     const result = await pool.query(
       `SELECT 
@@ -356,8 +347,6 @@ async getTaskStatistics(userId) {
     return result.rows;
   }
 
-  // Thêm vào cuối file taskService.js (trước module.exports)
-
   async updateTaskKanbanColumn(taskId, userId, newColumn) {
     const result = await pool.query(
       `UPDATE tasks 
@@ -369,7 +358,6 @@ async getTaskStatistics(userId) {
     return result.rows[0] || null;
   }
 
-    // THÊM HÀM NÀY ĐỂ TIMELINE LẤY TASKS CÓ NGÀY
   async getTasksForTimeline(userId) {
     const result = await pool.query(
       `SELECT 

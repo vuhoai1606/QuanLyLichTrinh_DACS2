@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
 const path = require('path');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
@@ -26,7 +28,20 @@ const profileRoutes = require('./routes/profileRoutes');
 const { setUserLocals } = require('./middleware/authMiddleware');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
 const PORT = process.env.PORT || 8888;
+
+// ✅ SOCKET.IO - Export để dùng ở controllers
+global.io = io;
+
+io.on('connection', (socket) => {
+  console.log('👤 Client connected:', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('👤 Client disconnected:', socket.id);
+  });
+});
 
 // Compression middleware - Nén response để giảm bandwidth
 app.use(compression());
@@ -133,6 +148,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+    console.log(`🔌 Socket.IO ready for realtime updates`);
 });
