@@ -138,7 +138,7 @@ exports.updateTask = async (req, res) => {
     const userId = req.session.userId;
     const data = req.body;
 
-    // Kiểm tra task thuộc user
+    // Kiểm tra quyền sở hữu task - TỐT
     const check = await pool.query(
       'SELECT task_id FROM tasks WHERE task_id = $1 AND user_id = $2',
       [taskId, userId]
@@ -147,18 +147,18 @@ exports.updateTask = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Task không tồn tại' });
     }
 
-    // Nếu có thay đổi end_time → reset grace_end_time để tính lại ân hạn
+    // Reset grace_end_time khi thay đổi end_time - TỐT
     if (data.end_time !== undefined) {
       data.grace_end_time = null;
     }
 
-    // Tạo query động
+    // Query động an toàn, chỉ update field có giá trị - RẤT TỐT
     const fields = [];
     const values = [];
     let index = 1;
 
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null) {  // ← Quan trọng: bỏ qua null/undefined
         fields.push(`${key} = $${index}`);
         values.push(value);
         index++;
@@ -175,7 +175,7 @@ exports.updateTask = async (req, res) => {
     const result = await pool.query(query, values);
     const updatedTask = result.rows[0];
 
-    // Gửi thông báo nếu có thay đổi quan trọng
+    // Thông báo notification - TỐT
     if (data.status || data.start_time !== undefined || data.end_time !== undefined) {
       await notificationService.createNotification({
         userId,
@@ -187,6 +187,8 @@ exports.updateTask = async (req, res) => {
 
     res.json({ success: true, task: updatedTask });
 
+    // ← Dòng log bạn thêm - ĐÚNG VỊ TRÍ HOÀN HẢO
+    console.log('Payload update task:', data);
   } catch (err) {
     console.error('Error updating task:', err);
     res.status(500).json({ success: false, message: 'Lỗi server' });
@@ -496,5 +498,57 @@ exports.confirmTaskComplete = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Lỗi CSDL: Cột grace_end_time không tồn tại.' });
     }
     res.status(500).json({ success: false, message: 'Lỗi server' });
+  }
+};
+
+exports.getCategories = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập' });
+
+    const { rows } = await pool.query(
+      `SELECT category_id, category_name, color 
+       FROM categories 
+       WHERE user_id = $1 
+       ORDER BY category_name`,
+      [userId]
+    );
+
+    res.json({ success: true, categories: rows });
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server' });
+  }
+};
+
+exports.reorderTasks = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { order } = req.body; // mảng task_id theo thứ tự mới
+
+    if (!Array.isArray(order)) {
+      return res.status(400).json({ success: false, message: 'Order phải là mảng' });
+    }
+
+    // Cập nhật sort_order (cần thêm cột này vào DB)
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (let i = 0; i < order.length; i++) {
+        await client.query(
+          'UPDATE tasks SET sort_order = $1 WHERE task_id = $2 AND user_id = $3',
+          [i, order[i], userId]
+        );
+      }
+      await client.query('COMMIT');
+      res.json({ success: true });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 };

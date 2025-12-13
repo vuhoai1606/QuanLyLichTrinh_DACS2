@@ -7,8 +7,18 @@ exports.getKanbanTasks = async (req, res) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
 
-    // truyền dữ liệu groupByKanban: true
-    const data = await taskService.getTasksByUser(userId, { groupByKanban: true });
+    const { start, end, assignee, category } = req.query;
+
+    const filters = { groupByKanban: true };
+
+    if (start || end) {
+      filters.startDate = start ? `${start}T00:00:00` : null;
+      filters.endDate = end ? `${end}T23:59:59` : null;
+    }
+    if (assignee) filters.assignee = assignee;
+    if (category) filters.categoryId = Number(category);
+
+    const data = await taskService.getTasksByUser(userId, filters);
 
     res.json({ success: true, data });
   } catch (error) {

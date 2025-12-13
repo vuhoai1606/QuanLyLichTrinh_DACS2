@@ -23,6 +23,9 @@ router.get('/api/tasks/:id', taskController.getTaskById);
 router.put('/api/tasks/:id', taskController.updateTask);
 router.delete('/api/tasks/:id', taskController.deleteTask);
 
+router.get('/api/categories', taskController.getCategories);
+router.patch('/api/tasks/reorder', taskController.reorderTasks);
+
 // Route mới để xác nhận hoàn thành task có overdue
 router.post('/api/tasks/:id/confirm-complete', taskController.confirmTaskComplete);
 module.exports = router;

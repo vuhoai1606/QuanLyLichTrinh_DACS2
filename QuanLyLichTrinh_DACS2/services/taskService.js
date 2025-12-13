@@ -16,12 +16,24 @@ class TaskService {
    * Có thể filter theo status, priority, search keyword
    */
   async getTasksByUser(userId, filters = {}) {
-    const { status, priority, search, sortBy = 'created_at', sortOrder = 'DESC', groupByKanban = false } = filters;
+    const { 
+      status, 
+      priority, 
+      search, 
+      sortBy = 'created_at', 
+      sortOrder = 'DESC', 
+      groupByKanban = false,
+      startDate,  // Thêm filter ngày bắt đầu
+      endDate     // Thêm filter ngày kết thúc
+    } = filters;
 
     let query = `
       SELECT 
-        t.*
+        t.*,
+        c.category_name,
+        c.color AS color
       FROM tasks t
+      LEFT JOIN categories c ON t.category_id = c.category_id
       WHERE t.user_id = $1
     `;
 
@@ -49,8 +61,34 @@ class TaskService {
       paramIndex++;
     }
 
+    // Filter theo khoảng thời gian (nếu có)
+    if (startDate) {
+      query += ` AND t.end_time >= $${paramIndex}`;
+      params.push(startDate);
+      paramIndex++;
+    }
+    if (endDate) {
+      query += ` AND t.end_time <= $${paramIndex}`;
+      params.push(endDate);
+      paramIndex++;
+    }
+
+        // Filter theo assignee (người được giao)
+    if (filters.assignee) {
+      query += ` AND t.assigned_to = $${paramIndex}`;
+      params.push(filters.assignee);
+      paramIndex++;
+    }
+
+    // Filter theo category
+    if (filters.categoryId) {
+      query += ` AND t.category_id = $${paramIndex}`;
+      params.push(filters.categoryId);
+      paramIndex++;
+    }
+
     // Sorting
-    const allowedSortFields = ['created_at', 'start_time', 'priority', 'title'];
+    const allowedSortFields = ['created_at', 'start_time', 'end_time', 'priority', 'title'];
     const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
     query += ` ORDER BY t.${sortField} ${sortOrder}`;
 
@@ -58,12 +96,20 @@ class TaskService {
     const tasks = result.rows;
 
     if (groupByKanban) {
-      return {
-        todo: tasks.filter(t => t.kanban_column === 'todo'),
-        in_progress: tasks.filter(t => t.kanban_column === 'in_progress'),
-        done: tasks.filter(t => t.kanban_column === 'done'),
-        overdue: tasks.filter(t => t.kanban_column === 'overdue')
+      const grouped = {
+        todo: [],
+        in_progress: [],
+        done: [],
+        overdue: []
       };
+      tasks.forEach(task => {
+        if (task.kanban_column === 'todo') grouped.todo.push(task);
+        else if (task.kanban_column === 'in_progress') grouped.in_progress.push(task);
+        else if (task.kanban_column === 'done') grouped.done.push(task);
+        else if (task.kanban_column === 'overdue') grouped.overdue.push(task);
+        else grouped.todo.push(task);
+      });
+      return grouped;
     }
 
     return tasks;
@@ -101,12 +147,12 @@ class TaskService {
       priority = 'medium',
       status = 'todo',
       repeatType = 'none',
-      categoryId,
+      categoryId,  // ← Nhận category_id từ taskData
       tags = [],
       collaborators = [],
     } = taskData;
 
-    // Validation
+    // Validation giữ nguyên như cũ...
     if (!title || title.trim().length === 0) {
       throw new Error('Tiêu đề task không được để trống');
     }
@@ -135,11 +181,11 @@ class TaskService {
       throw new Error('Status không hợp lệ');
     }
 
-    // Insert task
+    // INSERT
     const result = await pool.query(
       `INSERT INTO tasks 
-       (user_id, title, description, start_time, end_time, priority, status, repeat_type, kanban_column)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (user_id, title, description, start_time, end_time, priority, status, repeat_type, kanban_column, category_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'todo', $9)
        RETURNING *`,
       [
         userId,
@@ -150,12 +196,12 @@ class TaskService {
         priority,
         status,
         repeatType,
-        'todo',
+        categoryId || null  
       ]
     );
 
     return result.rows[0];
-  }
+}
 
   /**
    * CẬP NHẬT TASK

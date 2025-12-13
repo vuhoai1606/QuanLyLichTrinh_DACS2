@@ -22,7 +22,7 @@
       
       <!-- Toolbar -->
       <div class="toolbar">
-        <!-- <button id="add-column" class="btn btn-primary">
+        <button id="add-column" class="btn btn-primary">
           <i class="fas fa-plus"></i>
           <span>Add Column</span>
         </button>
@@ -33,21 +33,30 @@
         <button class="btn btn-secondary">
           <i class="fas fa-download"></i>
           <span>Export</span>
-        </button> -->
+        </button>
       </div>
 
       <!-- Filter Bar -->
       <div class="filter-bar">
-        <!-- <input type="date" id="filter-start" placeholder="Start Date">
+        <input type="date" id="filter-start" placeholder="Start Date">
         <input type="date" id="filter-end" placeholder="End Date">
+        <select id="filter-assignee" class="filter-select">
+          <option value="">Tất cả người giao việc</option>
+        </select>
+
+        <select id="filter-category" class="filter-select">
+          <option value="">Tất cả danh mục</option>
+        </select>
+
         <button id="apply-filter" class="btn btn-primary">
           <i class="fas fa-filter"></i>
           <span>Apply Filter</span>
         </button>
+        
         <button id="clear-filter" class="btn btn-clear">
           <i class="fas fa-times"></i>
           <span>Clear</span>
-        </button> -->
+        </button>
       </div>
     </div>
 
