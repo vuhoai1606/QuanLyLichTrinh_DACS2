@@ -23,10 +23,10 @@
     </div>
 
     <!-- Sync with Google -->
-    <!-- <button id="googleSyncBtn" class="action-btn sync-btn" data-tooltip="Sync with Google">
+    <button id="googleSyncBtn" class="action-btn sync-btn" data-tooltip="Sync with Google">
       <i class="fas fa-sync"></i>
       <span class="btn-text">Sync with Google</span>
-    </button> -->
+    </button>
   </div>
 
   <!-- Menu điều hướng -->
@@ -63,7 +63,7 @@
         <!-- ADMIN PANEL DROPDOWN - Chỉ hiện nếu user là admin -->
         <% if (typeof userRole !== 'undefined' && userRole === 'admin') { %>
         <li class="dropdown" id="admin-dropdown-container">
-          <a class="nav-link dropbtn <%= active === 'admin-dashboard' || active === 'admin-users' || active === 'admin-notifications' || active === 'admin-logs' ? 'active' : '' %>" id="admin-trigger" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 700;">
+          <a class="nav-link dropbtn <%= active === 'admin-dashboard' || active === 'admin-users' || active === 'admin-notifications' || active === 'admin-logs' ? 'active' : '' %>" id="admin-trigger" style="font-weight: 700;">
               <i class="fas fa-shield-alt"></i>
               <span>Admin Panel</span>
               <i class="fas fa-caret-down"></i>

@@ -209,7 +209,40 @@ let currentWeatherData = null;
 let weatherUpdateInterval = null;
 let clockInterval = null;
 
-8
+function loadWeather() {
+    const box = document.getElementById('weather-box');
+    if (!box) return;
+
+    // Hiển thị loading đẹp trước khi có dữ liệu
+    box.innerHTML = `
+        <div class="weather-loading">
+            <i class="fas fa-cloud-sun fa-2x" style="color:#fbbf24"></i>
+            <p>Đang tải thời tiết...</p>
+        </div>
+    `;
+
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=16.047&longitude=108.206&current_weather=true&timezone=Asia/Bangkok')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.current_weather) return;
+
+            currentWeatherData = {
+                temp: data.current_weather.temperature,
+                wind: data.current_weather.windspeed,
+                lastUpdate: new Date()  // Thời điểm API trả dữ liệu
+            };
+
+            // Dừng interval cũ nếu có rồi thì tạo mới
+            if (weatherUpdateInterval) clearInterval(weatherUpdateInterval);
+            weatherUpdateInterval = setInterval(updateWeatherDisplay, 1000); // Cập nhật mỗi giây
+
+            updateWeatherDisplay(); // Gọi lần đầu ngay
+        })
+        .catch(err => {
+            console.error('Lỗi load weather:', err);
+            box.innerHTML = `<p style="color:#ef4444; text-align:center">Không tải được thời tiết</p>`;
+        });
+}
 
 // Hàm cập nhật giao diện thời tiết + đồng hồ chạy realtime
 function updateWeatherDisplay() {
@@ -407,4 +440,3 @@ function escapeHtml(text) {
 function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
 }
-

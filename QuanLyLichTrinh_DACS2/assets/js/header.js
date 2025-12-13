@@ -63,18 +63,66 @@ function setupHeaderListeners() {
 /**
  * Sync with Google Calendar
  */
+/**
+ * Sync with Google Calendar (Bắt đầu luồng OAuth hoặc kích hoạt Sync)
+ */
 async function syncGoogleCalendar() {
-    try {
-        const response = await fetch('/api/sync/google');
-        const data = await response.json();
+    const googleSyncBtn = document.getElementById('googleSyncBtn');
+    
+    // Lưu lại trạng thái gốc của nút
+    const originalText = googleSyncBtn.querySelector('.btn-text') ? googleSyncBtn.querySelector('.btn-text').textContent : 'Sync with Google';
+    const isCollapsed = googleSyncBtn.closest('header').classList.contains('collapsed');
+
+    // Bắt đầu trạng thái loading
+    if (googleSyncBtn) {
+        googleSyncBtn.disabled = true;
+        const icon = googleSyncBtn.querySelector('i');
+        const text = googleSyncBtn.querySelector('.btn-text');
         
-        if (data.success) {
-            alert('Sync thành công!');
+        // Thay đổi UI thành loading
+        if (icon) icon.className = 'fas fa-spinner fa-spin'; 
+        if (text) text.textContent = 'Processing...';
+        if (isCollapsed && text) text.textContent = ''; // Ẩn text khi collapsed
+    }
+
+    try {
+        // Gọi API để kiểm tra trạng thái và nhận URL OAuth nếu cần
+        const response = await fetch('/api/google/sync');
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            
+            if (data.action === 'redirect' && data.url) {
+                // Hành động 1: Chuyển hướng đến Google để xác thực (Lần đầu Sync)
+                alert('Bạn sẽ được chuyển đến trang xác thực Google.');
+                window.location.href = data.url; 
+
+            } else {
+                // Hành động 2: Đồng bộ/Thiết lập Webhook thành công (Đã có token)
+                alert('Sync/Thiết lập thành công: ' + data.message);
+            }
+
         } else {
-            alert(data.message);
+            // Xử lý lỗi từ server
+            alert(`Lỗi: ${data.message || 'Lỗi không xác định từ server.'}`);
         }
     } catch (error) {
-        console.error('Lỗi:', error);
+        console.error('Lỗi mạng hoặc server:', error);
+        alert('Không thể kết nối đến server. Vui lòng kiểm tra server đang chạy.');
+    } finally {
+        // Kết thúc trạng thái loading
+        if (googleSyncBtn) {
+            googleSyncBtn.disabled = false;
+            
+            const icon = googleSyncBtn.querySelector('i');
+            const text = googleSyncBtn.querySelector('.btn-text');
+
+            if (icon) icon.className = 'fas fa-sync'; // Icon gốc
+            if (text) text.textContent = originalText; // Text gốc
+            
+            // Đảm bảo ẩn text nếu vẫn đang collapsed
+            if (isCollapsed && text) text.textContent = '';
+        }
     }
 }
 

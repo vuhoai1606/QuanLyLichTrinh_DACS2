@@ -22,7 +22,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const profileRoutes = require('./routes/profileRoutes');
-
+const googleRoutes = require('./routes/googleRoutes');
 
 // Import middleware
 const { setUserLocals } = require('./middleware/authMiddleware');
@@ -129,6 +129,7 @@ app.use('/', notificationRoutes);
 app.use('/', timelineRoutes);
 app.use('/', reportRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/google', googleRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
