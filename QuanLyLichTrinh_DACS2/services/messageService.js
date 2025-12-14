@@ -143,10 +143,23 @@ async function sendMessage(senderId, receiverId, content, messageType = 'text', 
       file_size
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING *
+    RETURNING message_id, sender_id, receiver_id, message_content, message_type, attachment_url, file_name, file_size, sent_at, is_read
   `, [senderId, receiverId, content, messageType, attachmentUrl, fileName, fileSize]);
   
-  return result.rows[0];
+  const message = result.rows[0];
+  
+  // Lấy thông tin sender để trả về đầy đủ (cho Socket.IO và frontend)
+  const senderInfo = await pool.query(
+    'SELECT user_id, username, full_name, avatar_url FROM users WHERE user_id = $1',
+    [senderId]
+  );
+  
+  // Gộp thông tin
+  return {
+    ...message,
+    sender_name: senderInfo.rows[0].full_name,
+    sender_avatar: senderInfo.rows[0].avatar_url,
+  };
 }
 
 /**

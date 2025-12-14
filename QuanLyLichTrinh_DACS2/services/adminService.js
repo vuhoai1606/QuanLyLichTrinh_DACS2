@@ -494,6 +494,8 @@ class AdminService {
         RETURNING *
       `, [adminId, title, content, type, startDate || new Date(), endDate, targetUsers]);
       
+      const notification = result.rows[0];
+      
       // Tạo audit log
       await client.query(
         'SELECT create_admin_log($1, $2, $3, $4, $5, $6)',
@@ -502,13 +504,66 @@ class AdminService {
           'create_notification',
           null,
           `Tạo thông báo hệ thống: ${title}`,
-          JSON.stringify({ notification_id: result.rows[0].notification_id, type, target_users: targetUsers }),
+          JSON.stringify({ notification_id: notification.notification_id, type, target_users: targetUsers }),
           ipAddress
         ]
       );
       
+      // ✅ TẠO NOTIFICATION RECORDS CHO TỪNG USER
+      // Lấy danh sách user IDs dựa trên targetUsers
+      let userIds = [];
+      if (targetUsers === 'all') {
+        const usersResult = await client.query('SELECT user_id FROM users WHERE is_banned = FALSE');
+        userIds = usersResult.rows.map(row => row.user_id);
+      } else if (Array.isArray(targetUsers)) {
+        userIds = targetUsers;
+      }
+      
+      // Tạo individual notification records cho mỗi user (SAFE - dùng parameterized query)
+      if (userIds.length > 0) {
+        // Tạo VALUES clause với placeholders: ($1, 'system', $2, $3, '/admin-notifications', $4), ...
+        const placeholders = userIds.map((_, index) => {
+          const base = index * 4;
+          return `($${base + 1}, 'system', $${base + 2}, $${base + 3}, $${base + 4})`;
+        }).join(', ');
+        
+        // Flatten array: [userId1, title, content, systemNotifId, userId2, title, content, systemNotifId, ...]
+        const values = userIds.flatMap(userId => [
+          userId, 
+          title, 
+          content, 
+          notification.notification_id // related_id = system_notification_id để tracking
+        ]);
+        
+        await client.query(`
+          INSERT INTO notifications (user_id, type, title, message, related_id)
+          VALUES ${placeholders}
+        `, values);
+      }
+      
       await client.query('COMMIT');
-      return result.rows[0];
+      
+      // ✅ EMIT SOCKET EVENT - Gửi notification real-time đến users
+      if (global.io && userIds.length > 0) {
+        const io = global.io;
+        
+        // Emit đến từng user
+        userIds.forEach(userId => {
+          io.to(`user:${userId}`).emit('notification:new', {
+            notification: {
+              notification_id: notification.notification_id,
+              type: 'system',
+              title: notification.title,
+              message: notification.content,
+              created_at: notification.created_at
+            }
+          });
+        });
+        
+        console.log(`🔔 Created ${userIds.length} notification records and emitted to users`);
+      }
+      
+      return notification;
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('❌ createSystemNotification error:', error);

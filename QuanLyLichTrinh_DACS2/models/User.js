@@ -50,11 +50,14 @@ class User {
       const saltRounds = 10;
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
+      // Avatar mặc định
+      const defaultAvatar = '/img/default-avatar.jpg';
+
       const result = await pool.query(
-        `INSERT INTO users (username, password_hash, email, full_name, date_of_birth, gender, phone_number) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7) 
-         RETURNING user_id, username, email, full_name, date_of_birth, gender, phone_number, created_at`,
-        [username, passwordHash, email, fullName, dateOfBirth || null, gender || null, phoneNumber || null]
+        `INSERT INTO users (username, password_hash, email, full_name, date_of_birth, gender, phone_number, avatar_url) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+         RETURNING user_id, username, email, full_name, date_of_birth, gender, phone_number, avatar_url, created_at`,
+        [username, passwordHash, email, fullName, dateOfBirth || null, gender || null, phoneNumber || null, defaultAvatar]
       );
 
       return result.rows[0];

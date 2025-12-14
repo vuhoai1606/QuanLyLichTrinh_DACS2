@@ -1,5 +1,5 @@
 // assets/js/messages.js
-// Frontend cho hệ thống messaging
+// Frontend cho hệ thống messaging với Socket.IO
 
 document.addEventListener('DOMContentLoaded', () => {
   // ===== Elements =====
@@ -21,8 +21,67 @@ document.addEventListener('DOMContentLoaded', () => {
   // ===== State =====
   let currentChatUser = null;
   let searchTimeout = null;
-  let messagePolling = null;
   let lastMessageId = null; // Track tin nhắn mới nhất (ID lớn nhất)
+
+  // ===== SOCKET.IO SETUP =====
+  let socket = null;
+  
+  // Initialize Socket.IO connection
+  function initSocket() {
+    if (socket && socket.connected) return; // Tránh duplicate connection
+    
+    socket = io({
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    });
+    
+    socket.on('connect', () => {
+      console.log('✅ Socket connected:', socket.id);
+      // Join user's personal room
+      if (window.currentUserId) {
+        socket.emit('user:join', window.currentUserId);
+      }
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('❌ Socket disconnected');
+    });
+    
+    // Listen for new messages
+    socket.on('message:new', (data) => {
+      console.log('🔔 Received new message:', data);
+      handleNewMessage(data);
+    });
+    
+    socket.on('user:online', (data) => {
+      console.log('👤 User online:', data.userId);
+      // TODO: Update UI to show online status
+    });
+    
+    socket.on('user:offline', (data) => {
+      console.log('👤 User offline:', data.userId);
+      // TODO: Update UI to show offline status
+    });
+  }
+  
+  // Handle incoming real-time message
+  function handleNewMessage(data) {
+    const { message, senderId } = data;
+    
+    // Nếu đang chat với người gửi, hiển thị tin nhắn ngay
+    if (currentChatUser && senderId === currentChatUser.other_user_id) {
+      appendMessage(message);
+      // Mark as read
+      fetch(`/api/messages/read/${senderId}`, { method: 'PUT' }).catch(err => 
+        console.error('Mark read error:', err)
+      );
+    }
+    
+    // Reload conversations để cập nhật preview và unread count
+    loadConversations();
+  }
 
 // ===== EMOJI PICKER SIÊU XỊN – KHÔNG BỊ TẮT KHI CHUYỂN TAB (ĐÃ SỬA 100%) =====
 const emojiBtn = document.getElementById('emoji-btn');
@@ -70,6 +129,9 @@ emojiPicker.addEventListener('click', (e) => {
     searchResults: !!searchResults,
     conversationsList: !!conversationsList
   });
+  
+  // Initialize Socket.IO first
+  initSocket();
   
   loadConversations();
 
@@ -267,7 +329,6 @@ emojiPicker.addEventListener('click', (e) => {
 
     // Mark as read
     await fetch(`/api/messages/read/${user.other_user_id}`, { method: 'PUT' });
-
   }
 
   // ===== Load Messages =====

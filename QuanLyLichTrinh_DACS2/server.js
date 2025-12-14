@@ -35,10 +35,33 @@ const PORT = process.env.PORT || 8888;
 // ✅ SOCKET.IO - Export để dùng ở controllers
 global.io = io;
 
+// Track online users: Map của userId -> socketId
+const onlineUsers = new Map();
+global.onlineUsers = onlineUsers;
+
 io.on('connection', (socket) => {
   console.log('👤 Client connected:', socket.id);
   
+  // User join - Lưu thông tin user online
+  socket.on('user:join', (userId) => {
+    if (userId) {
+      onlineUsers.set(userId, socket.id);
+      socket.userId = userId; // Lưu userId vào socket để dễ xử lý
+      socket.join(`user:${userId}`); // Join room riêng của user
+      console.log(`✅ User ${userId} joined with socket ${socket.id}`);
+      
+      // Emit online status to all users
+      io.emit('user:online', { userId, socketId: socket.id });
+    }
+  });
+  
   socket.on('disconnect', () => {
+    // Remove user from online list
+    if (socket.userId) {
+      onlineUsers.delete(socket.userId);
+      io.emit('user:offline', { userId: socket.userId });
+      console.log(`❌ User ${socket.userId} disconnected`);
+    }
     console.log('👤 Client disconnected:', socket.id);
   });
 });

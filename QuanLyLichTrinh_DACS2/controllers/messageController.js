@@ -130,6 +130,18 @@ exports.sendMessage = async (req, res) => {
       'text'
     );
     
+    // ✅ EMIT SOCKET EVENT - Gửi tin nhắn real-time đến người nhận
+    if (global.io) {
+      const io = global.io;
+      // Emit đến room của người nhận
+      io.to(`user:${receiverId}`).emit('message:new', {
+        message,
+        senderId,
+        receiverId
+      });
+      console.log(`🔔 Emitted message:new to user:${receiverId}`);
+    }
+    
     res.json({ success: true, message });
   } catch (error) {
     console.error('❌ sendMessage error:', error);
@@ -225,6 +237,17 @@ exports.uploadFile = (req, res) => {
         req.file.size
       );
       
+      // ✅ EMIT SOCKET EVENT - Gửi file/image real-time đến người nhận
+      if (global.io) {
+        const io = global.io;
+        io.to(`user:${receiverId}`).emit('message:new', {
+          message,
+          senderId,
+          receiverId
+        });
+        console.log(`🔔 Emitted message:new (${messageType}) to user:${receiverId}`);
+      }
+      
       res.json({ success: true, message });
     } catch (error) {
       console.error('❌ uploadFile error:', error);
@@ -256,6 +279,13 @@ exports.markAsRead = async (req, res) => {
     }
     
     await messageService.markMessagesAsRead(userId, otherUserId);
+    
+    // ✅ EMIT SOCKET EVENT - Thông báo đã đọc tin nhắn (để update badge)
+    if (global.io) {
+      const io = global.io;
+      io.to(`user:${userId}`).emit('messages:read', { userId, otherUserId });
+      console.log(`🔔 Emitted messages:read to user:${userId}`);
+    }
     
     res.json({ success: true, message: 'Đã đánh dấu đọc' });
   } catch (error) {

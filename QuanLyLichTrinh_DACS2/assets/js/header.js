@@ -22,10 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHeaderListeners();
     setupDropdowns(); // Setup dropdowns (Account + Admin Panel)
     loadNotificationsCount();   // Lần đầu load ngay khi trang mở
+    loadUnreadMessagesCount();  // Thêm: Load unread messages count
     checkAuthStatus();
 
     // TỰ ĐỘNG CẬP NHẬT BADGE MỔI 30 GIÂY (hoạt động trên mọi trang)
     setInterval(loadNotificationsCount, 30000); // 30.000ms = 30 giây
+    setInterval(loadUnreadMessagesCount, 30000); // Thêm: Update messages badge mỗi 30 giây
+    
+    // Socket.IO for real-time updates (if available)
+    if (typeof io !== 'undefined' && !window.headerSocket) {
+        initHeaderSocket();
+    }
 });
 
 function setupHeaderListeners() {
@@ -159,6 +166,70 @@ async function loadNotificationsCount() {
     } catch (error) {
         console.error('Lỗi:', error);
     }
+}
+
+/**
+ * Load số lượng messages chưa đọc cho badge
+ */
+async function loadUnreadMessagesCount() {
+    try {
+        const response = await fetch('/api/messages/unread/count');
+        const data = await response.json();
+        
+        if (data.success) {
+            const badge = document.getElementById('messages-badge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi load unread messages:', error);
+    }
+}
+
+/**
+ * Initialize Socket.IO for real-time updates
+ */
+function initHeaderSocket() {
+    window.headerSocket = io({
+        transports: ['websocket', 'polling']
+    });
+    
+    const socket = window.headerSocket;
+    
+    socket.on('connect', () => {
+        console.log('📡 Header socket connected');
+        if (window.currentUserId) {
+            socket.emit('user:join', window.currentUserId);
+        }
+    });
+    
+    // Listen for new messages
+    socket.on('message:new', (data) => {
+        console.log('🔔 New message received in header');
+        loadUnreadMessagesCount(); // Update badge immediately
+    });
+    
+    // Listen for message marked as read
+    socket.on('messages:read', (data) => {
+        console.log('✅ Messages marked as read');
+        loadUnreadMessagesCount(); // Update badge immediately
+    });
+    
+    // Listen for new notifications (từ admin)
+    socket.on('notification:new', (data) => {
+        console.log('🔔 New notification received:', data);
+        loadNotificationsCount(); // Update badge immediately
+        // Không show toast - notification sẽ hiển trong danh sách notifications
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('📡 Header socket disconnected');
+    });
 }
 
 /**

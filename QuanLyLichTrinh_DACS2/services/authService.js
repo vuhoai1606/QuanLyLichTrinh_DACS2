@@ -255,6 +255,9 @@ class AuthService {
       }
 
       // 4. Tạo user mới từ Google account
+      // Sử dụng avatar mặc định thay vì avatar từ Google
+      const defaultAvatar = '/img/default-avatar.jpg';
+      
       const result = await pool.query(
         `INSERT INTO users (username, email, full_name, google_id, avatar_url, login_provider, is_email_verified, password_hash)
          VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7)
@@ -264,7 +267,7 @@ class AuthService {
           email,
           fullName,
           googleId,
-          avatarUrl,
+          defaultAvatar, // Sử dụng avatar mặc định
           'google',
           'google_oauth_no_password', // Placeholder password
         ]
