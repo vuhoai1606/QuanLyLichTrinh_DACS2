@@ -2232,7 +2232,7 @@ textarea:placeholder-shown {
   text-align: center;
   font-weight: 900;
   font-size: 14px;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 16px;

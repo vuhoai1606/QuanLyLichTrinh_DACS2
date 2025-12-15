@@ -1131,7 +1131,7 @@ body {
 .card-item p,
 .task-desc {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: #000;
   margin-bottom: var(--space-sm);
   line-height: 1.6;
 }

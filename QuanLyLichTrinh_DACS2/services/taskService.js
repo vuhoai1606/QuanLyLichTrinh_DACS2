@@ -335,18 +335,21 @@ class TaskService {
     const result = await pool.query(
       `SELECT 
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'todo') as todo,
-        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
         COUNT(*) FILTER (WHERE status = 'done') as done,
-        COUNT(*) FILTER (WHERE kanban_column = 'overdue') as overdue, 
-        COUNT(*) FILTER (WHERE priority = 'high') as high_priority,
-        COUNT(*) FILTER (WHERE start_time::date = CURRENT_DATE) as today
+        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
+        COUNT(*) FILTER (WHERE status = 'overdue' OR kanban_column = 'overdue') as overdue
        FROM tasks
        WHERE user_id = $1`,
       [userId]
     );
 
-    return result.rows[0];
+    const row = result.rows[0];
+    return {
+      total: parseInt(row.total) || 0,
+      done: parseInt(row.done) || 0,
+      in_progress: parseInt(row.in_progress) || 0,
+      overdue: parseInt(row.overdue) || 0
+    };
   }
 
   /**

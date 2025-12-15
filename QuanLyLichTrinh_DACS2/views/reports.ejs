@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,42 +7,128 @@
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/reports.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <!-- Socket.IO Client -->
   <script src="/socket.io/socket.io.js"></script>
-  <title>Reports</title>
+  <title>Thống kê & Báo cáo</title>
 </head>
 <body>
-  <!-- Header -->
   <%- include('header') %>
 
-  <!-- Nội dung chính -->
   <div class="main-content">
     <div class="dashboard-header">
-      <h1>Statisics</h1>
-      <p class="subtitle">Thống kê và báo cáo hiệu suất</p>
+      <h1>Thống kê</h1>
+      <p class="subtitle">Thống kê và báo cáo hiệu suất công việc</p>
+
+      <!-- FILTER THÁNG/NĂM MỚI -->
+      <div class="report-filter">
+        <label for="report-month">Tháng:</label>
+        <select id="report-month">
+          <option value="1">Tháng 1</option>
+          <option value="2">Tháng 2</option>
+          <option value="3">Tháng 3</option>
+          <option value="4">Tháng 4</option>
+          <option value="5">Tháng 5</option>
+          <option value="6">Tháng 6</option>
+          <option value="7">Tháng 7</option>
+          <option value="8">Tháng 8</option>
+          <option value="9">Tháng 9</option>
+          <option value="10">Tháng 10</option>
+          <option value="11">Tháng 11</option>
+          <option value="12" selected>Tháng 12</option>
+        </select>
+
+        <label for="report-year">Năm:</label>
+        <select id="report-year">
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+          <option value="2025" selected>2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- SUMMARY CARDS MỚI -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <h3>Tổng nhiệm vụ</h3>
+        <p id="summary-total-tasks">--</p>
+      </div>
+      <div class="summary-card">
+        <h3>Đã hoàn thành</h3>
+        <p id="summary-completed-tasks">--</p>
+      </div>
+      <div class="summary-card">
+        <h3>Tỷ lệ hoàn thành</h3>
+        <p id="summary-completion-rate">--%</p>
+      </div>
+      <div class="summary-card">
+        <h3>Sự kiện tháng này</h3>
+        <p id="summary-events">--</p>
+      </div>
     </div>
 
     <div class="dashboard-grid">
+
+      <!-- CARD: Hiệu suất tuần này -->
+      <div class="card productivity-card">
+        <h2>Hiệu suất tuần này</h2>
+        <div class="productivity-summary">
+          <div class="score">
+            <span class="big-number" id="productivity-score">--</span>/100
+            <span class="trend" id="productivity-trend">Đang tải...</span>
+          </div>
+          <div class="streak" id="productivity-streak">
+            <span class="loading">Đang tải...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biểu đồ trạng thái -->
       <div class="card">
         <h2>Nhiệm vụ theo trạng thái</h2>
         <div class="chart-container">
           <canvas id="chart-status"></canvas>
         </div>
       </div>
+
+      <!-- Biểu đồ thời gian + sự kiện -->
       <div class="card">
-        <h2>Nhiệm vụ theo tuần</h2>
-        <div class="chart-container">
-            <canvas id="chart-week"></canvas>
+        <div class="chart-header">
+          <h2 id="chart-week-title">Nhiệm vụ tạo mới trong 7 ngày gần nhất</h2>
+          <div class="period-selector">
+            <button class="period-btn" data-period="day">Ngày</button>
+            <button class="period-btn active" data-period="week">Tuần</button>
+            <button class="period-btn" data-period="month">Tháng</button>
+          </div>
         </div>
+
+        <div class="chart-container">
+          <canvas id="chart-week"></canvas>
+        </div>
+
+        <!-- Hoàn thành vs Tạo mới -->
+        <div class="chart-container" style="margin-top: 30px;">
+          <h3 style="margin-bottom: 15px; color: #1e293b;">Hoàn thành vs Tạo mới</h3>
+          <canvas id="chart-completed-vs-created"></canvas>
+        </div>
+
+        <!-- Top 5 danh mục phổ biến -->
+        <div class="chart-container" style="margin-top: 30px;">
+          <h3 style="margin-bottom: 15px; color: #1e293b;">Top 5 danh mục phổ biến</h3>
+          <canvas id="chart-top-tags"></canvas>
+        </div>
+
         <div class="report-actions">
-          <button id="create-report" class="btn-primary"><i class="fas fa-file"></i> Tạo báo cáo</button>
+          <button id="download-pdf" class="btn-primary"><i class="fas fa-file-pdf"></i> Tải PDF</button>
+          <button id="create-report" class="btn-primary"><i class="fas fa-eye"></i> Xem báo cáo</button>
           <button id="print-report" class="btn-secondary"><i class="fas fa-print"></i> In báo cáo</button>
         </div>
+
         <div class="form-group" style="margin-top: 15px;">
-          <input type="email" id="report-email" placeholder="Nhập email để gửi">
-          <button id="email-report" class="btn-primary"><i class="fas fa-envelope"></i> Gửi</button>
+          <input type="email" id="report-email" placeholder="Nhập email để gửi báo cáo">
+          <button id="email-report" class="btn-primary"><i class="fas fa-envelope"></i> Gửi email</button>
         </div>
-        <div class="chart-container" style="margin-top: 15px;">
+
+        <div class="chart-container" style="margin-top: 30px;">
           <canvas id="chart-events"></canvas>
         </div>
       </div>
@@ -52,7 +138,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/reports.js"></script>
-  <!-- ✅ BANNED LISTENER - Auto logout when admin bans user -->
   <script src="/js/banned-listener.js"></script>
 </body>
 </html>

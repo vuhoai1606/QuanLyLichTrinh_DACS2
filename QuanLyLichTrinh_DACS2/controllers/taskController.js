@@ -384,18 +384,29 @@ exports.getTaskStatistics = async (req, res) => {
       });
     }
 
-    const stats = await taskService.getTaskStatistics(userId);
+    const rawStats = await taskService.getTaskStatistics(userId);
+
+    // LOG ĐỂ DEBUG – BẬT LÊN KHI TEST
+    console.log('Raw stats from service:', rawStats);
+
+    const stats = {
+      total: rawStats.total || 0,
+      done: rawStats.done || 0,
+      in_progress: rawStats.in_progress || 0,
+      overdue: rawStats.overdue || 0
+    };
+
+    console.log('Final stats sent to frontend:', stats);
 
     res.json({
       success: true,
-      data: stats
+      stats // Đảm bảo đúng format
     });
   } catch (error) {
     console.error('Error getting statistics:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi lấy thống kê',
-      error: error.message
+      message: 'Lỗi khi lấy thống kê'
     });
   }
 };
