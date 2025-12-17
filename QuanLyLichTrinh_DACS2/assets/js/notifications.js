@@ -208,7 +208,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateGlobalBadge(unreadCount) {
         if (badge) {
             badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            // Dùng cssText để override mọi CSS
+            if (unreadCount > 0) {
+                badge.style.cssText = 'display: flex !important;';
+            } else {
+                badge.style.cssText = 'display: none !important;';
+            }
         }
     }
 

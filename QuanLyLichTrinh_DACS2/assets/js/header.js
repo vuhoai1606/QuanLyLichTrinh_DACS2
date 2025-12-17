@@ -25,11 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUnreadMessagesCount();  // Thêm: Load unread messages count
     checkAuthStatus();
 
-    // TỰ ĐỘNG CẬP NHẬT BADGE MỔI 30 GIÂY (hoạt động trên mọi trang)
-    setInterval(loadNotificationsCount, 30000); // 30.000ms = 30 giây
-    setInterval(loadUnreadMessagesCount, 30000); // Thêm: Update messages badge mỗi 30 giây
-    
     // Socket.IO for real-time updates (if available)
+    // Badge sẽ tự động cập nhật khi có thông báo mới qua socket
     if (typeof io !== 'undefined' && !window.headerSocket) {
         initHeaderSocket();
     }
@@ -160,11 +157,28 @@ async function loadNotificationsCount() {
         const response = await fetch('/api/notifications/count');
         const data = await response.json();
         
+        console.log('📊 Notification count:', data); // Debug
+        
         if (data.success) {
-            document.getElementById('notif-badge').textContent = data.count;
+            const badge = document.getElementById('notif-badge');
+            if (badge) {
+                const count = data.count || 0;
+                badge.textContent = count > 99 ? '99+' : count;
+                
+                // Dùng cssText để override mọi CSS existing
+                if (count > 0) {
+                    badge.style.cssText = 'display: flex !important;';
+                    console.log('✅ Badge SHOWN:', count);
+                } else {
+                    badge.style.cssText = 'display: none !important;';
+                    console.log('✅ Badge HIDDEN');
+                }
+            } else {
+                console.error('❌ Badge element NOT FOUND!');
+            }
         }
     } catch (error) {
-        console.error('Lỗi:', error);
+        console.error('❌ Lỗi load notification count:', error);
     }
 }
 

@@ -38,17 +38,42 @@ class NotificationService {
   async getAll(userId, filter = 'all') {
     if (!userId) return { notifications: [], unreadCount: 0 };
 
-    let query = 'SELECT * FROM notifications WHERE user_id = $1';
+    // ✅ JOIN với system_notifications để filter theo start_date
+    let query = `
+      SELECT n.* 
+      FROM notifications n
+      LEFT JOIN system_notifications sn ON n.related_id = sn.notification_id
+      WHERE n.user_id = $1
+      AND (
+        n.related_id IS NULL -- Notification thường (không phải system)
+        OR (
+          sn.start_date <= NOW() -- Đã đến thời gian hiển thị
+          AND sn.is_active = true -- Notification vẫn active
+        )
+      )
+    `;
     const values = [userId];
 
-    if (filter === 'unread') query += ' AND is_read = false';
-    query += ' ORDER BY created_at DESC LIMIT 50';
+    if (filter === 'unread') query += ' AND n.is_read = false';
+    query += ' ORDER BY n.created_at DESC LIMIT 50';
 
     const res = await pool.query(query, values);
-    const countRes = await pool.query(
-      'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false',
-      [userId]
-    );
+    
+    // ✅ Count cũng phải filter tương tự
+    const countRes = await pool.query(`
+      SELECT COUNT(*) 
+      FROM notifications n
+      LEFT JOIN system_notifications sn ON n.related_id = sn.notification_id
+      WHERE n.user_id = $1 
+      AND n.is_read = false
+      AND (
+        n.related_id IS NULL
+        OR (
+          sn.start_date <= NOW()
+          AND sn.is_active = true
+        )
+      )
+    `, [userId]);
 
     return {
       notifications: res.rows,

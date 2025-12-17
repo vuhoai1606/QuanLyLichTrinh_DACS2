@@ -18,7 +18,7 @@
   "scripts": {
     "start": "node server.js",
     "migrate": "node migration/runMigration.js && node migration/runUpdate.js && node migration/run_create_sessions.js && node migration/run_add_profile_fields.js && node migration/run_add_2fa.js",
-    "update": "node migration/run_add_ban_columns.js && node migration/run_add_missing_columns_only.js",
+    "update": "node migration/run_remove_end_date.js",
     "seed": "node seeder/index.js",
     "setup": "npm run migrate && npm run seed",
     "dev": "nodemon server.js",
@@ -39,8 +39,8 @@
     "multer": "2.0.2",
     "nodemailer": "7.0.10",
     "pg": "8.16.3",
-    "puppeteer": "^24.33.0",
-    "socket.io": "^4.8.1",
+    "puppeteer": "24.33.0",
+    "socket.io": "4.8.1",
     "svg-captcha": "1.4.0"
   },
   "devDependencies": {

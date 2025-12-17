@@ -1092,30 +1092,30 @@ body::before {
 =========================== */
 .toast-notification {
   position: fixed !important;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 280px;
-  max-width: 400px;
-  min-height: 64px;
+  top: 80px;
+  right: 20px;
+  transform: translateX(0);
+  min-width: 240px;
+  max-width: 320px;
+  min-height: 48px;
   background: rgba(0, 0, 0, 0.92);
   color: white;
-  border-radius: var(--radius-xl);
-  padding: 18px 28px;
+  border-radius: 8px;
+  padding: 12px 20px;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  font-size: clamp(14px, 1.8vw, 16px);
-  font-weight: 600;
-  text-align: center;
-  box-shadow: var(--shadow-xl), 0 0 40px rgba(0,0,0,0.3);
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   z-index: 999999;
   pointer-events: none;
   user-select: none;
-  backdrop-filter: blur(16px);
-  animation: toastPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 2px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  animation: slideInRight 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .toast-success {
@@ -1141,15 +1141,11 @@ body::before {
 @keyframes toastPop {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.7) rotate(-5deg);
-  }
-  60% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.05) rotate(2deg);
+    transform: translateX(400px);
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    transform: translateX(0);
   }
 }
 
@@ -1160,7 +1156,18 @@ body::before {
 @keyframes toastFadeOut {
   to {
     opacity: 0;
-    transform: translate(-50%, -60%) scale(0.9);
+    transform: translateX(400px);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
