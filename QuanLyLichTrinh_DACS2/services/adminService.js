@@ -481,7 +481,7 @@ class AdminService {
   /**
    * 9. TẠO THÔNG BÁO HỆ THỐNG
    */
-  async createSystemNotification(adminId, { title, content, type = 'info', startDate, endDate, targetUsers = 'all' }, ipAddress = null) {
+  async createSystemNotification(adminId, { title, content, type = 'info', startDate, targetUsers = 'all' }, ipAddress = null) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -489,10 +489,10 @@ class AdminService {
       // Tạo notification
       const result = await client.query(`
         INSERT INTO system_notifications 
-        (created_by, title, content, notification_type, start_date, end_date, target_users)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        (created_by, title, content, notification_type, start_date, target_users)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
-      `, [adminId, title, content, type, startDate || new Date(), endDate, targetUsers]);
+      `, [adminId, title, content, type, startDate || new Date(), targetUsers]);
       
       const notification = result.rows[0];
       
@@ -543,11 +543,14 @@ class AdminService {
       
       await client.query('COMMIT');
       
-      // ✅ EMIT SOCKET EVENT - Gửi notification real-time đến users
-      if (global.io && userIds.length > 0) {
+      // ✅ CHỈ EMIT SOCKET NẾU START_DATE <= NOW()
+      const now = new Date();
+      const shouldEmitNow = new Date(notification.start_date) <= now;
+      
+      if (shouldEmitNow && global.io && userIds.length > 0) {
         const io = global.io;
         
-        // Emit đến từng user
+        // Emit đến từng user nếu notification đã đến thời gian hiển thị
         userIds.forEach(userId => {
           io.to(`user:${userId}`).emit('notification:new', {
             notification: {
@@ -560,7 +563,9 @@ class AdminService {
           });
         });
         
-        console.log(`🔔 Created ${userIds.length} notification records and emitted to users`);
+        console.log(`🔔 Created ${userIds.length} notification records and emitted immediately`);
+      } else if (!shouldEmitNow) {
+        console.log(`⏰ Notification scheduled for ${notification.start_date} (not emitted yet)`);
       }
       
       return notification;

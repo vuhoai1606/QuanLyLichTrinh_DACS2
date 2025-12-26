@@ -82,6 +82,9 @@ const renderTasks = (taskArray, targetListEl) => {
                     (task.end_time && new Date(task.end_time) < new Date() && task.status !== 'done')
                     ? 'task-item-overdue' : '';
 
+        const isOverdue = task.kanban_column === 'overdue' || 
+                         (task.end_time && new Date(task.end_time) < new Date() && task.status !== 'done');
+        
         li.innerHTML = `
             <div class="task-main ${overdueClass}">
                 <strong>${task.title}</strong>
@@ -107,11 +110,25 @@ const renderTasks = (taskArray, targetListEl) => {
             <small class="countdown" data-end="${task.end_time}">Còn: <span class="time-left">đang tải...</span></small>` : ''}
 
             <div class="task-actions">
+                ${isOverdue ? `
+                <button class="btn-reset" title="Tái thiết lập" style="background-color: #6366f1; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                    <i class="fas fa-undo"></i> Reset
+                </button>` : ''}
                 <button class="btn-edit" title="Sửa"><i class="fas fa-edit"></i></button>
                 <button class="btn-delete" title="Xóa"><i class="fas fa-trash"></i></button>
             </div>
         `;
 
+        const btnReset = li.querySelector('.btn-reset');
+        if (btnReset) {
+            btnReset.onclick = () => {
+                openModal(task);
+                document.getElementById('modal-title').textContent = 'Tái thiết lập công việc quá hạn';
+                // Đặt trạng thái ngầm định là todo khi lưu
+                currentResetMode = true; 
+            };
+        }
+        
         // Drag & Drop
         li.draggable = true;
         li.addEventListener('dragstart', e => {

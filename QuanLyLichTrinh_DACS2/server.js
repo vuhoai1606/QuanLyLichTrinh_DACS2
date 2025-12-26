@@ -175,4 +175,8 @@ app.use((err, req, res, next) => {
 server.listen(PORT, () => {
     console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
     console.log(`🔌 Socket.IO ready for realtime updates`);
+    
+    // ✅ Khởi động notification scheduler để emit scheduled notifications
+    const { startNotificationScheduler } = require('./services/notificationScheduler');
+    startNotificationScheduler();
 });

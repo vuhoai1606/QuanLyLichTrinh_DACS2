@@ -1376,28 +1376,28 @@ textarea.input-field,
 
 .toast-notification {
   position: fixed !important;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 360px;
-  min-height: 60px;
+  top: 80px;
+  right: 20px;
+  transform: translateX(0);
+  max-width: 320px;
+  min-height: 48px;
   background: rgba(0, 0, 0, 0.9);
   color: white;
-  border-radius: 40px;
-  padding: 16px 28px;
+  border-radius: 8px;
+  padding: 12px 20px;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
-  text-align: center;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   z-index: 999999;
   pointer-events: none;
   user-select: none;
-  animation: toastPop 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInRight 0.3s ease;
 }
 
 .toast-success {

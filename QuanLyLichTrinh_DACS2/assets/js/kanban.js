@@ -283,8 +283,25 @@ function initDragAndDrop() {
       list.appendChild(draggedCard);
 
       const taskId = draggedCard.dataset.id;
+      const oldColumn = draggedCard.dataset.kanbanColumn;
       const newColumn = list.dataset.column;
 
+      // YÊU CẦU: Nếu từ overdue sang todo -> Mở modal chỉnh sửa
+      if (oldColumn === 'overdue' && newColumn === 'todo') {
+          openTaskModal(taskId);
+          // Thay đổi tiêu đề modal để người dùng biết cần chỉnh sửa lại thời gian
+          setTimeout(() => {
+              document.querySelector('#task-detail-modal h3').textContent = 'Cập nhật lại thời gian cho Task';
+          }, 100);
+          return; // Dừng việc cập nhật API tự động, đợi người dùng nhấn Save trong Modal
+      }
+
+      // Chỉ cho phép di chuyển task Quá hạn sang cột Todo
+      if (oldColumn === 'overdue' && newColumn !== 'todo') {
+          showToast('Task quá hạn chỉ có thể di chuyển sang cột To Do để thiết lập lại', 'warning');
+          return;
+      }
+      
       try {
         const res = await fetch(`/api/kanban/${taskId}/move`, {
           method: 'PATCH',

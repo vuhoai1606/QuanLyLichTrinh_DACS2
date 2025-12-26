@@ -35,15 +35,17 @@ function showToast(message, type = 'info') {
   toast.textContent = message;
   toast.style.cssText = `
     position: fixed;
-    bottom: 24px;
-    right: 24px;
-    padding: 16px 24px;
+    top: 80px;
+    right: 20px;
+    padding: 12px 20px;
+    max-width: 320px;
     background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
     color: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 10000;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
     animation: slideInRight 0.3s ease;
   `;
   

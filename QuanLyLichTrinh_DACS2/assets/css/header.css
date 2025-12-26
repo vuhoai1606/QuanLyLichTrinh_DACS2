@@ -776,7 +776,7 @@ header.collapsed .action-btn:hover[data-tooltip]::after {
   font-weight: 700;
   min-width: clamp(20px, 2.8vw, 22px);
   height: clamp(20px, 2.8vw, 22px);
-  display: flex;
+  /* JavaScript sẽ control display qua inline style */
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full);

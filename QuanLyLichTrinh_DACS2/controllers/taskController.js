@@ -296,50 +296,31 @@ exports.updateTaskStatus = async (req, res) => {
 
 // Cập nhật cột Kanban (Dùng cho Auto Task Manager và Task List)
 exports.updateTaskKanbanColumn = async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const { id } = req.params;
-    const { kanban_column, kanbanColumn } = req.body; 
-    const column = kanban_column || kanbanColumn;
+  try {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    const { kanbanColumn } = req.body;
 
-    if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Vui lòng đăng nhập' 
-      });
+    // Lấy thông tin task cũ để kiểm tra trạng thái trước đó
+    const oldTask = await taskService.getTaskById(id, userId);
+    
+    let newStatus = kanbanColumn;
+    let extraUpdateData = {};
+
+    // Logic Reset: Nếu chuyển từ overdue sang todo
+    if (oldTask.kanban_column === 'overdue' && kanbanColumn === 'todo') {
+        extraUpdateData.grace_end_time = null; // Xóa thời gian ân hạn cũ
+        newStatus = 'todo';
     }
 
-    // KHẮC PHỤC: Tăng cường kiểm tra hợp lệ
-    const validColumns = ['todo', 'in_progress', 'done', 'overdue'];
-    if (!column || typeof column !== 'string' || !validColumns.includes(column)) { 
-      // Thêm column để dễ dàng debug
-      console.error(`Lỗi 400: Cột Kanban nhận được không hợp lệ: ${column}`); 
-      return res.status(400).json({
-        success: false,
-        message: `Tên cột Kanban không hợp lệ hoặc bị thiếu. Cột nhận được: ${column}. Cột hợp lệ: ${validColumns.join(', ')}`
-      });
-    }
+    const updateData = { 
+      kanbanColumn: kanbanColumn,
+      status: newStatus,
+      ...extraUpdateData
+    };
     
-    let newStatus; 
-    
-    if (column === 'done') {
-        newStatus = 'done';
-    } else if (column === 'in_progress') {
-        newStatus = 'in_progress';
-    } else if (column === 'overdue') {
-        newStatus = 'overdue'; 
-    } else {
-        newStatus = 'todo';
-    }
-    
-    // CẬP NHẬT: Tạo updateData chỉ với các trường cần thiết
-    const updateData = { 
-      kanbanColumn: column,
-      status: newStatus, // Bắt buộc phải gửi để Task List đồng bộ
-    };
-    
-    // Thử cập nhật task
     const updatedTask = await taskService.updateTask(id, userId, updateData);
+    // ... phần còn lại của hàm giữ nguyên ...
 
     if (!updatedTask) {
       return res.status(404).json({

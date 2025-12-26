@@ -71,7 +71,7 @@
             <input type="checkbox" id="2fa-toggle">
             <span class="toggle-slider"></span>
           </label>
-          <span class="toggle-status" id="2fa-status">Tắt</span>
+          <span class="toggle-status" id="2fa-status">Đang tải...</span>
         </div>
       </div>
     </div>
@@ -83,6 +83,23 @@
       <button class="btn-primary" onclick="saveSettings()">
         <i class="fas fa-save"></i> Lưu thay đổi
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- 2FA Confirmation Modal -->
+<div id="2fa-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="2fa-modal-title">Bật xác thực 2 bước</h3>
+      <button class="close-modal" onclick="close2FAModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="2fa-modal-body">
+      <!-- Nội dung sẽ được JS fill -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="close2FAModal()">Hủy</button>
+      <button class="btn-primary" id="2fa-confirm-btn">Xác nhận</button>
     </div>
   </div>
 </div>
