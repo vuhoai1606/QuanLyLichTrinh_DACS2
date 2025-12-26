@@ -398,7 +398,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: white;
+  /* background: white; */
 }
 
 .chat-header-info {
@@ -493,9 +493,10 @@ body {
 }
 
 .message.received .message-bubble {
-  background: white;
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border-bottom-left-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .message.sent .message-bubble {
@@ -550,7 +551,7 @@ body {
   background: transparent;
   border-radius: 50%;
   font-size: 19px;
-  color: #64748b;
+  /* color: #64748b; */
   cursor: pointer;
   transition: all 0.25s ease;
   display: flex;

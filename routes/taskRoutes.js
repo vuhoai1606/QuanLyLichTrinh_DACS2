@@ -13,6 +13,8 @@ router.use(requireAuth);
 router.get('/api/tasks', taskController.getTasks);
 router.get('/api/tasks/today', taskController.getTodayTasks);
 router.post('/api/tasks', taskController.createTask);
+// Lấy thống kê nhanh cho Dashboard
+router.get('/api/stats', taskController.getTaskStatistics);
 
 // Routes đặc biệt với string cụ thể
 router.patch('/api/tasks/:id/status', taskController.updateTaskStatus);
@@ -22,6 +24,9 @@ router.patch('/api/tasks/:id/kanban', taskController.updateTaskKanbanColumn);
 router.get('/api/tasks/:id', taskController.getTaskById);
 router.put('/api/tasks/:id', taskController.updateTask);
 router.delete('/api/tasks/:id', taskController.deleteTask);
+
+router.get('/api/categories', taskController.getCategories);
+router.patch('/api/tasks/reorder', taskController.reorderTasks);
 
 // Route mới để xác nhận hoàn thành task có overdue
 router.post('/api/tasks/:id/confirm-complete', taskController.confirmTaskComplete);

@@ -7,11 +7,18 @@
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/notifications.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
   <title>Notifications</title>
 </head>
 <body>
   <!-- Header -->
   <%- include('header') %>
+
+  <!-- Pass userId to JavaScript -->
+  <script>
+    window.currentUserId = <%= userId || 'null' %>;
+  </script>
 
   <!-- Nội dung chính -->
   <div class="main-content">
@@ -21,7 +28,8 @@
 
       <!-- Filter theo loại -->
       <div class="notification-filters">
-        <button class="filter-btn" data-type="all">Tất cả</button>
+        <button class="filter-btn active" data-type="all">Tất cả</button>
+        <button class="filter-btn" data-type="system">Hệ thống</button>
         <button class="filter-btn" data-type="task">Tasks</button>
         <button class="filter-btn" data-type="event">Events</button>
         <button class="filter-btn" data-type="group">Groups</button>
@@ -39,5 +47,9 @@
 
   <script src="/js/header.js"></script>
   <script src="/js/notifications.js"></script>
+  <!-- ✅ BANNED LISTENER - Auto logout when admin bans user -->
+  <% if (isAuthenticated) { %>
+  <script src="/js/banned-listener.js"></script>
+  <% } %>
 </body>
 </html>

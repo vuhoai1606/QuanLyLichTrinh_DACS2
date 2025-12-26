@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="/css/index.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
@@ -22,9 +24,9 @@
         <p id="greeting-time">Tổng quan công việc & lịch trình hôm nay</p>
       </div>
       <div class="header-actions">
-        <button class="btn-ghost" id="quick-add-btn">
+        <!-- <button class="btn-ghost" id="quick-add-btn">
           Thêm nhanh
-        </button>
+        </button> -->
       </div>
     </div>
 
@@ -105,9 +107,9 @@
         <!-- Stats -->
         <div class="card">
           <h2>📊 Thống kê</h2>
-          <p>✅ Hoàn thành: <span id="stat-done">0</span></p>
-          <p>⏰ Trễ hạn: <span id="stat-overdue">0</span></p>
-          <p>📊 Tổng: <span id="stat-total">0</span></p>
+          <p>✅ Hoàn thành: <span id="small-stat-done">0</span></p>
+          <p>⏰ Trễ hạn: <span id="small-stat-overdue">0</span></p>
+          <p>📊 Tổng: <span id="small-stat-total">0</span></p>
           <div class="progress-bar">
             <div class="progress" id="progress-bar"></div>
           </div>
@@ -138,6 +140,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/js/index.js"></script>
   <script src="/js/header.js"></script>
+  <!-- ✅ BANNED LISTENER - Auto logout when admin bans user -->
+  <script src="/js/banned-listener.js"></script>
 
 </body>
 </html>

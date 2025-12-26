@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chấp nhận lời mời lịch</title>
+  <link rel="stylesheet" href="/css/calendar.css">
+  <style>
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background: #f8fafc; 
+      margin: 0; 
+      padding: 0; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh; 
+    }
+    .container { 
+      background: white; 
+      padding: 40px; 
+      border-radius: 12px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+      text-align: center; 
+      max-width: 500px; 
+      width: 90%; 
+    }
+    h1 { color: #4285f4; margin-bottom: 20px; }
+    .success { color: #10b981; font-size: 18px; margin: 20px 0; }
+    .error { color: #ef4444; font-size: 16px; margin: 20px 0; }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 10px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+    .btn-primary { background: #4285f4; color: white; }
+    .btn-success { background: #10b981; color: white; }
+    .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><%= message %></h1>
+
+    <% if (success) { %>
+      <p class="success">🎉 Bạn đã chấp nhận lời mời thành công!</p>
+      <p>Lịch được chia sẻ sẽ hiển thị ngay trên trang Calendar của bạn.</p>
+      <a href="/calendar" class="btn btn-primary">Về trang Calendar</a>
+    <% } else { %>
+      <p class="error"><%= message %></p>
+      <% if (inviteEmail) { %>
+        <p>Vui lòng <strong>đăng ký</strong> hoặc <strong>đăng nhập</strong> bằng email: <strong><%= inviteEmail %></strong></p>
+      <% } %>
+      <a href="/login" class="btn btn-primary">Đăng nhập</a>
+      <a href="/register" class="btn btn-success">Đăng ký</a>
+      <br><br>
+      <a href="/" style="color:#666; font-size:14px;">Về trang chủ</a>
+    <% } %>
+  </div>
+</body>
+</html>

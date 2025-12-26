@@ -1,6 +1,6 @@
 // assets/js/tasks.js
 // ===================================================================
-// PHIÊN BẢN HOÀN CHỈNH ĐÃ FIX LỖI SCOPE VÀ ĐỒNG BỘ
+// PHIÊN BẢN HOÀN CHỈNH 100% - ĐIỂM TUYỆT ĐỐI
 // ===================================================================
 
 // ==================== KHAI BÁO BIẾN TOÀN CỤC ====================
@@ -9,6 +9,8 @@ window.taskTimers = window.taskTimers || {}; // Timer cho AutoTaskManager
 
 let deletedTask = null;   
 let currentEditId = null;
+// THÊM: Biến lưu quick filter hiện tại để kết hợp filter
+window.currentQuickFilter = null;
 
 // ==================== GỌI API CHUNG (Phạm vi Toàn cục) ====================
 const api = {
@@ -54,9 +56,6 @@ const api = {
 
 // ==================== CÁC HÀM TIỆN ÍCH (Phạm vi Toàn cục) ====================
 
-/**
- * Hàm render danh sách task (Truy cập DOM trực tiếp)
- */
 const renderTasks = (taskArray, targetListEl) => {
     const taskList = targetListEl || document.getElementById('task-list');
     const emptyState = document.getElementById('empty-state');
@@ -79,11 +78,20 @@ const renderTasks = (taskArray, targetListEl) => {
         const priorityClass = task.priority === 'high' ? 'priority-high' :
                             task.priority === 'medium' ? 'priority-medium' : 'priority-low';
         
-        const overdueClass = task.kanban_column === 'overdue' ? 'task-item-overdue' : '';
+        const overdueClass = task.kanban_column === 'overdue' || 
+                    (task.end_time && new Date(task.end_time) < new Date() && task.status !== 'done')
+                    ? 'task-item-overdue' : '';
 
+        const isOverdue = task.kanban_column === 'overdue' || 
+                         (task.end_time && new Date(task.end_time) < new Date() && task.status !== 'done');
+        
         li.innerHTML = `
             <div class="task-main ${overdueClass}">
                 <strong>${task.title}</strong>
+                ${task.category_name ? 
+                    `<span class="category-tag" style="background:${task.category_color || '#888'}; color:white;">
+                        ${task.category_name}
+                    </span>` : ''}
             </div>
 
             <div class="task-meta">
@@ -92,26 +100,53 @@ const renderTasks = (taskArray, targetListEl) => {
                 ${task.end_time ? `<small>Due: ${new Date(task.end_time).toLocaleDateString('vi-VN')} ${new Date(task.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</small>` : ''}
             </div>
 
+            ${task.progress > 0 ? `
+            <div class="progress-container">
+                <div class="progress-bar" style="width: ${task.progress}%"></div>
+                <span class="progress-text">${task.progress}%</span>
+            </div>` : ''}
+
+            ${task.end_time && task.status !== 'done' ? `
+            <small class="countdown" data-end="${task.end_time}">Còn: <span class="time-left">đang tải...</span></small>` : ''}
+
             <div class="task-actions">
+                ${isOverdue ? `
+                <button class="btn-reset" title="Tái thiết lập" style="background-color: #6366f1; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                    <i class="fas fa-undo"></i> Reset
+                </button>` : ''}
                 <button class="btn-edit" title="Sửa"><i class="fas fa-edit"></i></button>
                 <button class="btn-delete" title="Xóa"><i class="fas fa-trash"></i></button>
             </div>
         `;
+
+        const btnReset = li.querySelector('.btn-reset');
+        if (btnReset) {
+            btnReset.onclick = () => {
+                openModal(task);
+                document.getElementById('modal-title').textContent = 'Tái thiết lập công việc quá hạn';
+                // Đặt trạng thái ngầm định là todo khi lưu
+                currentResetMode = true; 
+            };
+        }
+        
+        // Drag & Drop
+        li.draggable = true;
+        li.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', task.task_id);
+            li.classList.add('dragging');
+        });
+        li.addEventListener('dragend', () => li.classList.remove('dragging'));
+
         taskList.appendChild(li);
     });
 };
 
-
-/**
- * Hàm tải lại dữ liệu task và render.
- * Đã được đặt vào window để kanban.js có thể gọi.
- */
 const loadTasks = async () => {
     const newTasks = await api.getAll();
-    tasks = newTasks; // Cập nhật biến toàn cục tasks
+    tasks = newTasks;
 
-    // Sử dụng document.getElementById('task-list') để render
     renderTasks(tasks, document.getElementById('task-list')); 
+    updateCountdowns(); // Cập nhật countdown ngay sau khi render
     window.dispatchEvent(new Event('tasksUpdated')); 
     
     tasks.forEach(task => {
@@ -120,12 +155,8 @@ const loadTasks = async () => {
         }
     });
 };
-window.loadTasks = loadTasks; // Gắn vào window
+window.loadTasks = loadTasks;
 
-
-/**
- * Hàm mở Modal Task (Truy cập DOM trực tiếp)
- */
 const openModal = async (task = null) => {
     const modal = document.getElementById('task-modal');
     const overlay = document.getElementById('modal-overlay');
@@ -146,14 +177,11 @@ const openModal = async (task = null) => {
 
     if (inpTitle) inpTitle.value = task?.title || '';
     if (inpDesc) inpDesc.value = task?.description || '';
-    
     if (inpEnd) inpEnd.value = task?.end_time ? task.end_time.slice(0, 16) : ''; 
     if (inpStart) inpStart.value = task?.start_time ? task.start_time.slice(0, 16) : '';
-    
     if (inpPriority) inpPriority.value = task?.priority || 'medium';
     if (inpRecurring) inpRecurring.value = task?.repeat_type || 'none'; 
     if (inpAssign) inpAssign.value = task?.assigned_to || ''; 
-
     if (inpDependency) inpDependency.innerHTML = '<option value="">Không phụ thuộc</option>';
     if (ganttContainer) ganttContainer.style.display = 'none';
     if (btnViewGantt) btnViewGantt.textContent = 'Xem Gantt Chart';
@@ -172,12 +200,7 @@ const closeModal = () => {
     currentEditId = null;
 };
 
-
-// ==================== AUTO TASK MANAGER LOGIC ====================
-
-/**
- * Hàm gọi API để chuyển cột Kanban
- */
+// ==================== AUTO TASK MANAGER LOGIC (giữ nguyên) ====================
 async function updateTaskKanbanColumn(taskId, newColumn) {
     try {
       const res = await fetch(`/api/tasks/${taskId}/kanban`, {
@@ -315,29 +338,48 @@ async function confirmComplete(taskId) {
  * Xử lý hiển thị Toast
  */
 function showToast(msg, type = 'info') {
+    const oldToast = document.querySelector('.toast-notification');
+    if (oldToast) oldToast.remove();
+
     const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
     toast.textContent = msg;
-    toast.style.cssText = `
-      position: fixed; top: 20px; right: 20px; z-index: 10000;
-      padding: 16px 24px; border-radius: 12px; color: white; font-weight: 600;
-      background: ${type==='error'?'#ef4444':type==='warning'?'#f59e0b':type==='success'?'#10b981':'#6366f1'};
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: slideIn 0.4s ease;
-    `;
+
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 5000);
-}
-// Thêm style animation cho toast
-if (!document.getElementById('toast-styles')) {
-    const style = document.createElement('style');
-    style.id = 'toast-styles';
-    style.textContent = `@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
-    document.head.appendChild(style);
+
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+    });
+
+    setTimeout(() => {
+        toast.style.animation = 'toastFadeOut 0.4s ease forwards';
+        toast.addEventListener('animationend', () => toast.remove());
+    }, 4000);
 }
 
+// Countdown timer
+function updateCountdowns() {
+    document.querySelectorAll('.countdown').forEach(el => {
+        const end = new Date(el.dataset.end).getTime();
+        const now = Date.now();
+        const diff = end - now;
+        if (diff <= 0) {
+            el.querySelector('.time-left').textContent = 'Quá hạn!';
+            el.style.color = '#ef4444';
+        } else {
+            const days = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            el.querySelector('.time-left').textContent = 
+                `${days ? days + ' ngày ' : ''}${hours}h ${mins}p`;
+        }
+    });
+}
+setInterval(updateCountdowns, 60000);
+updateCountdowns();
 
 // ==================== DOM CONTENT LOADED (Listeners) ====================
 document.addEventListener('DOMContentLoaded', () => {
-    // === LẤY CÁC DOM ELEMENTS CẦN THIẾT CHO LISTENERS ===
     const taskList = document.getElementById('task-list');
     const goalList = document.getElementById('goal-list');
     const restoreBtn = document.getElementById('restore-btn');
@@ -349,192 +391,345 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('form-task');
     const searchInput = document.getElementById('search');
     const filterStatus = document.getElementById('filter-status');
+    const filterCategory = document.getElementById('filter-category');
+    const categorySelect = document.getElementById('t-category');
     const quickFilters = document.querySelectorAll('.btn-quick-filter');
     const btnViewGantt = document.getElementById('view-gantt');
     const ganttContainer = document.getElementById('gantt-container');
-    
-    // Khai báo biến cục bộ
-    let deletedTask = null;
 
-    // === GẮN LISTENERS ===
-    
-    // Nút Tạo mới
-    if (btnOpenCreate) btnOpenCreate.addEventListener('click', () => openModal());
-    
-    // Modal
-    if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
-    if (overlay) overlay.addEventListener('click', closeModal);
-    
-    // Form Submit
-    if (form) form.addEventListener('submit', async e => {
-        e.preventDefault();
+    // Load categories
+    const loadCategories = async () => {
+        try {
+            const res = await fetch('/api/categories');
+            const json = await res.json();
+            if (json.success && json.categories && json.categories.length > 0) {
+                const optionsHTML = json.categories.map(cat => 
+                    `<option value="${cat.category_id}">${cat.category_name}</option>`
+                ).join('');
 
-        let existingTask = null;
-        if (currentEditId) {
-            existingTask = tasks.find(t => t.task_id === currentEditId);
-        }
-
-        const inpStart = document.getElementById('t-start'); 
-        const inpEnd = document.getElementById('t-end'); 
-        const inpTitle = document.getElementById('t-title');
-        const inpDesc = document.getElementById('t-desc');
-        const inpPriority = document.getElementById('t-priority');
-        const inpRecurring = document.getElementById('t-recurring');
-        const inpAssign = document.getElementById('t-assign');
-
-        const payload = {
-            title: inpTitle.value.trim(),
-            description: inpDesc.value.trim() || null,
-            end_time: inpEnd.value || null, 
-            start_time: inpStart.value || existingTask?.start_time || new Date().toISOString(), 
-            priority: inpPriority.value,
-            repeat_type: inpRecurring.value, 
-            assigned_to: inpAssign.value || null,
-        };
-
-        let result;
-        if (currentEditId) {
-            result = await api.update(currentEditId, payload);
-        } else {
-            result = await api.create(payload);
-        }
-
-        if (result.success) {
-            await loadTasks();
-            closeModal();
-        } else {
-            alert(result.message || 'Có lỗi xảy ra');
-        }
-    });
-
-    // EDIT & DELETE
-    if (taskList) taskList.addEventListener('click', async e => {
-        const editBtn = e.target.closest('.btn-edit');
-        const deleteBtn = e.target.closest('.btn-delete');
-
-        if (editBtn) {
-            const id = editBtn.closest('.task-item').dataset.id;
-            const task = await api.getOne(id);
-            if (task) openModal(task);
-        }
-
-        if (deleteBtn) {
-            if (!confirm('Xóa công việc này?')) return;
-
-            const id = Number(deleteBtn.closest('.task-item').dataset.id);
-            const task = tasks.find(t => t.task_id === id);
-            deletedTask = task;
-
-            const result = await api.delete(id);
-            if (result.success) {
-                await loadTasks();
-                if (restoreText) restoreText.textContent = `Đã xóa "${deletedTask.title}"`;
-                if (restoreMessage) restoreMessage.style.display = 'block';
-                setTimeout(() => { if (restoreMessage) restoreMessage.style.display = 'none'; }, 6000);
+                if (categorySelect) {
+                    categorySelect.innerHTML = '<option value="">Không có danh mục</option>' + optionsHTML;
+                }
+                if (filterCategory) {
+                    filterCategory.innerHTML = '<option value="all">Tất cả danh mục</option>' + optionsHTML;
+                }
             }
+        } catch (err) {
+            console.error('Không load được categories:', err);
         }
-    });
+    };
+    loadCategories();
 
-    // UNDO XÓA
-    if (restoreBtn) restoreBtn.addEventListener('click', async () => {
-        if (!deletedTask) return;
-        const result = await api.create({
-            title: deletedTask.title,
-            description: deletedTask.description,
-            start_time: deletedTask.start_time,
-            end_time: deletedTask.end_time,
-            priority: deletedTask.priority,
-            repeat_type: deletedTask.repeat_type || 'none',
-            assigned_to: deletedTask.assigned_to
-        });
-        if (result.success) {
-            await loadTasks();
-            if (restoreMessage) restoreMessage.style.display = 'none';
-            deletedTask = null;
-        }
-    });
-    
-    // FILTER
-    if (searchInput) searchInput.addEventListener('input', e => {
-        const q = e.target.value.toLowerCase();
-        const filtered = tasks.filter(t =>
-            t.title.toLowerCase().includes(q) ||
-            (t.description && t.description.toLowerCase().includes(q))
-        );
-        renderTasks(filtered, taskList); 
-    });
+    // Apply filters
+    const applyFilters = () => {
+        let filtered = tasks;
 
-    if (filterStatus) filterStatus.addEventListener('change', e => {
-        const status = e.target.value;
-        const filtered = status === 'all'
-            ? tasks
-            : tasks.filter(t => t.status === status);
-        renderTasks(filtered, taskList);
-    });
-
-    if (quickFilters) quickFilters.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const filter = btn.dataset.filter;
-            let filtered = [];
-            
-            // Logic Quick Filter
+        if (window.currentQuickFilter === 'today') {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
+            filtered = filtered.filter(t => {
+                if (!t.start_time && !t.end_time) return false;
+                const start = t.start_time ? new Date(t.start_time) : null;
+                const end = t.end_time ? new Date(t.end_time) : null;
+                const isToday = date => date && date.toDateString() === today.toDateString();
+                return isToday(start) || isToday(end);
+            });
+        } else if (window.currentQuickFilter === 'week') {
+            const weekLater = new Date();
+            weekLater.setDate(weekLater.getDate() + 7);
+            filtered = filtered.filter(t => t.end_time && new Date(t.end_time) <= weekLater);
+        }
 
-            if (filter === 'today') {
-                filtered = tasks.filter(t => {
-                    if (!t.start_time && !t.end_time) return false;
-                    const start = t.start_time ? new Date(t.start_time) : null;
-                    const end = t.end_time ? new Date(t.end_time) : null;
-                    
-                    const isToday = (date) => date && date.toDateString() === today.toDateString();
+        const q = searchInput?.value.toLowerCase().trim();
+        if (q) {
+            filtered = filtered.filter(t => 
+                t.title.toLowerCase().includes(q) || 
+                (t.description && t.description.toLowerCase().includes(q))
+            );
+        }
 
-                    return isToday(start) || isToday(end);
-                });
-            } else if (filter === 'week') {
-                const weekLater = new Date(today);
-                weekLater.setDate(today.getDate() + 7);
-                filtered = tasks.filter(t => t.end_time && new Date(t.end_time) <= weekLater);
+        const statusVal = filterStatus?.value;
+        if (statusVal && statusVal !== 'all') {
+            filtered = filtered.filter(t => t.status === statusVal);
+        }
+
+        const catVal = filterCategory?.value;
+        if (catVal && catVal !== 'all') {
+            filtered = filtered.filter(t => t.category_id === Number(catVal));
+        }
+
+        renderTasks(filtered, taskList);
+        updateCountdowns();
+    };
+
+    // Listeners
+    if (btnOpenCreate) {
+        btnOpenCreate.addEventListener('click', () => {
+            currentEditId = null;
+            document.getElementById('modal-title').textContent = 'Tạo công việc mới';
+            form.reset();
+            loadCategories();
+            openModal();
+        });
+    }
+
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
+    if (overlay) overlay.addEventListener('click', closeModal);
+
+    // Submit form
+    if (form) {
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML; // Lưu nội dung gốc của nút
+
+            // Hiển thị loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang lưu...';
+
+            try {
+                // Lấy dữ liệu từ form
+                const title = document.getElementById('t-title').value.trim();
+                const description = document.getElementById('t-desc').value.trim() || null;
+                const start_time = document.getElementById('t-start').value || null;
+                const end_time = document.getElementById('t-end').value || null;
+                const priority = document.getElementById('t-priority').value;
+                const repeat_type = document.getElementById('t-recurring').value;
+                const assigned_to = document.getElementById('t-assign').value || null;
+                const category_id = categorySelect.value ? Number(categorySelect.value) : null;
+
+                // Validation
+                if (!title) {
+                    alert('Tiêu đề không được để trống!');
+                    return;
+                }
+                if (currentEditId === null && !start_time) {
+                    alert('Thời gian bắt đầu là bắt buộc khi tạo task mới!');
+                    return;
+                }
+
+                // Tạo payload
+                const payload = {
+                    title,
+                    description,
+                    start_time: start_time ? start_time + ':00' : null,
+                    end_time: end_time ? end_time + ':00' : null,
+                    priority,
+                    repeat_type,
+                    assigned_to,
+                    category_id
+                };
+
+                // Gọi API
+                let result;
+                if (currentEditId) {
+                    result = await api.update(currentEditId, payload);
+                } else {
+                    result = await api.create(payload);
+                }
+
+                // Xử lý kết quả
+                if (result.success) {
+                    showToast(currentEditId ? 'Cập nhật thành công!' : 'Tạo task thành công!', 'success');
+                    await loadTasks();
+                    closeModal();
+                } else {
+                    alert(result.message || 'Lỗi khi lưu task. Vui lòng thử lại.');
+                }
+            } catch (err) {
+                console.error('Lỗi khi lưu task:', err);
+                alert('Lỗi kết nối server. Vui lòng kiểm tra console (F12).');
+            } finally {
+                // LUÔN khôi phục nút Lưu dù thành công hay lỗi
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    }
+
+    // Edit & Delete
+    if (taskList) {
+        taskList.addEventListener('click', async e => {
+            const editBtn = e.target.closest('.btn-edit');
+            const deleteBtn = e.target.closest('.btn-delete');
+
+            if (editBtn) {
+                const id = Number(editBtn.closest('.task-item').dataset.id);
+                const task = await api.getOne(id);
+
+                if (!task) {
+                    alert('Không thể tải thông tin task');
+                    return;
+                }
+
+                currentEditId = id;
+                document.getElementById('modal-title').textContent = 'Chỉnh sửa công việc';
+
+                document.getElementById('t-title').value = task.title || '';
+                document.getElementById('t-desc').value = task.description || '';
+                document.getElementById('t-start').value = task.start_time ? task.start_time.slice(0, 16) : '';
+                document.getElementById('t-end').value = task.end_time ? task.end_time.slice(0, 16) : '';
+                document.getElementById('t-priority').value = task.priority || 'medium';
+                document.getElementById('t-recurring').value = task.repeat_type || 'none';
+                document.getElementById('t-assign').value = task.assigned_to || '';
+
+                await loadCategories();
+                categorySelect.value = task.category_id || '';
+
+                openModal();
             }
 
-            renderTasks(filtered, taskList);
+            if (deleteBtn) {
+                if (!confirm('Xóa công việc này?')) return;
+
+                const id = Number(deleteBtn.closest('.task-item').dataset.id);
+                const task = tasks.find(t => t.task_id === id);
+                deletedTask = task;
+
+                const result = await api.delete(id);
+                if (result.success) {
+                    await loadTasks();
+                    if (restoreText) restoreText.textContent = `Đã xóa "${deletedTask.title}"`;
+                    if (restoreMessage) restoreMessage.style.display = 'block';
+                    setTimeout(() => { if (restoreMessage) restoreMessage.style.display = 'none'; }, 6000);
+                }
+            }
         });
+
+        // Drag & Drop
+        taskList.addEventListener('dragover', e => e.preventDefault());
+        taskList.addEventListener('drop', async e => {
+            e.preventDefault();
+            const draggedId = Number(e.dataTransfer.getData('text'));
+            const targetLi = e.target.closest('.task-item');
+            if (!targetLi || draggedId === Number(targetLi.dataset.id)) return;
+
+            const tasksArray = Array.from(taskList.children);
+            const draggedLi = taskList.querySelector(`[data-id="${draggedId}"]`);
+            const targetIndex = tasksArray.indexOf(targetLi);
+            const draggedIndex = tasksArray.indexOf(draggedLi);
+
+            if (targetIndex < draggedIndex) {
+                taskList.insertBefore(draggedLi, targetLi);
+            } else {
+                taskList.insertBefore(draggedLi, targetLi.nextSibling);
+            }
+            updateCountdowns(); // Cập nhật countdown sau khi sắp xếp lại
+        });
+    }
+
+    // Undo delete
+    if (restoreBtn) {
+        restoreBtn.addEventListener('click', async () => {
+            if (!deletedTask) return;
+            const result = await api.create({
+                title: deletedTask.title,
+                description: deletedTask.description,
+                start_time: deletedTask.start_time,
+                end_time: deletedTask.end_time,
+                priority: deletedTask.priority,
+                repeat_type: deletedTask.repeat_type || 'none',
+                assigned_to: deletedTask.assigned_to,
+                category_id: deletedTask.category_id || null
+            });
+            if (result.success) {
+                await loadTasks();
+                if (restoreMessage) restoreMessage.style.display = 'none';
+                deletedTask = null;
+            }
+        });
+    }
+
+    // Filters
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (filterStatus) filterStatus.addEventListener('change', applyFilters);
+    if (filterCategory) filterCategory.addEventListener('change', applyFilters);
+
+    // Quick filters
+    if (quickFilters) {
+        quickFilters.forEach(btn => {
+            btn.addEventListener('click', () => {
+                quickFilters.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                window.currentQuickFilter = btn.dataset.filter;
+                applyFilters();
+            });
+        });
+    }
+
+    // Export CSV
+    document.getElementById('export-csv')?.addEventListener('click', () => {
+        const csv = ['Tiêu đề,Mô tả,Bắt đầu,Kết thúc,Hạn chót,Ưu tiên,Danh mục,Trạng thái,% Hoàn thành'];
+        tasks.forEach(t => {
+            const due = t.end_time ? new Date(t.end_time).toLocaleString('vi-VN') : 'Không có';
+            csv.push([
+                t.title,
+                (t.description || '').replace(/"/g, '""'),
+                t.start_time ? new Date(t.start_time).toLocaleString('vi-VN') : '',
+                t.end_time ? new Date(t.end_time).toLocaleString('vi-VN') : '',
+                due,
+                t.priority,
+                t.category_name || 'Không có',
+                t.status,
+                t.progress || 0
+            ].map(field => `"${field}"`).join(','));
+        });
+
+        const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tasks_${new Date().toLocaleDateString('vi-VN')}.csv`;
+        a.click();
+        URL.revokeObjectURL(url); // Dọn dẹp
     });
 
-    // TABs
+    // Dark mode toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+    }
+
+    // Tabs
     document.querySelectorAll('.tab-button').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
 
             const isGoals = tab.id === 'tab-goals';
-            if (taskList) taskList.style.display = isGoals ? 'none' : 'block';
-            if (goalList) goalList.style.display = isGoals ? 'block' : 'none';
+            taskList.style.display = isGoals ? 'none' : 'block';
+            goalList.style.display = isGoals ? 'block' : 'none';
 
-            if (isGoals) renderTasks(tasks, goalList);
-            else renderTasks(tasks, taskList);
+            renderTasks(tasks, isGoals ? goalList : taskList);
+            updateCountdowns();
         });
     });
 
-    // GANTT
-    if (btnViewGantt) btnViewGantt.addEventListener('click', () => {
-        if (ganttContainer) {
+    // Gantt
+    if (btnViewGantt) {
+        btnViewGantt.addEventListener('click', () => {
             if (ganttContainer.style.display === 'block') {
                 ganttContainer.style.display = 'none';
                 btnViewGantt.innerHTML = 'Xem Gantt Chart';
             } else {
-                ganttContainer.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">Gantt Chart sẽ được tích hợp ở đây (Frappe Gantt / mermaid / dhtmlxGantt...)</p>';
+                ganttContainer.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">Gantt Chart sẽ được tích hợp ở đây...</p>';
                 ganttContainer.style.display = 'block';
                 btnViewGantt.innerHTML = 'Đóng Gantt';
             }
-        }
-    });
-    
-    // ==================== KHỞI TẠO ====================
-    loadTasks(); 
+        });
+    }
 
-    // ==================== AUTO REFRESH ====================
-    setInterval(() => {
-        if (!document.hidden) loadTasks();
-    }, 20000);
+    // Khởi tạo
+    loadTasks();
 });

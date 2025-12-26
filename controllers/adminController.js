@@ -226,6 +226,27 @@ exports.unbanUser = async (req, res) => {
   }
 };
 
+// API: Cấp quyền admin
+exports.promoteToAdmin = async (req, res) => {
+  try {
+    const adminId = req.session.userId;
+    const targetUserId = parseInt(req.params.userId);
+    const ipAddress = req.adminIP;
+    
+    // Không cho phép tự cấp quyền cho mình
+    if (adminId === targetUserId) {
+      return res.status(400).json({ success: false, message: 'Không thể tự cấp quyền cho chính mình' });
+    }
+    
+    const result = await adminService.promoteToAdmin(adminId, targetUserId, ipAddress);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('❌ promoteToAdmin error:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 // API: Xóa người dùng
 exports.deleteUser = async (req, res) => {
   try {
@@ -349,6 +370,26 @@ exports.getAuditLogs = async (req, res) => {
   } catch (error) {
     console.error('❌ getAuditLogs error:', error);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// API: Xóa nhiều logs cùng lúc
+exports.deleteMultipleLogs = async (req, res) => {
+  try {
+    const adminId = req.session.userId;
+    const { logIds } = req.body;
+    const ipAddress = req.adminIP;
+    
+    if (!Array.isArray(logIds) || logIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'logIds phải là array và không được rỗng' });
+    }
+    
+    const result = await adminService.deleteMultipleLogs(adminId, logIds, ipAddress);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('❌ deleteMultipleLogs error:', error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

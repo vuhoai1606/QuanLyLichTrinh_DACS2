@@ -40,6 +40,9 @@ router.post('/api/users/:userId/ban', adminController.banUser);
 // Mở khóa tài khoản
 router.post('/api/users/:userId/unban', adminController.unbanUser);
 
+// Cấp quyền admin
+router.post('/api/users/:userId/promote', adminController.promoteToAdmin);
+
 // Xóa người dùng
 router.delete('/api/users/:userId', adminController.deleteUser);
 
@@ -56,5 +59,8 @@ router.delete('/api/notifications/:notificationId', adminController.deleteSystem
 // ===== API: AUDIT LOGS =====
 // Lấy audit logs
 router.get('/api/logs', adminController.getAuditLogs);
+
+// Xóa nhiều logs cùng lúc
+router.delete('/api/logs/delete-multiple', adminController.deleteMultipleLogs);
 
 module.exports = router;

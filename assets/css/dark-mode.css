@@ -237,7 +237,7 @@ body[data-theme="dark"] .sidebar,
 body[data-theme="dark"] nav,
 body[data-theme="dark"] .navbar,
 body[data-theme="dark"] header {
-  background-color: var(--bg-secondary);
+  /* background-color: var(--bg-secondary); */
   border-color: var(--border-color);
 }
 
@@ -279,7 +279,7 @@ body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 /* Links */
 body.dark-mode a,
 body[data-theme="dark"] a {
-  color: var(--primary);
+  /* color: var(--primary); */
 }
 
 body.dark-mode a:hover,
@@ -287,7 +287,7 @@ body[data-theme="dark"] a:hover {
   color: var(--primary-hover);
 }
 
-/* Text colors - FORCE white text in dark mode */
+/* Text colors - FORCE white text in dark mode
 body.dark-mode h1,
 body.dark-mode h2,
 body.dark-mode h3,
@@ -301,9 +301,9 @@ body[data-theme="dark"] h4,
 body[data-theme="dark"] h5,
 body[data-theme="dark"] h6 {
   color: #ffffff !important;
-}
+} */
 
-body.dark-mode p,
+/* body.dark-mode p,
 body.dark-mode span,
 body.dark-mode div,
 body.dark-mode label,
@@ -314,10 +314,10 @@ body[data-theme="dark"] div,
 body[data-theme="dark"] label,
 body[data-theme="dark"] li {
   color: #ffffff !important;
-}
+} */
 
 /* Light mode - FORCE dark text */
-body.light-mode h1,
+/* body.light-mode h1,
 body.light-mode h2,
 body.light-mode h3,
 body.light-mode h4,
@@ -330,7 +330,7 @@ body[data-theme="light"] h4,
 body[data-theme="light"] h5,
 body[data-theme="light"] h6 {
   color: #1a1a1a !important;
-}
+} */
 
 body.light-mode p,
 body.light-mode span,
@@ -342,7 +342,7 @@ body[data-theme="light"] span,
 body[data-theme="light"] div:not(.card):not(.box),
 body[data-theme="light"] label,
 body[data-theme="light"] li {
-  color: #1a1a1a !important;
+  /* color: #1a1a1a !important; */
 }
 
 /* HR dividers */
@@ -368,4 +368,73 @@ textarea,
 a,
 .btn {
   transition: all 0.15s ease !important;
+}
+
+
+/* ================================================
+   BỔ SUNG - LIGHT MODE RESET & DARK MODE OVERRIDE
+   ================================================ */
+
+/* --- 1. LIGHT MODE (Mặc định trong :root) --- */
+:root {
+  /* BACKGROUNDS */
+  --bg-primary: #ffffff; /* Nền chính (Card, Modal, etc.) */
+  --bg-secondary: #f9fafb; /* Nền phụ (Body, Sidebar Light) */
+  --bg-tertiary: #f3f4f6; /* Nền tương tác (Hover, Input Background) */
+  --bg-gradient: #f5f7fb; /* Nền Body trong Light Mode (Không dùng gradient) */
+  
+  /* TEXTS */
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  
+  /* BORDERS */
+  --border-color: #e5e7eb;
+  
+  /* SHADOWS (Giữ nguyên, nhưng Dark Mode sẽ ghi đè) */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+  
+  /* GLASS EFFECT (Light Mode) */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
+}
+
+/* --- 2. DARK MODE OVERRIDE --- */
+body[data-theme="dark"],
+body.dark-mode {
+  /* BACKGROUNDS */
+  --bg-primary: #1e293b;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #334155;
+  --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Nền Dark Mode Gradient */
+  
+  /* TEXTS */
+  --text-primary: #ffffff !important;
+  --text-secondary: #e2e8f0 !important;
+  --text-muted: #94a3b8 !important;
+  
+  /* BORDERS */
+  --border-color: #475569;
+  
+  /* SHADOWS */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  
+  /* GLASS EFFECT (Dark Mode) */
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(100, 116, 139, 0.3);
+}
+
+/* Áp dụng các biến lên các thành phần cơ bản trong Light Mode */
+body[data-theme="light"],
+body.light-mode {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Áp dụng các biến lên các thành phần cơ bản trong Dark Mode */
+body[data-theme="dark"],
+body.dark-mode {
+  background: var(--bg-gradient) !important;
 }

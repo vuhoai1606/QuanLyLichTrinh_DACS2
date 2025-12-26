@@ -16,12 +16,24 @@ class TaskService {
    * Có thể filter theo status, priority, search keyword
    */
   async getTasksByUser(userId, filters = {}) {
-    const { status, priority, search, sortBy = 'created_at', sortOrder = 'DESC', groupByKanban = false } = filters;
+    const { 
+      status, 
+      priority, 
+      search, 
+      sortBy = 'created_at', 
+      sortOrder = 'DESC', 
+      groupByKanban = false,
+      startDate,  // Thêm filter ngày bắt đầu
+      endDate     // Thêm filter ngày kết thúc
+    } = filters;
 
     let query = `
       SELECT 
-        t.*
+        t.*,
+        c.category_name,
+        c.color AS color
       FROM tasks t
+      LEFT JOIN categories c ON t.category_id = c.category_id
       WHERE t.user_id = $1
     `;
 
@@ -49,22 +61,55 @@ class TaskService {
       paramIndex++;
     }
 
+    // Filter theo khoảng thời gian (nếu có)
+    if (startDate) {
+      query += ` AND t.end_time >= $${paramIndex}`;
+      params.push(startDate);
+      paramIndex++;
+    }
+    if (endDate) {
+      query += ` AND t.end_time <= $${paramIndex}`;
+      params.push(endDate);
+      paramIndex++;
+    }
+
+        // Filter theo assignee (người được giao)
+    if (filters.assignee) {
+      query += ` AND t.assigned_to = $${paramIndex}`;
+      params.push(filters.assignee);
+      paramIndex++;
+    }
+
+    // Filter theo category
+    if (filters.categoryId) {
+      query += ` AND t.category_id = $${paramIndex}`;
+      params.push(filters.categoryId);
+      paramIndex++;
+    }
+
     // Sorting
-    const allowedSortFields = ['created_at', 'start_time', 'priority', 'title'];
+    const allowedSortFields = ['created_at', 'start_time', 'end_time', 'priority', 'title'];
     const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
     query += ` ORDER BY t.${sortField} ${sortOrder}`;
 
     const result = await pool.query(query, params);
     const tasks = result.rows;
 
-  // QUAN TRỌNG: ĐOẠN NÀY PHẢI ĐẶT TRƯỚC return
     if (groupByKanban) {
-      return {
-        todo: tasks.filter(t => t.kanban_column === 'todo'),
-        in_progress: tasks.filter(t => t.kanban_column === 'in_progress'),
-        done: tasks.filter(t => t.kanban_column === 'done'),
-        overdue: tasks.filter(t => t.kanban_column === 'overdue')
+      const grouped = {
+        todo: [],
+        in_progress: [],
+        done: [],
+        overdue: []
       };
+      tasks.forEach(task => {
+        if (task.kanban_column === 'todo') grouped.todo.push(task);
+        else if (task.kanban_column === 'in_progress') grouped.in_progress.push(task);
+        else if (task.kanban_column === 'done') grouped.done.push(task);
+        else if (task.kanban_column === 'overdue') grouped.overdue.push(task);
+        else grouped.todo.push(task);
+      });
+      return grouped;
     }
 
     return tasks;
@@ -97,18 +142,17 @@ class TaskService {
     const {
       title,
       description,
-      // Đảm bảo destructure đúng key (snake_case)
       start_time, 
       end_time,
       priority = 'medium',
       status = 'todo',
       repeatType = 'none',
-      categoryId,
+      categoryId,  // ← Nhận category_id từ taskData
       tags = [],
       collaborators = [],
     } = taskData;
 
-    // Validation
+    // Validation giữ nguyên như cũ...
     if (!title || title.trim().length === 0) {
       throw new Error('Tiêu đề task không được để trống');
     }
@@ -137,27 +181,27 @@ class TaskService {
       throw new Error('Status không hợp lệ');
     }
 
-    // Insert task
+    // INSERT
     const result = await pool.query(
       `INSERT INTO tasks 
-       (user_id, title, description, start_time, end_time, priority, status, repeat_type, kanban_column)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (user_id, title, description, start_time, end_time, priority, status, repeat_type, kanban_column, category_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'todo', $9)
        RETURNING *`,
       [
         userId,
         title.trim(),
         description?.trim() || null,
         taskStartTime,
-        taskEndTime, // <-- FIX: Sử dụng taskEndTime (không null nếu có giá trị từ form)
+        taskEndTime,
         priority,
         status,
         repeatType,
-        'todo', // Default kanban column
+        categoryId || null  
       ]
     );
 
     return result.rows[0];
-  }
+}
 
   /**
    * CẬP NHẬT TASK
@@ -173,7 +217,6 @@ class TaskService {
     const {
       title,
       description,
-      // 🌟 FIX: Đảm bảo chỉ destructure tên trường CSDL (snake_case)
       start_time,
       end_time,
       priority,
@@ -204,7 +247,7 @@ class TaskService {
     const params = [];
     let paramIndex = 1; // Bắt đầu từ $1
 
-    // 🌟 ĐỊNH NGHĨA HÀM TIỆN ÍCH CỤC BỘ (FIX ReferenceError: addUpdate is not defined)
+    // 🌟 ĐỊNH NGHĨA HÀM TIỆN ÍCH CỤC BỘ
     const addUpdate = (key, value) => {
       if (value !== undefined) {
         updates.push(`${key} = $${paramIndex}`);
@@ -213,7 +256,7 @@ class TaskService {
       }
     };
 
-    // 🌟 FIX: CHỈ SỬ DỤNG addUpdate và các biến đã được destructure (snake_case)
+    // 🌟 FIX: CHỈ SỬ DỤNG addUpdate và các biến đã được destructure 
     addUpdate('title', title !== undefined ? title.trim() : title);
     addUpdate('description', description !== undefined ? description?.trim() || null : description);
     addUpdate('start_time', start_time); 
@@ -226,8 +269,6 @@ class TaskService {
     addUpdate('progress', progress);
     addUpdate('collaborators', collaborators);
     addUpdate('grace_end_time', grace_end_time); 
-
-    // ⛔ ĐÃ XÓA TẤT CẢ CÁC KHỐI IF LẶP LẠI VÀ SỬ DỤNG TÊN BIẾN SAI
 
     if (updates.length === 0) {
       throw new Error('Không có dữ liệu để cập nhật');
@@ -287,28 +328,28 @@ class TaskService {
     return result.rows[0];
   }
 
-  // taskService.js - Sửa trong hàm getTaskStatistics
-
   /**
-   * LẤY THỐNG KÊ TASKS (FIX CÚ PHÁP SQL)
+   * LẤY THỐNG KÊ TASKS
    */
-async getTaskStatistics(userId) {
+  async getTaskStatistics(userId) {
     const result = await pool.query(
       `SELECT 
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'todo') as todo,
-        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
         COUNT(*) FILTER (WHERE status = 'done') as done,
-        -- ✅ FIX ENUM: Đếm Trễ hạn bằng kanban_column (Varchar)
-        COUNT(*) FILTER (WHERE kanban_column = 'overdue') as overdue, 
-        COUNT(*) FILTER (WHERE priority = 'high') as high_priority,
-        COUNT(*) FILTER (WHERE start_time::date = CURRENT_DATE) as today
+        COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
+        COUNT(*) FILTER (WHERE status = 'overdue' OR kanban_column = 'overdue') as overdue
        FROM tasks
        WHERE user_id = $1`,
       [userId]
     );
 
-    return result.rows[0];
+    const row = result.rows[0];
+    return {
+      total: parseInt(row.total) || 0,
+      done: parseInt(row.done) || 0,
+      in_progress: parseInt(row.in_progress) || 0,
+      overdue: parseInt(row.overdue) || 0
+    };
   }
 
   /**
@@ -327,7 +368,6 @@ async getTaskStatistics(userId) {
     return result.rows;
   }
 
-  // THÊM HÀM MỚI Ở CUỐI FILE (không ảnh hưởng gì đến code cũ)
   async getTasksByDateRangeForCalendar(userId, startDate, endDate) {
     const result = await pool.query(
       `SELECT 
@@ -356,8 +396,6 @@ async getTaskStatistics(userId) {
     return result.rows;
   }
 
-  // Thêm vào cuối file taskService.js (trước module.exports)
-
   async updateTaskKanbanColumn(taskId, userId, newColumn) {
     const result = await pool.query(
       `UPDATE tasks 
@@ -369,7 +407,6 @@ async getTaskStatistics(userId) {
     return result.rows[0] || null;
   }
 
-    // THÊM HÀM NÀY ĐỂ TIMELINE LẤY TASKS CÓ NGÀY
   async getTasksForTimeline(userId) {
     const result = await pool.query(
       `SELECT 

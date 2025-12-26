@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
 const path = require('path');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
@@ -20,13 +22,49 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const profileRoutes = require('./routes/profileRoutes');
-
+const googleRoutes = require('./routes/googleRoutes');
 
 // Import middleware
 const { setUserLocals } = require('./middleware/authMiddleware');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
 const PORT = process.env.PORT || 8888;
+
+// ✅ SOCKET.IO - Export để dùng ở controllers
+global.io = io;
+
+// Track online users: Map của userId -> socketId
+const onlineUsers = new Map();
+global.onlineUsers = onlineUsers;
+
+io.on('connection', (socket) => {
+  console.log('👤 Client connected:', socket.id);
+  
+  // User join - Lưu thông tin user online
+  socket.on('user:join', (userId) => {
+    if (userId) {
+      onlineUsers.set(userId, socket.id);
+      socket.userId = userId; // Lưu userId vào socket để dễ xử lý
+      socket.join(`user:${userId}`); // Join room riêng của user
+      console.log(`✅ User ${userId} joined with socket ${socket.id}`);
+      
+      // Emit online status to all users
+      io.emit('user:online', { userId, socketId: socket.id });
+    }
+  });
+  
+  socket.on('disconnect', () => {
+    // Remove user from online list
+    if (socket.userId) {
+      onlineUsers.delete(socket.userId);
+      io.emit('user:offline', { userId: socket.userId });
+      console.log(`❌ User ${socket.userId} disconnected`);
+    }
+    console.log('👤 Client disconnected:', socket.id);
+  });
+});
 
 // Compression middleware - Nén response để giảm bandwidth
 app.use(compression());
@@ -114,6 +152,7 @@ app.use('/', notificationRoutes);
 app.use('/', timelineRoutes);
 app.use('/', reportRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/google', googleRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
@@ -133,6 +172,11 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+    console.log(`🔌 Socket.IO ready for realtime updates`);
+    
+    // ✅ Khởi động notification scheduler để emit scheduled notifications
+    const { startNotificationScheduler } = require('./services/notificationScheduler');
+    startNotificationScheduler();
 });

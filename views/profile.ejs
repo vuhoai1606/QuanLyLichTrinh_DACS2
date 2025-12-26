@@ -8,9 +8,16 @@
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/settings.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
   <%- include('header') %>
+
+  <!-- Pass userId to JavaScript -->
+  <script>
+    window.currentUserId = <%= userId || 'null' %>;
+  </script>
 
   <main class="settings-container">
     <div class="settings-header">
@@ -30,7 +37,7 @@
         <form id="profile-form">
           <!-- Avatar -->
           <div class="form-group" style="text-align: center; margin-bottom: 30px;">
-            <img id="avatar-preview" src="<%= user.avatar_url || '/img/default-avatar.jpg' %>" 
+            <img id="avatar-preview" src="<%= user.avatar_url || '/uploads/avatars/default-avatar.jpg' %>" 
                  alt="Avatar" 
                  style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--primary-color);">
             <div>
@@ -145,5 +152,9 @@
 
   <script src="/js/header.js"></script>
   <script src="/js/profile.js"></script>
+  <!-- ✅ BANNED LISTENER - Auto logout when admin bans user -->
+  <% if (isAuthenticated) { %>
+  <script src="/js/banned-listener.js"></script>
+  <% } %>
 </body>
 </html>

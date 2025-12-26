@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hồ sơ cá nhân | TaskManager</title>
+  <%- include('theme-support') %>
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/settings.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <%- include('header') %>
+
+  <main class="settings-container">
+    <div class="settings-header">
+      <div>
+        <h1>Hồ sơ cá nhân</h1>
+        <p class="subtitle">Quản lý thông tin tài khoản của bạn</p>
+      </div>
+      <button id="save-profile" class="btn-save-all">
+        <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+      </button>
+    </div>
+
+    <div class="settings-grid">
+      <!-- 🧍 Thông tin cá nhân -->
+      <section class="card">
+        <h2><i class="fa-solid fa-user"></i> Thông tin cá nhân</h2>
+        <form id="profile-form">
+          <!-- Avatar -->
+          <div class="form-group" style="text-align: center; margin-bottom: 30px;">
+            <img id="avatar-preview" src="<%= user.avatar_url || '/img/default-avatar.jpg' %>" 
+                 alt="Avatar" 
+                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--primary-color);">
+            <div>
+              <label for="avatar-upload" class="btn-secondary" style="cursor: pointer; display: inline-block;">
+                <i class="fa-solid fa-camera"></i> Thay đổi ảnh
+              </label>
+              <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="fullName">Họ và tên</label>
+            <input type="text" id="fullName" value="<%= user.full_name || '' %>" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" value="<%= user.email || '' %>" disabled style="cursor: not-allowed;">
+            <small style="color: #666;">Email không thể thay đổi</small>
+          </div>
+
+          <div class="form-group">
+            <label>Giới tính</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="gender" value="Nam" <%= user.gender === 'Nam' ? 'checked' : '' %>>
+                <span>Nam</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="gender" value="Nữ" <%= user.gender === 'Nữ' ? 'checked' : '' %>>
+                <span>Nữ</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="phoneNumber">Số điện thoại</label>
+            <input type="tel" id="phoneNumber" value="<%= user.phone_number || '' %>" placeholder="Nhập số điện thoại" pattern="[0-9]{10}" maxlength="10">
+          </div>
+
+          <div class="form-group">
+            <label for="dateOfBirth">Ngày sinh</label>
+            <input type="date" id="dateOfBirth" value="<%= user.date_of_birth ? new Date(user.date_of_birth.getTime() + user.date_of_birth.getTimezoneOffset() * 60000).toISOString().split('T')[0] : '' %>">
+          </div>
+
+          <div class="form-group">
+            <label>Thông tin tài khoản</label>
+            <div style="padding: 10px; border-radius: 8px; font-size: 14px;">
+              <p><i class="fas fa-calendar-alt"></i> Tham gia: <%= user.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'Chưa rõ' %></p>
+              <p><i class="fas fa-clock"></i> Cập nhật: <%= user.updated_at ? new Date(user.updated_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN') %></p>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-save"></i> Cập nhật thông tin
+          </button>
+        </form>
+      </section>
+
+      <!-- 🔐 Bảo mật -->
+      <section class="card">
+        <h2><i class="fa-solid fa-shield-halved"></i> Bảo mật & Mật khẩu</h2>
+        
+        <% if (user.login_provider !== 'google') { %>
+          <div class="section">
+            <h3><i class="fa-solid fa-key"></i> Đổi mật khẩu</h3>
+            <form id="password-form">
+              <div class="form-group">
+                <label for="currentPassword">Mật khẩu hiện tại</label>
+                <div class="password-wrapper" style="position: relative;">
+                  <input type="password" id="currentPassword" placeholder="••••••••" required>
+                  <span class="toggle-password" onclick="togglePasswordVisibility('currentPassword', this)">
+                    <i class="fa-solid fa-eye-slash"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="newPassword">Mật khẩu mới</label>
+                <div class="password-wrapper" style="position: relative;">
+                  <input type="password" id="newPassword" placeholder="••••••••" required>
+                  <span class="toggle-password" onclick="togglePasswordVisibility('newPassword', this)">
+                    <i class="fa-solid fa-eye-slash"></i>
+                  </span>
+                </div>
+                <small>Tối thiểu 6 ký tự, có chữ và số</small>
+              </div>
+
+              <div class="form-group">
+                <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                <div class="password-wrapper" style="position: relative;">
+                  <input type="password" id="confirmPassword" placeholder="••••••••" required>
+                  <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', this)">
+                    <i class="fa-solid fa-eye-slash"></i>
+                  </span>
+                </div>
+                <small id="password-match-message" style="display: none;"></small>
+              </div>
+
+              <button type="submit" class="btn-primary">
+                <i class="fa-solid fa-arrow-rotate-right"></i> Đổi mật khẩu
+              </button>
+            </form>
+          </div>
+        <% } else { %>
+          <div style="padding: 15px; background: #e3f2fd; border-radius: 8px; color: #1976d2;">
+            <i class="fab fa-google"></i> Bạn đăng nhập bằng Google. Không thể thay đổi mật khẩu tại đây.
+          </div>
+        <% } %>
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+        <div class="section">
+          <h3 style="color: #dc2626;"><i class="fa-solid fa-trash"></i> Xóa tài khoản</h3>
+          <p style="margin-bottom: 15px;">
+            <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> 
+            Hành động này không thể hoàn tác. Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.
+          </p>
+          <button id="delete-account" class="btn-danger">
+            <i class="fa-solid fa-trash"></i> Xóa tài khoản vĩnh viễn
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/profile.js"></script>
+</body>
+</html>

@@ -11,7 +11,7 @@ router.use(requireAuth);
 router.get('/api/events', eventController.getEvents);
 router.get('/api/events/upcoming', eventController.getUpcomingEvents);
 router.get('/api/events/range', eventController.getEventsByDateRange);
-router.post('/api/events/:id', eventController.createEvent);
+router.post('/api/events', eventController.createEvent);
 
 // Routes với :id parameter (đặt cuối)
 router.get('/api/events/:id', eventController.getEventById);

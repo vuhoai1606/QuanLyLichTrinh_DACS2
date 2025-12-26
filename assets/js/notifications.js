@@ -1,5 +1,4 @@
 // assets/js/notifications.js
-// ĐÃ SỬA HOÀN HẢO - GỌI ĐÚNG POST /read & /read-all (KHÔNG CÒN PATCH /mark)
 document.addEventListener('DOMContentLoaded', () => {
     const notiList = document.getElementById('noti-list');
     const markAllBtn = document.getElementById('mark-read');
@@ -83,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Lấy danh sách thông báo */
     async function loadNotifications(isRefresh = false) {
         try {
-            const res = await fetch('/api/notifications');
+            const res = await fetch('/api/notifications', { method: 'GET' });
             const data = await res.json();
 
             if (data.success) {
@@ -209,7 +208,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateGlobalBadge(unreadCount) {
         if (badge) {
             badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            // Dùng cssText để override mọi CSS
+            if (unreadCount > 0) {
+                badge.style.cssText = 'display: flex !important;';
+            } else {
+                badge.style.cssText = 'display: none !important;';
+            }
         }
     }
 

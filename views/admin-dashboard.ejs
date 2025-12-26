@@ -10,39 +10,15 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
   <%- include('header') %>
 
   <div class="admin-container">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-sidebar-header">
-        <i class="fas fa-shield-alt"></i>
-        <h2>Admin Panel</h2>
-      </div>
-      
-      <nav class="admin-nav">
-        <a href="/admin/dashboard" class="admin-nav-item active">
-          <i class="fas fa-chart-line"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="/admin/users" class="admin-nav-item">
-          <i class="fas fa-users"></i>
-          <span>Quản lý Users</span>
-        </a>
-        <a href="/admin/notifications" class="admin-nav-item">
-          <i class="fas fa-bullhorn"></i>
-          <span>Thông báo</span>
-        </a>
-        <a href="/admin/logs" class="admin-nav-item">
-          <i class="fas fa-history"></i>
-          <span>Audit Logs</span>
-        </a>
-      </nav>
-    </aside>
-
     <!-- Main Content -->
     <main class="admin-main">
       <div class="admin-header">
@@ -109,7 +85,7 @@
           </div>
         </div>
 
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="stat-icon cyan">
             <i class="fas fa-tasks"></i>
           </div>
@@ -137,7 +113,7 @@
             <h3 id="total-messages"><%= overview.total_messages || 0 %></h3>
             <p>Tổng Messages</p>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <!-- Charts Section -->
@@ -183,8 +159,13 @@
     </main>
   </div>
 
+  <script src="/js/header.js"></script>
+  <script src="/js/banned-listener.js"></script>
   <script src="/js/admin.js"></script>
   <script>
+    // Pass currentUserId to JavaScript
+    window.currentUserId = <%= userId || 'null' %>;
+    
     // Initialize charts with server data
     const activityData = JSON.parse('<%- JSON.stringify(activityStats || {}) %>');
     const overviewData = JSON.parse('<%- JSON.stringify(overview || {}) %>');

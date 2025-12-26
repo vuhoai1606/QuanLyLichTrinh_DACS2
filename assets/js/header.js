@@ -20,11 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupHeaderListeners();
+    setupDropdowns(); // Setup dropdowns (Account + Admin Panel)
     loadNotificationsCount();   // Lần đầu load ngay khi trang mở
+    loadUnreadMessagesCount();  // Thêm: Load unread messages count
     checkAuthStatus();
 
-    // TỰ ĐỘNG CẬP NHẬT BADGE MỖI 30 GIÂY (hoạt động trên mọi trang)
-    setInterval(loadNotificationsCount, 30000); // 30.000ms = 30 giây
+    // Socket.IO for real-time updates (if available)
+    // Badge sẽ tự động cập nhật khi có thông báo mới qua socket
+    if (typeof io !== 'undefined' && !window.headerSocket) {
+        initHeaderSocket();
+    }
 });
 
 function setupHeaderListeners() {
@@ -62,18 +67,66 @@ function setupHeaderListeners() {
 /**
  * Sync with Google Calendar
  */
+/**
+ * Sync with Google Calendar (Bắt đầu luồng OAuth hoặc kích hoạt Sync)
+ */
 async function syncGoogleCalendar() {
-    try {
-        const response = await fetch('/api/sync/google');
-        const data = await response.json();
+    const googleSyncBtn = document.getElementById('googleSyncBtn');
+    
+    // Lưu lại trạng thái gốc của nút
+    const originalText = googleSyncBtn.querySelector('.btn-text') ? googleSyncBtn.querySelector('.btn-text').textContent : 'Sync with Google';
+    const isCollapsed = googleSyncBtn.closest('header').classList.contains('collapsed');
+
+    // Bắt đầu trạng thái loading
+    if (googleSyncBtn) {
+        googleSyncBtn.disabled = true;
+        const icon = googleSyncBtn.querySelector('i');
+        const text = googleSyncBtn.querySelector('.btn-text');
         
-        if (data.success) {
-            alert('Sync thành công!');
+        // Thay đổi UI thành loading
+        if (icon) icon.className = 'fas fa-spinner fa-spin'; 
+        if (text) text.textContent = 'Processing...';
+        if (isCollapsed && text) text.textContent = ''; // Ẩn text khi collapsed
+    }
+
+    try {
+        // Gọi API để kiểm tra trạng thái và nhận URL OAuth nếu cần
+        const response = await fetch('/api/google/sync');
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            
+            if (data.action === 'redirect' && data.url) {
+                // Hành động 1: Chuyển hướng đến Google để xác thực (Lần đầu Sync)
+                alert('Bạn sẽ được chuyển đến trang xác thực Google.');
+                window.location.href = data.url; 
+
+            } else {
+                // Hành động 2: Đồng bộ/Thiết lập Webhook thành công (Đã có token)
+                alert('Sync/Thiết lập thành công: ' + data.message);
+            }
+
         } else {
-            alert(data.message);
+            // Xử lý lỗi từ server
+            alert(`Lỗi: ${data.message || 'Lỗi không xác định từ server.'}`);
         }
     } catch (error) {
-        console.error('Lỗi:', error);
+        console.error('Lỗi mạng hoặc server:', error);
+        alert('Không thể kết nối đến server. Vui lòng kiểm tra server đang chạy.');
+    } finally {
+        // Kết thúc trạng thái loading
+        if (googleSyncBtn) {
+            googleSyncBtn.disabled = false;
+            
+            const icon = googleSyncBtn.querySelector('i');
+            const text = googleSyncBtn.querySelector('.btn-text');
+
+            if (icon) icon.className = 'fas fa-sync'; // Icon gốc
+            if (text) text.textContent = originalText; // Text gốc
+            
+            // Đảm bảo ẩn text nếu vẫn đang collapsed
+            if (isCollapsed && text) text.textContent = '';
+        }
     }
 }
 
@@ -104,12 +157,93 @@ async function loadNotificationsCount() {
         const response = await fetch('/api/notifications/count');
         const data = await response.json();
         
+        console.log('📊 Notification count:', data); // Debug
+        
         if (data.success) {
-            document.getElementById('notif-badge').textContent = data.count;
+            const badge = document.getElementById('notif-badge');
+            if (badge) {
+                const count = data.count || 0;
+                badge.textContent = count > 99 ? '99+' : count;
+                
+                // Dùng cssText để override mọi CSS existing
+                if (count > 0) {
+                    badge.style.cssText = 'display: flex !important;';
+                    console.log('✅ Badge SHOWN:', count);
+                } else {
+                    badge.style.cssText = 'display: none !important;';
+                    console.log('✅ Badge HIDDEN');
+                }
+            } else {
+                console.error('❌ Badge element NOT FOUND!');
+            }
         }
     } catch (error) {
-        console.error('Lỗi:', error);
+        console.error('❌ Lỗi load notification count:', error);
     }
+}
+
+/**
+ * Load số lượng messages chưa đọc cho badge
+ */
+async function loadUnreadMessagesCount() {
+    try {
+        const response = await fetch('/api/messages/unread/count');
+        const data = await response.json();
+        
+        if (data.success) {
+            const badge = document.getElementById('messages-badge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi load unread messages:', error);
+    }
+}
+
+/**
+ * Initialize Socket.IO for real-time updates
+ */
+function initHeaderSocket() {
+    window.headerSocket = io({
+        transports: ['websocket', 'polling']
+    });
+    
+    const socket = window.headerSocket;
+    
+    socket.on('connect', () => {
+        console.log('📡 Header socket connected');
+        if (window.currentUserId) {
+            socket.emit('user:join', window.currentUserId);
+        }
+    });
+    
+    // Listen for new messages
+    socket.on('message:new', (data) => {
+        console.log('🔔 New message received in header');
+        loadUnreadMessagesCount(); // Update badge immediately
+    });
+    
+    // Listen for message marked as read
+    socket.on('messages:read', (data) => {
+        console.log('✅ Messages marked as read');
+        loadUnreadMessagesCount(); // Update badge immediately
+    });
+    
+    // Listen for new notifications (từ admin)
+    socket.on('notification:new', (data) => {
+        console.log('🔔 New notification received:', data);
+        loadNotificationsCount(); // Update badge immediately
+        // Không show toast - notification sẽ hiển trong danh sách notifications
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('📡 Header socket disconnected');
+    });
 }
 
 /**
@@ -197,11 +331,16 @@ function displaySearchResults(results) {
 }
 
 // ===================================================================
-// DROPDOWN CLICK TOGGLE - Nhấn mở, nhấn lại đóng
+// DROPDOWN SETUP - Gộp vào 1 function để gọi từ DOMContentLoaded chính
 // ===================================================================
-document.addEventListener('DOMContentLoaded', () => {
+function setupDropdowns() {
+    // Account Dropdown
     const accountTrigger = document.getElementById('account-trigger');
     const accountDropdown = document.getElementById('account-dropdown-container');
+    
+    // Admin Dropdown
+    const adminTrigger = document.getElementById('admin-trigger');
+    const adminDropdown = document.getElementById('admin-dropdown-container');
     
     if (accountTrigger && accountDropdown) {
         // Toggle dropdown khi click vào tài khoản
@@ -209,65 +348,35 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             e.stopPropagation();
             accountDropdown.classList.toggle('active');
+            
+            // Đóng admin dropdown nếu đang mở
+            if (adminDropdown) {
+                adminDropdown.classList.remove('active');
+            }
         });
-        
-        // Đóng dropdown khi click bên ngoài
-        document.addEventListener('click', (e) => {
-            if (!accountDropdown.contains(e.target)) {
+    }
+    
+    if (adminTrigger && adminDropdown) {
+        // Toggle dropdown khi click vào admin panel
+        adminTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            adminDropdown.classList.toggle('active');
+            
+            // Đóng account dropdown nếu đang mở
+            if (accountDropdown) {
                 accountDropdown.classList.remove('active');
             }
         });
     }
-});
-
-// ===================================================================
-// NOTES - CẬP NHẬT CHÍNH XÁC THEO BACKEND HIỆN TẠI CỦA BẠN
-// ===================================================================
-// ✅ ĐÃ CÓ SẴN trong backend (bạn KHÔNG cần tạo thêm):
-//    - /api/logout (POST)           → authController.logout
-//    - /api/check-auth (GET)        → authController.checkAuth
-//    - /api/notifications/count     → bạn cần thêm 1 route nhỏ (rất dễ)
-// 
-// ❌ CHƯA CÓ trong backend (bạn cần tạo thêm để header hoạt động đầy đủ):
-//    - /api/sync/google             → Sync Google Calendar
-//    - /api/export/quick            → Quick export CSV
-//    - /api/search                  → Global search (tasks + events)
-//    - /api/notifications/count     → Đếm thông báo chưa đọc
-//
-// Gợi ý nhanh để thêm /api/notifications/count (nếu bạn muốn hoàn thiện ngay):
-// Trong routes/notificationRoutes.js (hoặc thêm vào authRoutes.js)
-// 
-// router.get('/api/notifications/count', requireAuth, async (req, res) => {
-//   const count = await Notification.countUnread(req.session.userId);
-//   res.json({ success: true, count });
-// });
-//
-// Nếu chưa muốn làm real-time badge → cứ để 0 cũng được, không lỗi
-// ===================================================================
-
-
-
-// ===================================================================
-// NOTES - CẬP NHẬT CHÍNH XÁC THEO BACKEND HIỆN TẠI CỦA BẠN
-// ===================================================================
-// ✅ ĐÃ CÓ SẴN trong backend (bạn KHÔNG cần tạo thêm):
-//    - /api/logout (POST)           → authController.logout
-//    - /api/check-auth (GET)        → authController.checkAuth
-//    - /api/notifications/count     → bạn cần thêm 1 route nhỏ (rất dễ)
-// 
-// ❌ CHƯA CÓ trong backend (bạn cần tạo thêm để header hoạt động đầy đủ):
-//    - /api/sync/google             → Sync Google Calendar
-//    - /api/export/quick            → Quick export CSV
-//    - /api/search                  → Global search (tasks + events)
-//    - /api/notifications/count     → Đếm thông báo chưa đọc
-//
-// Gợi ý nhanh để thêm /api/notifications/count (nếu bạn muốn hoàn thiện ngay):
-// Trong routes/notificationRoutes.js (hoặc thêm vào authRoutes.js)
-// 
-// router.get('/api/notifications/count', requireAuth, async (req, res) => {
-//   const count = await Notification.countUnread(req.session.userId);
-//   res.json({ success: true, count });
-// });
-//
-// Nếu chưa muốn làm real-time badge → cứ để 0 cũng được, không lỗi
-// ===================================================================
+    
+    // Đóng dropdown khi click bên ngoài
+    document.addEventListener('click', (e) => {
+        if (accountDropdown && !accountDropdown.contains(e.target)) {
+            accountDropdown.classList.remove('active');
+        }
+        if (adminDropdown && !adminDropdown.contains(e.target)) {
+            adminDropdown.classList.remove('active');
+        }
+    });
+}

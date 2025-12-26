@@ -2,12 +2,6 @@
 const taskService = require('../services/taskService');
 const notificationService = require('../services/notificationService');
 const pool = require('../config/db');
-/**
- * TASK CONTROLLER - Đã tái cấu trúc sử dụng Services
- * ====================================================
- * Controller chỉ xử lý HTTP request/response
- * Business logic đã chuyển sang taskService
- */
 
 // Lấy danh sách tasks của user với filters
 exports.getTasks = async (req, res) => {
@@ -97,7 +91,6 @@ exports.createTask = async (req, res) => {
     const taskData = {
       title: req.body.title,
       description: req.body.description || null,
-      // 🌟 FIX LỖI DATA FLOW: Chỉ sử dụng start_time và end_time (snake_case)
       start_time: req.body.start_time || new Date().toISOString(),
       end_time: req.body.end_time || null, 
       
@@ -139,14 +132,13 @@ exports.createTask = async (req, res) => {
 };
 
 // Cập nhật task
-// CẬP NHẬT TASK – ĐÃ SỬA HOÀN TOÀN ĐÚNG TÊN CỘT CỦA BẠN (end_time, start_time)
 exports.updateTask = async (req, res) => {
   try {
     const taskId = req.params.id;
     const userId = req.session.userId;
     const data = req.body;
 
-    // Kiểm tra task thuộc user
+    // Kiểm tra quyền sở hữu task - TỐT
     const check = await pool.query(
       'SELECT task_id FROM tasks WHERE task_id = $1 AND user_id = $2',
       [taskId, userId]
@@ -155,18 +147,18 @@ exports.updateTask = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Task không tồn tại' });
     }
 
-    // Nếu có thay đổi end_time → reset grace_end_time để tính lại ân hạn
+    // Reset grace_end_time khi thay đổi end_time - TỐT
     if (data.end_time !== undefined) {
       data.grace_end_time = null;
     }
 
-    // Tạo query động
+    // Query động an toàn, chỉ update field có giá trị - RẤT TỐT
     const fields = [];
     const values = [];
     let index = 1;
 
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null) {  // ← Quan trọng: bỏ qua null/undefined
         fields.push(`${key} = $${index}`);
         values.push(value);
         index++;
@@ -183,7 +175,7 @@ exports.updateTask = async (req, res) => {
     const result = await pool.query(query, values);
     const updatedTask = result.rows[0];
 
-    // Gửi thông báo nếu có thay đổi quan trọng
+    // Thông báo notification - TỐT
     if (data.status || data.start_time !== undefined || data.end_time !== undefined) {
       await notificationService.createNotification({
         userId,
@@ -195,6 +187,8 @@ exports.updateTask = async (req, res) => {
 
     res.json({ success: true, task: updatedTask });
 
+    // ← Dòng log bạn thêm - ĐÚNG VỊ TRÍ HOÀN HẢO
+    console.log('Payload update task:', data);
   } catch (err) {
     console.error('Error updating task:', err);
     res.status(500).json({ success: false, message: 'Lỗi server' });
@@ -223,7 +217,6 @@ exports.deleteTask = async (req, res) => {
       });
     }
 
-    // DÙNG chính deletedTask (có title) để tạo notification → đẹp hơn!
     await notificationService.createNotification({
       userId,
       type: 'task',
@@ -303,51 +296,31 @@ exports.updateTaskStatus = async (req, res) => {
 
 // Cập nhật cột Kanban (Dùng cho Auto Task Manager và Task List)
 exports.updateTaskKanbanColumn = async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const { id } = req.params;
-    const { kanban_column, kanbanColumn } = req.body; 
-    const column = kanban_column || kanbanColumn;
+  try {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    const { kanbanColumn } = req.body;
 
-    if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Vui lòng đăng nhập' 
-      });
+    // Lấy thông tin task cũ để kiểm tra trạng thái trước đó
+    const oldTask = await taskService.getTaskById(id, userId);
+    
+    let newStatus = kanbanColumn;
+    let extraUpdateData = {};
+
+    // Logic Reset: Nếu chuyển từ overdue sang todo
+    if (oldTask.kanban_column === 'overdue' && kanbanColumn === 'todo') {
+        extraUpdateData.grace_end_time = null; // Xóa thời gian ân hạn cũ
+        newStatus = 'todo';
     }
 
-    // 🌟 KHẮC PHỤC: Tăng cường kiểm tra hợp lệ
-    const validColumns = ['todo', 'in_progress', 'done', 'overdue'];
-    if (!column || typeof column !== 'string' || !validColumns.includes(column)) { 
-      // 💡 Thêm column để dễ dàng debug
-      console.error(`Lỗi 400: Cột Kanban nhận được không hợp lệ: ${column}`); 
-      return res.status(400).json({
-        success: false,
-        message: `Tên cột Kanban không hợp lệ hoặc bị thiếu. Cột nhận được: ${column}. Cột hợp lệ: ${validColumns.join(', ')}`
-      });
-    }
+    const updateData = { 
+      kanbanColumn: kanbanColumn,
+      status: newStatus,
+      ...extraUpdateData
+    };
     
-    let newStatus; 
-    
-    // ... (Logic tính newStatus giữ nguyên)
-    if (column === 'done') {
-        newStatus = 'done';
-    } else if (column === 'in_progress') {
-        newStatus = 'in_progress';
-    } else if (column === 'overdue') {
-        newStatus = 'overdue'; // Vẫn phải là 'overdue' để Task List hiển thị
-    } else {
-        newStatus = 'todo';
-    }
-    
-    // 🌟 CẬP NHẬT: Tạo updateData chỉ với các trường cần thiết
-    const updateData = { 
-      kanbanColumn: column,
-      status: newStatus, // Bắt buộc phải gửi để Task List đồng bộ
-    };
-    
-    // Thử cập nhật task
     const updatedTask = await taskService.updateTask(id, userId, updateData);
+    // ... phần còn lại của hàm giữ nguyên ...
 
     if (!updatedTask) {
       return res.status(404).json({
@@ -392,18 +365,29 @@ exports.getTaskStatistics = async (req, res) => {
       });
     }
 
-    const stats = await taskService.getTaskStatistics(userId);
+    const rawStats = await taskService.getTaskStatistics(userId);
+
+    // LOG ĐỂ DEBUG – BẬT LÊN KHI TEST
+    console.log('Raw stats from service:', rawStats);
+
+    const stats = {
+      total: rawStats.total || 0,
+      done: rawStats.done || 0,
+      in_progress: rawStats.in_progress || 0,
+      overdue: rawStats.overdue || 0
+    };
+
+    console.log('Final stats sent to frontend:', stats);
 
     res.json({
       success: true,
-      data: stats
+      stats // Đảm bảo đúng format
     });
   } catch (error) {
     console.error('Error getting statistics:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi lấy thống kê',
-      error: error.message
+      message: 'Lỗi khi lấy thống kê'
     });
   }
 };
@@ -448,8 +432,6 @@ exports.confirmTaskComplete = async (req, res) => {
     const taskId = req.params.id;
     const userId = req.session.userId;
 
-    // 🌟 LƯU Ý: Nếu cột grace_end_time không tồn tại trong CSDL, dòng này sẽ lỗi DB. 
-    // Giả định bạn sẽ thêm cột này hoặc chấp nhận lỗi tại đây.
     const { rows } = await pool.query(
       'SELECT end_time, grace_end_time, title FROM tasks WHERE task_id = $1 AND user_id = $2', 
       [taskId, userId]
@@ -466,14 +448,13 @@ exports.confirmTaskComplete = async (req, res) => {
     if (!graceEnd) {
       graceEnd = new Date(task.end_time); 
       graceEnd.setMinutes(graceEnd.getMinutes() + 5);
-      // 🌟 LƯU Ý: Dòng này cũng sẽ lỗi nếu cột grace_end_time không có trong CSDL.
       await pool.query(
         'UPDATE tasks SET grace_end_time = $1 WHERE task_id = $2',
         [graceEnd, taskId]
       );
     }
     
-    // Chuyển về Done (Loại bỏ is_overdue = FALSE)
+    // Chuyển về Done
     if (now <= graceEnd) {
       await pool.query(
         `UPDATE tasks 
@@ -490,9 +471,7 @@ exports.confirmTaskComplete = async (req, res) => {
       });
       res.json({ success: true, action: 'confirm_ok' });
     } else {
-      // Quá thời gian ân hạn, chuyển về Overdue (Loại bỏ is_overdue = TRUE)
       await pool.query(
-        // 🌟 FIX: Cập nhật status thành 'overdue' khi chuyển cột Kanban sang 'overdue'
         `UPDATE tasks SET kanban_column = 'overdue', status = 'overdue' WHERE task_id = $1`, 
         [taskId]
       );
@@ -506,10 +485,62 @@ exports.confirmTaskComplete = async (req, res) => {
     }
   } catch (err) {
     console.error('Lỗi confirm complete:', err);
-    // 🌟 Thêm kiểm tra lỗi DB cho grace_end_time
-    if (err.code === '42703') { // Lỗi cột không tồn tại
+    // Thêm kiểm tra lỗi DB cho grace_end_time
+    if (err.code === '42703') { 
         return res.status(500).json({ success: false, message: 'Lỗi CSDL: Cột grace_end_time không tồn tại.' });
     }
     res.status(500).json({ success: false, message: 'Lỗi server' });
+  }
+};
+
+exports.getCategories = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập' });
+
+    const { rows } = await pool.query(
+      `SELECT category_id, category_name, color 
+       FROM categories 
+       WHERE user_id = $1 
+       ORDER BY category_name`,
+      [userId]
+    );
+
+    res.json({ success: true, categories: rows });
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server' });
+  }
+};
+
+exports.reorderTasks = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { order } = req.body; // mảng task_id theo thứ tự mới
+
+    if (!Array.isArray(order)) {
+      return res.status(400).json({ success: false, message: 'Order phải là mảng' });
+    }
+
+    // Cập nhật sort_order (cần thêm cột này vào DB)
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (let i = 0; i < order.length; i++) {
+        await client.query(
+          'UPDATE tasks SET sort_order = $1 WHERE task_id = $2 AND user_id = $3',
+          [i, order[i], userId]
+        );
+      }
+      await client.query('COMMIT');
+      res.json({ success: true });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 };

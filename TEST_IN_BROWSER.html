@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Badge & Toast</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .test-section {
+            background: #2d3748;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #4338ca;
+        }
+        .badge-test {
+            position: relative;
+            display: inline-block;
+            padding: 20px;
+            background: #374151;
+            border-radius: 8px;
+            margin: 10px;
+        }
+        .badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: linear-gradient(135deg, #f43f5e, #dc2626);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            min-width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            padding: 0 6px;
+        }
+        code {
+            background: #1f2937;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #fbbf24;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Badge & Toast Notification</h1>
+
+    <!-- Test 1: Badge Display -->
+    <div class="test-section">
+        <h2>1️⃣ Test Badge Display</h2>
+        <div class="badge-test" id="test-badge-container">
+            🔔 Thông báo
+            <span id="test-badge" class="badge" style="display: none !important;">0</span>
+        </div>
+        <div style="margin-top: 20px;">
+            <button onclick="showBadge(1)">Hiện badge (1)</button>
+            <button onclick="showBadge(6)">Hiện badge (6)</button>
+            <button onclick="showBadge(99)">Hiện badge (99)</button>
+            <button onclick="showBadge(100)">Hiện badge (99+)</button>
+            <button onclick="hideBadge()">Ẩn badge</button>
+        </div>
+        <div id="badge-status" style="margin-top: 10px;"></div>
+    </div>
+
+    <!-- Test 2: Toast Notification -->
+    <div class="test-section">
+        <h2>2️⃣ Test Toast Notification</h2>
+        <p>Toast sẽ hiện ở <strong>góc trên bên phải</strong> (top: 80px, right: 20px)</p>
+        <button onclick="showToast('Thành công! ✅', 'success')">Success Toast</button>
+        <button onclick="showToast('Có lỗi xảy ra! ❌', 'error')">Error Toast</button>
+        <button onclick="showToast('Thông tin quan trọng ℹ️', 'info')">Info Toast</button>
+    </div>
+
+    <!-- Test 3: Console Test -->
+    <div class="test-section">
+        <h2>3️⃣ Console Tests</h2>
+        <p>Mở Console (F12) và chạy các lệnh sau:</p>
+        <div style="background: #1f2937; padding: 15px; border-radius: 5px;">
+            <p><strong>Test 1: Kiểm tra badge element</strong></p>
+            <code>document.getElementById('test-badge')</code>
+            
+            <p style="margin-top: 15px;"><strong>Test 2: Test API thông báo thật</strong></p>
+            <code>fetch('/api/notifications/count').then(r => r.json()).then(console.log)</code>
+            
+            <p style="margin-top: 15px;"><strong>Test 3: Kiểm tra badge thật</strong></p>
+            <code>document.getElementById('notif-badge')</code>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="test-section">
+        <h2>📝 Hướng dẫn test trên trang thật</h2>
+        <ol>
+            <li><strong>Hard Refresh:</strong> <code>Ctrl + Shift + R</code></li>
+            <li><strong>Mở Console:</strong> Nhấn <code>F12</code></li>
+            <li><strong>Xem log:</strong> Tìm dòng <span class="success">✅ Badge SHOWN: 6</span></li>
+            <li><strong>Kiểm tra element:</strong> Right-click vào badge → Inspect</li>
+            <li><strong>Verify display:</strong> Trong tab Computed, display phải là <code>flex</code></li>
+        </ol>
+    </div>
+
+    <script>
+        // Badge Test Functions
+        function showBadge(count) {
+            const badge = document.getElementById('test-badge');
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.cssText = 'display: flex !important;';
+            
+            updateStatus(`✅ Badge hiển thị: ${badge.textContent}`, 'success');
+            console.log('✅ Badge SHOWN:', count, 'Display:', badge.style.display);
+        }
+
+        function hideBadge() {
+            const badge = document.getElementById('test-badge');
+            badge.style.cssText = 'display: none !important;';
+            
+            updateStatus('✅ Badge đã ẩn', 'success');
+            console.log('✅ Badge HIDDEN, Display:', badge.style.display);
+        }
+
+        function updateStatus(message, type) {
+            const status = document.getElementById('badge-status');
+            status.innerHTML = `<span class="${type}">${message}</span>`;
+        }
+
+        // Toast Function
+        function showToast(message, type = 'info') {
+            // Xóa toast cũ nếu có
+            const oldToast = document.querySelector('.toast-notification');
+            if (oldToast) oldToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                padding: 12px 20px;
+                max-width: 320px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-size: 14px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            console.log('🍞 Toast shown at:', 'top: 80px, right: 20px');
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(400px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(400px);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Auto test on load
+        console.log('🧪 Test page loaded. Try the buttons above!');
+        console.log('📊 To test real badge, run: fetch("/api/notifications/count").then(r => r.json()).then(console.log)');
+    </script>
+</body>
+</html>

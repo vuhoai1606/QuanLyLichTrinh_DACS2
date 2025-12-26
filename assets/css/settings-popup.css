@@ -2,16 +2,31 @@
 
 .settings-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  inset: 0;
+  background: rgba(0,0,0,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   animation: fadeIn 0.2s ease-out;
+  isolation: isolate;
+}
+
+/* Sửa lại để thông báo nhỏ gọn và không đè lên toàn bộ khung */
+.settings-overlay .notification-toast {
+  position: fixed !important; /* Dùng fixed để nó nổi lên trên hẳn */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto !important;     /* Không cho nó chiếm 100% chiều rộng */
+  min-width: 200px;           /* Độ rộng tối thiểu vừa phải */
+  max-width: 300px;           /* Không cho to quá */
+  padding: 12px 20px !important;
+  border-radius: 12px !important;
+  background: rgba(239, 68, 68, 0.95) !important; /* Màu đỏ thông báo */
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  z-index: 10001;             /* Phải cao hơn z-index của popup (9999) */
 }
 
 @keyframes fadeIn {
@@ -375,3 +390,4 @@ body[data-theme="dark"] .settings-popup-footer {
     width: 100%;
   }
 }
+

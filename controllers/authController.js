@@ -75,13 +75,29 @@ exports.verifyOTP = async (req, res) => {
     // Verify OTP từ session thay vì database
     const result = await authService.completeRegistration(req, pendingReg, otpCode);
 
+    // Cập nhật last_login_at
+    const pool = require('../config/db');
+    await pool.query('UPDATE users SET last_login_at = NOW() WHERE user_id = $1', [result.user.user_id]);
+
     // Tự động đăng nhập
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
-    req.session.role = result.user.role || 'user'; // Lưu role
+    req.session.role = result.user.role || 'user';
 
     delete req.session.pendingRegistration;
+
+    // EMIT SOCKET.IO - Thông báo admin có user mới
+    if (global.io) {
+      global.io.emit('new-user-registered', {
+        userId: result.user.user_id,
+        username: result.user.username,
+        fullName: result.user.full_name,
+        email: result.user.email,
+        createdAt: new Date()
+      });
+      console.log('📢 [SOCKET] Emitted new-user-registered event');
+    }
 
     res.json({
       success: true,
@@ -115,7 +131,6 @@ exports.resendOTP = async (req, res) => {
       });
     }
 
-    // Gửi lại OTP qua session
     const result = await authService.resendOTP(req, pendingReg.email, pendingReg.fullName);
     res.json(result);
   } catch (error) {
@@ -126,7 +141,6 @@ exports.resendOTP = async (req, res) => {
     });
   }
 };
-
 
 /**
  * ĐĂNG NHẬP THÔNG THƯỜNG
@@ -146,14 +160,30 @@ exports.login = async (req, res) => {
       delete req.session.captcha;
     }
 
-    // Gọi service để login
     const result = await authService.login(username, password);
+
+    // KIỂM TRA TÀI KHOẢN BỊ KHÓA
+    if (result.user.is_banned) {
+      const banReason = result.user.ban_reason || 'Không có lý do cụ thể';
+      console.log(`🔴 [LOGIN] User "${username}" cố đăng nhập nhưng bị khóa - Reason: ${banReason}`);
+      
+      return res.status(403).json({
+        success: false,
+        accountBanned: true,
+        message: `Tài khoản đã bị khóa. Lý do: ${banReason}`,
+        banReason: banReason
+      });
+    }
+
+    // Cập nhật last_login_at
+    const pool = require('../config/db');
+    await pool.query('UPDATE users SET last_login_at = NOW() WHERE user_id = $1', [result.user.user_id]);
 
     // Lưu vào session
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
-    req.session.role = result.user.role || 'user'; // Lưu role
+    req.session.role = result.user.role || 'user';
 
     // Xử lý "Ghi nhớ đăng nhập"
     if (rememberMe) {
@@ -163,7 +193,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       message: 'Đăng nhập thành công!',
-      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/', // Admin redirect về dashboard
+      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/',
       user: {
         userId: result.user.user_id,
         username: result.user.username,
@@ -211,19 +241,36 @@ exports.googleLogin = async (req, res) => {
       email: result.user.email
     });
 
+    // KIỂM TRA TÀI KHOẢN BỊ KHÓA
+    if (result.user.is_banned) {
+      const banReason = result.user.ban_reason || 'Không có lý do cụ thể';
+      console.log(`🔴 [GOOGLE-LOGIN] User "${result.user.email}" cố đăng nhập nhưng bị khóa`);
+      
+      return res.status(403).json({
+        success: false,
+        accountBanned: true,
+        message: `Tài khoản đã bị khóa. Lý do: ${banReason}`,
+        banReason: banReason
+      });
+    }
+
+    // Cập nhật last_login_at
+    const pool = require('../config/db');
+    await pool.query('UPDATE users SET last_login_at = NOW() WHERE user_id = $1', [result.user.user_id]);
+
     req.session.userId = result.user.user_id;
     req.session.username = result.user.username;
     req.session.fullName = result.user.full_name;
     req.session.email = result.user.email;
-    req.session.avatar = result.user.avatar_url; // Lưu avatar Google
-    req.session.role = result.user.role || 'user'; // Lưu role
+    req.session.avatar = result.user.avatar_url;
+    req.session.role = result.user.role || 'user';
 
     console.log('✅ Session saved. Sending response...');
 
     res.json({
       success: true,
       message: result.isNewUser ? 'Đăng ký thành công!' : 'Đăng nhập thành công!',
-      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/', // Admin redirect về dashboard
+      redirectUrl: result.user.role === 'admin' ? '/admin/dashboard' : '/',
       user: {
         userId: result.user.user_id,
         username: result.user.username,
@@ -244,7 +291,6 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
-
 /**
  * ĐĂNG XUẤT
  */
@@ -252,13 +298,16 @@ exports.logout = async (req, res) => {
   try {
     req.session.destroy((err) => {
       if (err) {
+        console.error('Session destroy error:', err);
         return res.status(500).json({
           success: false,
           message: 'Có lỗi khi đăng xuất',
         });
       }
 
+      res.clearCookie('connect.sid', { path: '/' });
       res.clearCookie('connect.sid');
+
       res.json({
         success: true,
         message: 'Đăng xuất thành công',
@@ -324,14 +373,7 @@ exports.generateCaptcha = (req, res) => {
 };
 
 /**
- * ========================================
- * VIEW RENDERING (Các trang HTML)
- * ========================================
- */
-
-/**
  * BACKWARD COMPATIBILITY - Alias cho initiateRegistration
- * Để hỗ trợ route cũ /api/register
  */
 exports.register = exports.initiateRegistration;
 
@@ -361,13 +403,7 @@ exports.showVerifyOTPPage = (req, res) => {
 };
 
 /**
- * ========================================
  * FORGOT PASSWORD FLOW
- * ========================================
- */
-
-/**
- * BƯỚC 1: Verify username + email và gửi OTP
  */
 exports.forgotPasswordVerify = async (req, res) => {
   try {
@@ -384,7 +420,6 @@ exports.forgotPasswordVerify = async (req, res) => {
     const crypto = require('crypto');
     const emailService = require('../services/emailService');
     
-    // Kiểm tra username và email có khớp không
     const result = await pool.query(
       'SELECT user_id, username, email, full_name FROM users WHERE username = $1 AND email = $2',
       [username, email]
@@ -399,11 +434,9 @@ exports.forgotPasswordVerify = async (req, res) => {
     
     const user = result.rows[0];
     
-    // Generate OTP
     const otp = crypto.randomInt(100000, 999999).toString();
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
     
-    // Lưu OTP vào session
     req.session.forgotPasswordOTP = {
       otp: otp,
       expires: otpExpires.getTime(),
@@ -412,7 +445,6 @@ exports.forgotPasswordVerify = async (req, res) => {
       email: user.email
     };
     
-    // Gửi OTP qua email sử dụng emailService
     await emailService.sendOTPEmail(email, otp, user.full_name, 'reset-password');
     
     return res.json({
@@ -429,9 +461,6 @@ exports.forgotPasswordVerify = async (req, res) => {
   }
 };
 
-/**
- * BƯỚC 2: Verify OTP
- */
 exports.forgotPasswordVerifyOTP = async (req, res) => {
   try {
     const { otp } = req.body;
@@ -443,7 +472,6 @@ exports.forgotPasswordVerifyOTP = async (req, res) => {
       });
     }
     
-    // Check OTP from session
     const otpData = req.session.forgotPasswordOTP;
     if (!otpData) {
       return res.status(400).json({
@@ -452,7 +480,6 @@ exports.forgotPasswordVerifyOTP = async (req, res) => {
       });
     }
     
-    // Verify OTP
     if (otpData.otp !== otp) {
       return res.status(400).json({
         success: false,
@@ -460,7 +487,6 @@ exports.forgotPasswordVerifyOTP = async (req, res) => {
       });
     }
     
-    // Check expiration
     if (Date.now() > otpData.expires) {
       delete req.session.forgotPasswordOTP;
       return res.status(400).json({
@@ -469,7 +495,6 @@ exports.forgotPasswordVerifyOTP = async (req, res) => {
       });
     }
     
-    // Mark OTP as verified
     req.session.forgotPasswordOTP.verified = true;
     
     return res.json({
@@ -486,9 +511,6 @@ exports.forgotPasswordVerifyOTP = async (req, res) => {
   }
 };
 
-/**
- * BƯỚC 3: Reset password
- */
 exports.forgotPasswordReset = async (req, res) => {
   try {
     const { newPassword } = req.body;
@@ -500,7 +522,6 @@ exports.forgotPasswordReset = async (req, res) => {
       });
     }
     
-    // Validate password
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
@@ -515,7 +536,6 @@ exports.forgotPasswordReset = async (req, res) => {
       });
     }
     
-    // Check OTP verification
     const otpData = req.session.forgotPasswordOTP;
     if (!otpData || !otpData.verified) {
       return res.status(400).json({
@@ -527,17 +547,14 @@ exports.forgotPasswordReset = async (req, res) => {
     const pool = require('../config/db');
     const bcrypt = require('bcrypt');
     
-    // Hash new password
     const saltRounds = 10;
     const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
     
-    // Update password in database
     await pool.query(
       'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
       [newPasswordHash, otpData.userId]
     );
     
-    // Clear OTP from session
     delete req.session.forgotPasswordOTP;
     
     return res.json({

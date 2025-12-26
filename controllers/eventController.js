@@ -131,7 +131,6 @@ exports.createEvent = async (req, res) => {
       });
     }
 
-    // ĐÃ LOẠI BỎ isAllDay
     const eventData = {
       title: req.body.title,
       description: req.body.description,
@@ -144,7 +143,7 @@ exports.createEvent = async (req, res) => {
       categoryId: req.body.category_id || req.body.categoryId,
       color: req.body.color || '#3b82f6',
       tags: req.body.tags || [],
-      calendarType: req.body.calendar_type // Lấy thêm calendar_type để lưu
+      calendarType: req.body.calendar_type 
     };
 
     const newEvent = await eventService.createEvent(userId, eventData);
@@ -185,7 +184,6 @@ exports.updateEvent = async (req, res) => {
         message: 'Vui lòng đăng nhập' 
       });
     }
-
     
     const updateData = {
       title: req.body.title,

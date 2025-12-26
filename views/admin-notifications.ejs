@@ -9,39 +9,13 @@
   <link rel="stylesheet" href="/css/admin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
   <%- include('header') %>
 
   <div class="admin-container">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-sidebar-header">
-        <i class="fas fa-shield-alt"></i>
-        <h2>Admin Panel</h2>
-      </div>
-      
-      <nav class="admin-nav">
-        <a href="/admin/dashboard" class="admin-nav-item">
-          <i class="fas fa-chart-line"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="/admin/users" class="admin-nav-item">
-          <i class="fas fa-users"></i>
-          <span>Quản lý Users</span>
-        </a>
-        <a href="/admin/notifications" class="admin-nav-item active">
-          <i class="fas fa-bullhorn"></i>
-          <span>Thông báo</span>
-        </a>
-        <a href="/admin/logs" class="admin-nav-item">
-          <i class="fas fa-history"></i>
-          <span>Audit Logs</span>
-        </a>
-      </nav>
-    </aside>
-
     <!-- Main Content -->
     <main class="admin-main">
       <div class="admin-header">
@@ -129,8 +103,31 @@
     </div>
   </div>
 
+  <!-- Action Modal -->
+  <div id="action-modal" class="modal">
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2 id="action-modal-title">Xác nhận</h2>
+        <button class="modal-close" onclick="closeActionModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="action-modal-message"></p>
+        <textarea id="action-reason" placeholder="Lý do (bắt buộc)" style="display:none;"></textarea>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeActionModal()">Hủy</button>
+          <button class="btn-confirm" id="action-confirm-btn">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script src="/js/banned-listener.js"></script>
   <script src="/js/admin.js"></script>
   <script>
+    // Pass currentUserId to JavaScript
+    window.currentUserId = <%= userId || 'null' %>;
+    
     // Initialize notifications page
     initNotificationsPage();
   </script>
