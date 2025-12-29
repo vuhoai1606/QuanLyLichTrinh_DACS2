@@ -113,71 +113,137 @@ exports.handleSyncRequest = async (req, res) => {
 /**
  * Xử lý callback sau khi người dùng cấp quyền
  */
+// controllers/googleController.js
 exports.handleGoogleCallback = async (req, res) => {
-    const code = req.query.code;
-    const userId = req.query.state; // Lấy userId từ state
-    
-    if (!code || !userId) {
-        return res.redirect('/settings?error=google_auth_failed');
-    }
-    
-    try {
-        // Lấy tokens (access_token, refresh_token)
-        const { tokens } = await oauth2Client.getToken(code);
-        
-        if (!tokens.refresh_token) {
-            // Xử lý nếu Google không trả về refresh token (do user chưa đồng ý lần đầu)
-            console.warn('Google không trả về refresh token. Yêu cầu user cấp quyền lại.');
-            return res.redirect('/settings?error=google_no_refresh_token');
-        }
+  const { code, state } = req.query;
 
-        // Lưu tokens và thiết lập Webhook
-        await setupSync(userId, tokens); 
-        
-        // Cập nhật session (để frontend biết đã login)
-        req.session.googleToken = true; 
-        req.session.userId = userId; 
-        req.session.googleToken = true;
-        
-        console.log(`[Google Controller] OAuth thành công và lưu tokens cho User: ${userId}`);
-        
-        // Chuyển hướng người dùng về trang cài đặt hoặc dashboard
-        return res.redirect('/settings?success=google_sync_setup');
+  let userId;
+  try {
+    const parsedState = JSON.parse(state || '{}');
+    userId = parsedState.userId;
+  } catch (err) {
+    console.error('Invalid state format:', err);
+    return res.redirect('/calendar?google_sync=error');
+  }
 
-    } catch (error) {
-        console.error('Lỗi Google Callback:', error);
-        return res.redirect('/settings?error=google_token_error');
-    }
+  if (!code || !userId) {
+    return res.redirect('/calendar?google_sync=error');
+  }
+
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    // Lưu vào bảng users (giữ refresh_token cũ nếu đã có)
+    await pool.query(`
+      UPDATE users SET
+        google_access_token = $1,
+        google_refresh_token = COALESCE(google_refresh_token, $2),
+        google_calendar_id = 'primary'
+      WHERE user_id = $3
+    `, [tokens.access_token, tokens.refresh_token, userId]);
+
+    // Tạo watch channel + full sync ngay lập tức
+    await createOrRenewWatchChannel(userId);
+    await performFullSync(userId);
+
+    console.log(`[Google Sync] Thành công cho user ${userId}`);
+
+    // Redirect về calendar với thông báo thành công
+    res.redirect('/calendar?google_sync=success');
+  } catch (error) {
+    console.error('Lỗi Google OAuth Callback:', error);
+    res.redirect('/calendar?google_sync=error');
+  }
 };
 
 /**
  * Xử lý thông báo Webhook từ Google (Real-time)
  */
+// controllers/googleController.js
+
 exports.handleWebhookNotification = async (req, res) => {
-    // 1. Kiểm tra header Google gửi đến
-    const channelId = req.header('X-Goog-Channel-Id');
-    const resourceState = req.header('X-Goog-Resource-State');
-    
-    console.log(`\n🔔 [Google Controller]: Webhook nhận được (ID: ${channelId}, Trạng thái: ${resourceState})`);
+  // ==================== 1. LOG & VALIDATION CƠ BẢN ====================
+  const channelId = req.headers['x-goog-channel-id'];
+  const resourceState = req.headers['x-goog-resource-state'];
+  const resourceId = req.headers['x-goog-resource-id'];
+  const channelToken = req.headers['x-goog-channel-token']; // Nên có token để validate
 
-    // Phải trả về 204 ngay lập tức
-    res.status(204).send(); 
-    
-    if (resourceState === 'exists') {
-        // 1. Xác định người dùng bằng channelId
-        // const user = await findUserByChannelId(channelId); // Cần tạo hàm này trong DB
+  console.log(`\n🔔 [WEBHOOK] Nhận từ Google`);
+  console.log(`   Channel ID: ${channelId}`);
+  console.log(`   Resource State: ${resourceState}`);
+  console.log(`   Resource ID: ${resourceId}`);
+  console.log(`   Token: ${channelToken}`);
 
-        // 2. Lấy access token mới dùng refresh token
-        // const newAccessToken = await refreshAccessToken(user.google_refresh_token); 
+  // ==================== 2. TRẢ VỀ NGAY ĐỂ GOOGLE KHÔNG GỬI LẠI ====================
+  // Google yêu cầu status 2xx (200 hoặc 204). 200 phổ biến hơn.
+  res.status(200).send('OK');
 
-        // 3. Kéo (fetch) dữ liệu mới nhất từ Google Calendar API
-        // const updatedEvents = await fetchAndSaveLatestEvents(user.userId, newAccessToken);
+  // Nếu chỉ là sync message hoặc channel stop → không cần xử lý thêm
+  if (resourceState === 'sync') {
+    console.log('   → Sync message (initial handshake) - bỏ qua.');
+    return;
+  }
 
-        // 4. Dùng Socket.IO để thông báo Real-time cho người dùng đó
-        // global.io.to(user.userId).emit('calendarUpdate', { events: updatedEvents });
-        console.log(`   [Google Controller]: Kích hoạt cập nhật Real-time cho client.`);
+  if (resourceState !== 'exists') {
+    console.log(`   → Resource state: ${resourceState} - không xử lý.`);
+    return;
+  }
 
-    } else if (resourceState === 'stop') {
-        console.log(`   [Google Controller]: Kênh Webhook đã dừng (Channel ID: ${channelId}).`);
-    }
+  // ==================== 3. TÌM USER THEO CHANNEL ID ====================
+  let user;
+  try {
+    const result = await pool.query(
+      'SELECT user_id, google_access_token, google_refresh_token, google_sync_token FROM users WHERE google_channel_id = $1',
+      [channelId]
+    );
+    user = result.rows[0];
+  } catch (err) {
+    console.error('❌ Lỗi query user từ channel_id:', err);
+    return;
+  }
+
+  if (!user) {
+    console.warn(`   ⚠️ Không tìm thấy user với channel_id: ${channelId}`);
+    return;
+  }
+
+  console.log(`   ✅ Tìm thấy user: ${user.user_id}`);
+
+  // ==================== 4. THỰC HIỆN INCREMENTAL SYNC ====================
+  try {
+    await performIncrementalSync(user.user_id);
+    console.log(`   🎉 Đồng bộ thành công cho user ${user.user_id}`);
+  } catch (err) {
+    console.error(`❌ Lỗi khi đồng bộ calendar cho user ${user.user_id}:`, err);
+    // Có thể thêm logic retry hoặc thông báo admin ở đây
+  }
 };
+
+async function createOrRenewWatchChannel(userId) {
+  const { rows: [user] } = await pool.query('SELECT * FROM users WHERE user_id = $1', [userId]);
+  if (!user.google_refresh_token) return;
+
+  const oauth2Client = getOAuth2Client(user); // Hàm helper set credentials + auto refresh
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  const channelId = `channel-user-${userId}-${Date.now()}`;
+
+  const watchRes = await calendar.events.watch({
+    calendarId: user.google_calendar_id || 'primary',
+    requestBody: {
+      id: channelId,
+      type: 'web_hook',
+      address: 'https://yourdomain.com/api/google/webhook',
+      token: `user_${userId}` // Để validate webhook
+    }
+  });
+
+  await pool.query(`
+    UPDATE users SET
+      google_channel_id = $1,
+      google_channel_expiration = $2,
+      google_sync_token = NULL
+    WHERE user_id = $3
+  `, [channelId, watchRes.data.expiration, userId]);
+}

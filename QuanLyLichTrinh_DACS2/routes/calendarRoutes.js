@@ -23,22 +23,33 @@ let transporter = nodemailer.createTransport({
 router.use(requireAuth);
 
 // API lấy cả Task + Event trong khoảng thời gian
+// API lấy cả Task + Event + Shared Events trong khoảng thời gian
 router.get('/items', async (req, res) => {
   try {
-   const userId = req.session.userId;
-   const { start, end, group } = req.query; 
+    const userId = req.session.userId;
+    const { start, end, group = 'personal' } = req.query;
 
-    if (!start || !end) {
-      return res.status(400).json({ success: false, message: 'Thiếu tham số start hoặc end' });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-   const items = await eventService.getAllItemsByDateRange(userId, start, end, group); 
+    if (!start || !end) {
+      return res.status(400).json({ success: false, message: 'Missing start/end date' });
+    }
 
-   res.json({ success: true, data: items });
+    // 🔥 DÙNG HÀM HOÀN HẢO ĐÃ CÓ: getAllItemsByDateRange
+    const items = await eventService.getAllItemsByDateRange(userId, start, end, group);
 
-   } catch (error) {
-   console.error('Error fetching calendar items:', error);
-   res.status(500).json({ success: false, message: 'Lỗi server khi lấy dữ liệu lịch', error: error.message });
+    console.log(`📅 Calendar loaded: ${items.filter(i => i.type === 'task').length} tasks + ${items.filter(i => i.type === 'event').length} events (group: ${group})`);
+
+    res.json({
+      success: true,
+      data: items  // ← Frontend đang expect key "data"
+    });
+
+  } catch (error) {
+    console.error('Error loading calendar items:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

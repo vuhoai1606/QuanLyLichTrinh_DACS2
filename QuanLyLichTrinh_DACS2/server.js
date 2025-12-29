@@ -180,3 +180,6 @@ server.listen(PORT, () => {
     const { startNotificationScheduler } = require('./services/notificationScheduler');
     startNotificationScheduler();
 });
+
+const { startGoogleSyncScheduler } = require('./config/googleSyncScheduler');
+startGoogleSyncScheduler();

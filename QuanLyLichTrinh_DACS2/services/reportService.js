@@ -36,37 +36,48 @@ class ReportService {
     return rows.length > 0 ? rows : [];
   }
 
-  static async getTasksByPeriod(userId, period = 'week') {
+  static async getTasksByPeriod(userId, period = 'week', filter = {}) {
     let query = '';
+    const params = [userId];
 
     if (period === 'day') {
       query = `
         SELECT EXTRACT(HOUR FROM created_at)::int AS hour, COUNT(*)::int AS count
         FROM tasks 
         WHERE user_id = $1 AND DATE(created_at) = CURRENT_DATE
-        GROUP BY hour 
-        ORDER BY hour ASC`;
-    } else if (period === 'week') {
+        GROUP BY hour ORDER BY hour ASC`;
+    } 
+    else if (period === 'week') {
       query = `
         SELECT DATE(created_at) AS day, COUNT(*)::int AS count
         FROM tasks 
         WHERE user_id = $1 AND created_at >= CURRENT_DATE - INTERVAL '6 days'
-        GROUP BY DATE(created_at) 
-        ORDER BY day ASC`;
-    } else if (period === 'month') {
-      query = `
-        SELECT DATE(created_at) AS day, COUNT(*)::int AS count
-        FROM tasks 
-        WHERE user_id = $1 
-          AND created_at >= date_trunc('month', CURRENT_DATE)
-          AND created_at < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
-        GROUP BY DATE(created_at) 
-        ORDER BY day ASC`;
+        GROUP BY DATE(created_at) ORDER BY day ASC`;
+    } 
+    else if (period === 'month') {
+      if (filter.month && filter.year) {
+        query = `
+          SELECT DATE(created_at) AS day, COUNT(*)::int AS count
+          FROM tasks 
+          WHERE user_id = $1
+            AND EXTRACT(MONTH FROM created_at) = $2
+            AND EXTRACT(YEAR FROM created_at) = $3
+          GROUP BY DATE(created_at) ORDER BY day ASC`;
+        params.push(filter.month, filter.year);
+      } else {
+        query = `
+          SELECT DATE(created_at) AS day, COUNT(*)::int AS count
+          FROM tasks 
+          WHERE user_id = $1
+            AND created_at >= date_trunc('month', CURRENT_DATE)
+            AND created_at < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+          GROUP BY DATE(created_at) ORDER BY day ASC`;
+      }
     } else {
-      throw new Error('Invalid period. Must be "day", "week" or "month".');
+      throw new Error('Invalid period');
     }
 
-    const { rows } = await pool.query(query, [userId]);
+    const { rows } = await pool.query(query, params);
     return rows;
   }
 

@@ -1,4 +1,7 @@
+// services/eventService.js
+
 const pool = require('../config/db');
+const { RRule } = require('rrule'); // npm install rrule
 
 /**
  * EVENT SERVICE
@@ -61,7 +64,40 @@ class EventService {
     query += ` ORDER BY e.start_time ASC`;
 
     const result = await pool.query(query, params);
-    return result.rows;
+    const rawEvents = result.rows;
+
+    // === EXPAND RECURRING EVENTS ===
+    const expandedEvents = [];
+
+    const rangeStart = startDate ? new Date(startDate) : new Date('1970-01-01');
+    const rangeEnd = endDate ? new Date(endDate) : new Date('2100-12-31');
+
+    for (const event of rawEvents) {
+      if (event.recurrence && event.recurrence.length > 0) {
+        try {
+          const rule = RRule.fromString(event.recurrence[0]);
+          const instances = rule.between(rangeStart, rangeEnd, true);
+
+          instances.forEach(instanceStart => {
+            const durationMs = new Date(event.end_time) - new Date(event.start_time);
+            expandedEvents.push({
+              ...event,
+              start_time: instanceStart,
+              end_time: new Date(instanceStart.getTime() + durationMs),
+              is_recurring_instance: true,
+              original_event_id: event.event_id
+            });
+          });
+        } catch (err) {
+          console.error('Lỗi parse RRULE:', event.recurrence[0], err);
+          expandedEvents.push(event); // fallback: hiển thị master event
+        }
+      } else {
+        expandedEvents.push(event);
+      }
+    }
+
+    return expandedEvents;
   }
 
   /**
@@ -74,19 +110,49 @@ class EventService {
 
     const result = await pool.query(
       `SELECT 
-        e.*,
-        c.category_name,
-        c.color as category_color
+         e.*,
+         c.category_name,
+         c.color as category_color
        FROM events e
        LEFT JOIN categories c ON e.category_id = c.category_id
        WHERE e.user_id = $1
-       AND e.start_time >= $2
-       AND e.start_time <= $3
+         AND e.start_time >= $2
+         AND e.start_time <= $3
        ORDER BY e.start_time ASC`,
       [userId, firstDay, lastDay]
     );
 
-    return result.rows;
+    const rawEvents = result.rows;
+
+    // === EXPAND RECURRING EVENTS CHO THÁNG ===
+    const expandedEvents = [];
+
+    for (const event of rawEvents) {
+      if (event.recurrence && event.recurrence.length > 0) {
+        try {
+          const rule = RRule.fromString(event.recurrence[0]);
+          const instances = rule.between(firstDay, lastDay, true);
+
+          instances.forEach(instanceStart => {
+            const durationMs = new Date(event.end_time) - new Date(event.start_time);
+            expandedEvents.push({
+              ...event,
+              start_time: instanceStart,
+              end_time: new Date(instanceStart.getTime() + durationMs),
+              is_recurring_instance: true,
+              original_event_id: event.event_id
+            });
+          });
+        } catch (err) {
+          console.error('Lỗi parse RRULE trong getEventsByMonth:', err);
+          expandedEvents.push(event);
+        }
+      } else {
+        expandedEvents.push(event);
+      }
+    }
+
+    return expandedEvents;
   }
 
   /**
@@ -95,9 +161,9 @@ class EventService {
   async getEventById(eventId, userId) {
     const result = await pool.query(
       `SELECT 
-        e.*,
-        c.category_name,
-        c.color as category_color
+         e.*,
+         c.category_name,
+         c.color as category_color
        FROM events e
        LEFT JOIN categories c ON e.category_id = c.category_id
        WHERE e.event_id = $1 AND e.user_id = $2`,
@@ -115,12 +181,10 @@ class EventService {
    * TÌM ID CỦA CATEGORY DỰA VÀO TÊN
    */
   async getCategoryIdByName(userId, categoryName) {
-    // Nếu categoryName là 'Personal' hoặc 'Work' (tên mặc định), không cần tìm category_id
     if (categoryName === 'Personal' || categoryName === 'Work') {
       return null;
     }
     
-    // Tìm category_id dựa trên tên category được gửi từ frontend
     const result = await pool.query(
         'SELECT category_id FROM categories WHERE user_id = $1 AND category_name ILIKE $2',
         [userId, categoryName]
@@ -139,18 +203,16 @@ class EventService {
       startTime,
       endTime,
       location,
-      categoryId, // Có thể là ID hoặc null
+      categoryId,
       repeatType = 'none',
       meetingLink,
       tags = [],
     } = eventData;
 
-    // Validation
     if (!title || title.trim().length === 0) {
       throw new Error('Tiêu đề event không được để trống');
     }
 
-    // Validate thời gian 
     if (!startTime || !endTime) {
       throw new Error('Vui lòng nhập thời gian bắt đầu và kết thúc');
     }
@@ -159,15 +221,11 @@ class EventService {
       throw new Error('Thời gian kết thúc phải sau thời gian bắt đầu');
     }
     
-    // Xử lý logic category_id: Nếu frontend gửi tên calendar_type, ta phải tìm ID
     let finalCategoryId = categoryId;
     if (typeof finalCategoryId === 'string' && finalCategoryId !== 'Personal' && finalCategoryId !== 'Work') {
         finalCategoryId = await this.getCategoryIdByName(userId, finalCategoryId);
     }
-    // Nếu vẫn không có categoryId (ví dụ: là 'Personal'/'Work' hoặc không tìm thấy), set null
 
-    // Insert event
-    // is_all_day luôn là FALSE vì đã loại bỏ checkbox
     const result = await pool.query(
         `INSERT INTO events (user_id, title, description, start_time, end_time, location, category_id, 
         repeat_type, is_all_day, meeting_link, tags, calendar_type)
@@ -184,7 +242,7 @@ class EventService {
             repeatType,
             meetingLink || null,
             tags,
-            eventData.calendarType || 'Personal' // Lưu loại calendar/task vào cột calendar_type
+            eventData.calendarType || 'Personal'
         ]
     );
 
@@ -195,7 +253,6 @@ class EventService {
    * CẬP NHẬT EVENT
    */
   async updateEvent(eventId, userId, updateData) {
-    // Kiểm tra event có tồn tại không
     await this.getEventById(eventId, userId);
 
     const {
@@ -211,7 +268,6 @@ class EventService {
       calendarType
     } = updateData;
 
-    // Validation
     if (title !== undefined && title.trim().length === 0) {
       throw new Error('Tiêu đề event không được để trống');
     }
@@ -220,13 +276,11 @@ class EventService {
       throw new Error('Thời gian kết thúc phải sau thời gian bắt đầu');
     }
 
-    // Xử lý logic category_id cho update
     let finalCategoryId = categoryId;
     if (typeof finalCategoryId === 'string' && finalCategoryId !== 'Personal' && finalCategoryId !== 'Work') {
         finalCategoryId = await this.getCategoryIdByName(userId, finalCategoryId);
     }
 
-    // Build dynamic update query
     const updates = [];
     const params = [eventId, userId];
     let paramIndex = 3;
@@ -263,7 +317,7 @@ class EventService {
 
     if (categoryId !== undefined) {
       updates.push(`category_id = $${paramIndex}`);
-      params.push(finalCategoryId || null); // Sử dụng ID đã tìm được
+      params.push(finalCategoryId || null);
       paramIndex++;
     }
     
@@ -279,7 +333,6 @@ class EventService {
       paramIndex++;
     }
     
-    // is_all_day luôn là FALSE
     updates.push(`is_all_day = FALSE`);
 
     if (meetingLink !== undefined) {
@@ -331,7 +384,6 @@ class EventService {
 
   /**
    * KIỂM TRA CONFLICT THỜI GIAN
-   * Trả về true nếu có event trùng giờ
    */
   async checkTimeConflict(userId, startTime, endTime, excludeEventId = null) {
     let query = `
@@ -371,29 +423,58 @@ class EventService {
        LIMIT $2`,
       [userId, limit]
     );
-    return result.rows;
+
+    const rawEvents = result.rows;
+
+    // === EXPAND RECURRING CHO UPCOMING ===
+    const expandedEvents = [];
+    const now = new Date();
+    const farFuture = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 năm tới
+
+    for (const event of rawEvents) {
+      if (event.recurrence && event.recurrence.length > 0) {
+        try {
+          const rule = RRule.fromString(event.recurrence[0]);
+          const instances = rule.between(now, farFuture, true);
+
+          instances.slice(0, limit).forEach(instanceStart => { // Giới hạn để không quá nhiều
+            const durationMs = new Date(event.end_time) - new Date(event.start_time);
+            expandedEvents.push({
+              ...event,
+              start_time: instanceStart,
+              end_time: new Date(instanceStart.getTime() + durationMs),
+              is_recurring_instance: true,
+              original_event_id: event.event_id
+            });
+          });
+        } catch (err) {
+          console.error('Lỗi parse RRULE trong upcoming:', err);
+          expandedEvents.push(event);
+        }
+      } else {
+        expandedEvents.push(event);
+      }
+    }
+
+    // Sắp xếp lại và giới hạn
+    expandedEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    return expandedEvents.slice(0, limit);
   }
 
   /**
    * LẤY CẢ TASK VÀ EVENT TRONG KHOẢNG THỜI GIAN
-   * Dùng cho Calendar/Timeline view
    */
   async getAllItemsByDateRange(userId, startDate, endDate, group = 'personal') {
-    
-    // Logic lọc theo nhóm (group)
     let userConditions = `e.user_id = $1`;
     
     if (group === 'team' || group === 'work') {
-        // Mở rộng điều kiện: user_id = $1 HOẶC calendar_type = 'Work'
         userConditions = `(e.user_id = $1 OR e.calendar_type = 'Work')`;
     } 
 
     const baseTimeCondition = `e.start_time >= $2 AND e.start_time <= $3`;
     const taskTimeCondition = `t.start_time >= $2 AND t.start_time <= $3`;
 
-
     const query = `
-      -- ======================= 1. EVENTS ĐƯỢC SỞ HỮU/NHÓM =======================
       (SELECT 
         'event' AS type, 
         e.event_id AS id,
@@ -407,14 +488,13 @@ class EventService {
         c.category_name AS category,
         e.color,
         NULL AS status,
-        NULL AS priority -- Mặc định là TEXT
+        NULL AS priority
       FROM events e
       LEFT JOIN categories c ON e.category_id = c.category_id
       WHERE (${userConditions}) AND ${baseTimeCondition})
 
       UNION 
 
-      -- ======================= 2. EVENTS ĐƯỢC CHIA SẺ VỚI USER HIỆN TẠI =======================
       (SELECT
         'event' AS type,
         e.event_id AS id,
@@ -428,7 +508,7 @@ class EventService {
         c.category_name AS category,
         e.color,
         NULL AS status,
-        NULL AS priority -- Mặc định là TEXT
+        NULL AS priority
       FROM events e
       JOIN shared_events se ON e.event_id = se.event_id
       LEFT JOIN categories c ON e.category_id = c.category_id
@@ -438,7 +518,6 @@ class EventService {
       
       UNION ALL 
 
-      -- ========================= 3. TASKS CÁ NHÂN =========================
       (SELECT 
         'task' AS type,
         t.task_id AS id,
@@ -456,7 +535,7 @@ class EventService {
           ELSE '#10b981'
         END AS color,
         t.status::text AS status, 
-        t.priority::text AS priority -- ✨ ĐÃ SỬA: Chuyển đổi priority_enum sang TEXT ✨
+        t.priority::text AS priority
       FROM tasks t
       WHERE t.user_id = $1 AND ${taskTimeCondition})
       

@@ -22,8 +22,8 @@ router.get('/api/reports/tasks/status', async (req, res) => {
 // 2. Thống kê task theo thời gian
 router.get('/api/reports/tasks/by-period', async (req, res) => {
   try {
-    const { period = 'week' } = req.query;
-    const data = await reportService.getTasksByPeriod(req.session.userId, period);
+    const { period = 'week', month, year } = req.query;
+    const data = await reportService.getTasksByPeriod(req.session.userId, period, { month, year });
     res.json({ success: true, data });
   } catch (err) {
     console.error('Error /tasks/by-period:', err);

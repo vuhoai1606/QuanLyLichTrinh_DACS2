@@ -164,6 +164,43 @@
       <input type="text" id="eventTitle" placeholder="Event title" required>
       <textarea id="eventDesc" rows="3" placeholder="Description (optional)..."></textarea>
       
+      <!-- Thêm vào trong <form> của modal -->
+      <div class="form-group">
+        <label>Lặp lại</label>
+        <select id="repeatSelect" onchange="toggleRepeatOptions(this.value)">
+          <option value="none">Không lặp</option>
+          <option value="daily">Hàng ngày</option>
+          <option value="weekly">Hàng tuần</option>
+          <option value="monthly">Hàng tháng</option>
+          <option value="yearly">Hàng năm</option>
+          <option value="custom">Tùy chỉnh...</option>
+        </select>
+      </div>
+
+      <div id="customRepeatOptions" style="display:none; margin-top:10px;">
+        <div class="form-group">
+          <label>Lặp mỗi</label>
+          <input type="number" id="repeatInterval" min="1" value="1" style="width:80px;"> 
+          <span id="intervalLabel">tuần</span>
+        </div>
+
+        <div class="form-group" id="weekdayCheck">
+          <label>Lặp vào các ngày</label><br>
+          <label><input type="checkbox" value="mon"> Thứ 2</label>
+          <label><input type="checkbox" value="tue"> Thứ 3</label>
+          <label><input type="checkbox" value="wed"> Thứ 4</label>
+          <label><input type="checkbox" value="thu"> Thứ 5</label>
+          <label><input type="checkbox" value="fri"> Thứ 6</label>
+          <label><input type="checkbox" value="sat"> Thứ 7</label>
+          <label><input type="checkbox" value="sun"> Chủ nhật</label>
+        </div>
+
+        <div class="form-group">
+          <label>Kết thúc vào</label>
+          <input type="date" id="repeatEndDate">
+        </div>
+      </div>
+
       <div class="datetime-group">
         <div>
           <label>Start</label>
@@ -205,6 +242,11 @@
       </div>
     </div>
   </div>
+
+  <script src="/js/rrule.min.js"></script>
+  <script>
+    window.RRule = window.rrule.RRule;
+  </script>
   <script src="/js/calendar.js"></script>
   <script src="/js/header.js"></script>
   <!-- ✅ BANNED LISTENER - Auto logout when admin bans user -->
