@@ -44,6 +44,20 @@
   overflow: hidden;
 }
 
+/* Light mode - Settings popup full trắng */
+body.light-mode .settings-popup,
+body[data-theme="light"] .settings-popup {
+  background: #ffffff !important; /* Full trắng, không trong suốt */
+  backdrop-filter: none;
+}
+
+/* Dark mode - Settings popup tối */
+body.dark-mode .settings-popup,
+body[data-theme="dark"] .settings-popup {
+  background: #1e293b !important;
+  color: #ffffff;
+}
+
 @keyframes slideUp {
   from { 
     opacity: 0;

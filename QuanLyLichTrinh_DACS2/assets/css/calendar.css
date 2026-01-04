@@ -109,7 +109,7 @@ body::before {
     radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.38), transparent 55%),
     radial-gradient(circle at 80% 90%, rgba(16, 185, 129, 0.3), transparent 48%),
     radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.35), transparent 52%);
-  animation: meshAnimation 30s ease-in-out infinite;
+  /* animation: meshAnimation 30s ease-in-out infinite; */
   z-index: -1;
   filter: blur(60px);
 }
@@ -149,7 +149,7 @@ body::after {
     radial-gradient(1px 1px at 10% 90%, rgba(255, 255, 255, 0.28), transparent);
   background-size: 220% 220%;
   background-position: 0% 0%;
-  animation: floatingParticles 35s ease-in-out infinite;
+  /* animation: floatingParticles 35s ease-in-out infinite; */
   pointer-events: none;
   z-index: -1;
   opacity: 0.65;
@@ -171,7 +171,7 @@ body::after {
   max-width: min(1480px, 100%);
   width: 100%;
   padding: 48px 24px;
-  animation: fadeInUp 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  /* animation: fadeInUp 0.9s cubic-bezier(0.4, 0, 0.2, 1); */
   box-sizing: border-box;
 }
 
@@ -227,7 +227,7 @@ body::after {
     var(--primary-light) 100%
   );
   background-size: 400% 100%;
-  animation: gradientFlow 6s linear infinite;
+  /* animation: gradientFlow 6s linear infinite; */
 }
 
 @keyframes gradientFlow {
@@ -255,12 +255,12 @@ body::after {
 
 .calendar-header:hover {
   box-shadow: var(--shadow-2xl), 0 0 0 1px rgba(255,255,255,0.6);
-  transform: translateY(-6px);
+  /* transform: translateY(-6px); */
 }
 
 .calendar-header:hover::after {
-  opacity: 1;
-  animation: glowRotate 4s ease-in-out infinite;
+  /* opacity: 1; */
+  /* animation: glowRotate 4s ease-in-out infinite; */
 }
 
 @keyframes glowRotate {
@@ -295,7 +295,7 @@ body::after {
   background-clip: text;
   position: relative;
   background-size: 200% auto;
-  animation: gradientShift 8s ease infinite;
+  /* animation: gradientShift 8s ease infinite; */
 }
 
 @keyframes gradientShift {
@@ -318,7 +318,7 @@ body::after {
 }
 
 .calendar-header:hover .left-controls h2::after {
-  width: 85%;
+  /* width: 85%; */
 }
 
 .left-controls button {
@@ -356,17 +356,17 @@ body::after {
 }
 
 .left-controls button:hover::before {
-  left: 180%;
+  /* left: 180%; */
 }
 
 .left-controls button:hover {
   background: linear-gradient(135deg, #4338ca 0%, #7c3aed 100%);
-  transform: translateY(-5px) scale(1.04);
+  /* transform: translateY(-5px) scale(1.04); */
   box-shadow: 0 12px 28px rgba(99, 102, 241, 0.55);
 }
 
 .left-controls button:active {
-  transform: translateY(-3px) scale(0.99);
+  /* transform: translateY(-3px) scale(0.99); */
 }
 
 /* Enhanced Select Dropdown */
@@ -391,7 +391,7 @@ body::after {
   border-color: var(--accent);
   box-shadow: 0 0 0 6px var(--accent-lighter), var(--shadow-md);
   outline: none;
-  transform: translateY(-3px);
+  /* transform: translateY(-3px); */
 }
 
 .right-controls {
@@ -557,7 +557,7 @@ body::after {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   opacity: 0;
   transition: var(--transition);
-  animation: gradientSlide 3s linear infinite;
+  /* animation: gradientSlide 3s linear infinite; */
 }
 
 @keyframes gradientSlide {
@@ -589,7 +589,7 @@ body::after {
 
 .calendar-grid .day:hover::after {
   opacity: 1;
-  animation: shimmerSpin 4s linear infinite;
+  /* animation: shimmerSpin 4s linear infinite; */
 }
 
 @keyframes shimmerSpin {
@@ -620,7 +620,7 @@ body::after {
   transform: scale(1.1);
   z-index: 10;
   position: relative;
-  animation: todayPulse 3.5s ease-in-out infinite;
+  /* animation: todayPulse 3.5s ease-in-out infinite; */
 }
 
 @keyframes todayPulse {
@@ -640,7 +640,7 @@ body::after {
   font-weight: 900;
   font-size: 24px;
   text-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  animation: numberGlow 2s ease-in-out infinite;
+  /* animation: numberGlow 2s ease-in-out infinite; */
 }
 
 @keyframes numberGlow {
@@ -662,7 +662,7 @@ body::after {
   backdrop-filter: blur(12px);
   box-shadow: 0 6px 16px rgba(0,0,0,0.25);
   letter-spacing: 0.6px;
-  animation: badgeBounce 2.5s ease-in-out infinite;
+  /* animation: badgeBounce 2.5s ease-in-out infinite; */
 }
 
 @keyframes badgeBounce {

@@ -577,12 +577,15 @@ function renderNotifications(notifications) {
   const container = document.getElementById('notifications-list');
   if (!container) return;
   
-  if (notifications.length === 0) {
+  // Filter out hidden notifications
+  const activeNotifications = notifications.filter(notif => notif.is_active !== false);
+  
+  if (activeNotifications.length === 0) {
     container.innerHTML = '<div class="loading">Chưa có thông báo nào</div>';
     return;
   }
   
-  container.innerHTML = notifications.map(notif => `
+  container.innerHTML = activeNotifications.map(notif => `
     <div class="notification-item">
       <div class="notification-header">
         <div>

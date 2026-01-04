@@ -177,29 +177,29 @@ body::before {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: clamp(20px, 3vw, 32px);
   align-items: start;
 }
 
 /* Layout Structure:
-   Row 1: Productivity Card (4 cols) + Status Chart (8 cols)
-   Row 2: Time Chart (full width - 12 cols)
+   Row 1: Productivity Card (left) + Status Chart (right)
+   Row 2: Time Charts (2 columns layout)
 */
 
 .dashboard-grid > .card:nth-child(1) {
-  /* Productivity Card - Takes 4 columns */
-  grid-column: span 4;
+  /* Productivity Card - Left column */
+  grid-column: span 1;
 }
 
 .dashboard-grid > .card:nth-child(2) {
-  /* Status Chart - Takes 8 columns */
-  grid-column: span 8;
+  /* Status Chart - Right column */
+  grid-column: span 1;
 }
 
 .dashboard-grid > .card:nth-child(3) {
-  /* Time Chart with multiple charts - Full width */
-  grid-column: span 12;
+  /* Time Chart - Spans both columns */
+  grid-column: span 2;
 }
 
 /* =========================== 

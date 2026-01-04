@@ -124,7 +124,7 @@ header {
   padding: clamp(20px, 2.5vw, 28px) clamp(16px, 2vw, 20px);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
-  box-shadow: var(--shadow-2xl), 4px 0 24px rgba(99, 102, 241, 0.15);
+  box-shadow: none;
   z-index: 9999;
   transition: var(--transition-smooth);
   overflow-x: hidden;
@@ -148,11 +148,12 @@ header::before {
     radial-gradient(ellipse at 80% 70%, rgba(139,92,246,0.18), transparent 60%),
     radial-gradient(ellipse at 50% 50%, rgba(236,72,153,0.12), transparent 75%),
     radial-gradient(circle at 90% 20%, rgba(20,184,166,0.1), transparent 50%);
-  animation: gradientShift 20s ease-in-out infinite;
+  /* animation: gradientShift 20s ease-in-out infinite; */ /* DISABLED - Animation tắt */
   opacity: 0.9;
   mix-blend-mode: screen;
 }
 
+/* DISABLED - Animation tắt
 @keyframes gradientShift {
   0%, 100% { 
     opacity: 0.9; 
@@ -171,6 +172,7 @@ header::before {
     transform: scale(1.05) rotate(2deg); 
   }
 }
+*/
 
 /* Enhanced Border Glow with Animation */
 header::after {
@@ -191,13 +193,15 @@ header::after {
     transparent 100%
   );
   z-index: 1;
-  animation: borderPulse 4s ease-in-out infinite;
+  /* animation: borderPulse 4s ease-in-out infinite; */ /* DISABLED - Animation tắt */
 }
 
+/* DISABLED - Animation tắt
 @keyframes borderPulse {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
+*/
 
 /* Content Push with Smooth Transition */
 body > *:not(header):not(script):not(style):not(link):not(meta):not(title) {
@@ -1107,7 +1111,8 @@ header.collapsed .dropbtn:hover {
 .navbar::-webkit-scrollbar,
 header::-webkit-scrollbar,
 .dropdown-content::-webkit-scrollbar {
-  width: 7px;
+  width: 0px; /* Ẩn scrollbar */
+  display: none; /* Ẩn hoàn toàn scrollbar */
 }
 
 .navbar::-webkit-scrollbar-thumb,

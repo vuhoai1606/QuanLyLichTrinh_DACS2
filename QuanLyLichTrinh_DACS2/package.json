@@ -17,7 +17,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "migrate": "node migration/runMigration.js && node migration/runUpdate.js && node migration/run_create_sessions.js && node migration/run_add_profile_fields.js && node migration/run_add_2fa.js",
+    "migrate": "node migration/runMigration.js && node migration/runUpdate.js && node migration/run_create_sessions.js && node migration/run_add_profile_fields.js && node migration/run_add_2fa.js && node migration/run_remove_end_date.js",
     "update": "node migration/run_remove_end_date.js",
     "seed": "node seeder/index.js",
     "setup": "npm run migrate && npm run seed",
