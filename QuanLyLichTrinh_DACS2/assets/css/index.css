@@ -156,7 +156,7 @@ body::before {
 }
 
 .stat-card {
-  background: var(--glass-bg);
+  background: var(--bg-primary);
   backdrop-filter: blur(20px);
   border-radius: var(--radius);
   border: 1px solid var(--glass-border);
@@ -245,7 +245,7 @@ body::before {
 
 /* Card chung */
 .card {
-  background: var(--glass-bg);
+  background: var(--bg-primary);
   backdrop-filter: blur(24px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
@@ -510,7 +510,7 @@ body::before {
 .card:last-child {
   text-align: center;
   padding: 56px 48px;
-  background: linear-gradient(135deg, var(--glass-bg), var(--bg-primary));
+  background: var(--bg-primary);
 }
 
 #global-search {
