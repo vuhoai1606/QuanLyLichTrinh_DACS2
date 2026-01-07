@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let is2FAEnabled = false; // Trạng thái hiện tại từ backend
+let currentNotification = null; // Lưu trữ notification hiện tại
 
 // Show settings popup
 function showSettingsPopup() {
@@ -292,8 +293,7 @@ async function handle2FAConfirm() {
   }
 }
 
-// Notification
-let currentNotification = null;
+// Notification Toast - Tham khảo từ HTML demo
 function showNotificationPopup(message, type = 'info') {
   if (currentNotification && currentNotification.parentNode) {
     currentNotification.remove();
@@ -306,12 +306,13 @@ function showNotificationPopup(message, type = 'info') {
   let iconClass = 'fa-info-circle';
   if (type === 'success') { iconClass = 'fa-check-circle'; }
   else if (type === 'error') { iconClass = 'fa-exclamation-circle'; }
+  else if (type === 'warning') { iconClass = 'fa-exclamation-triangle'; }
 
   notification.innerHTML = `<i class="fas ${iconClass}"></i> ${message}`;
   document.body.appendChild(notification);
 
+  // Auto remove after 3 seconds
   setTimeout(() => {
-    notification.classList.remove('notification-toast');
     notification.style.animation = 'fadeOut 0.3s ease-in';
     setTimeout(() => notification.remove(), 300);
   }, 3000);
