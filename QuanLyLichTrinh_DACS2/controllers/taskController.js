@@ -104,7 +104,7 @@ exports.createTask = async (req, res) => {
       progress: req.body.progress || 0
     };
 
-    // GỌI SERVICE ĐÚNG CÁCH
+    // GỌI SERVICE 
     const newTask = await taskService.createTask(userId, taskData);
 
     // DÙNG newTask (đã có dữ liệu từ DB) ĐỂ TẠO NOTIFICATION
