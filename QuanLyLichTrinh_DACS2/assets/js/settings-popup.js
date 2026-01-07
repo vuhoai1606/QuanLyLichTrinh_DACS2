@@ -292,82 +292,119 @@ async function handle2FAConfirm() {
   }
 }
 
-// Notification
-let currentNotification = null;
+// Notification Toast - Tham khảo từ HTML demo
 function showNotificationPopup(message, type = 'info') {
-  if (currentNotification && currentNotification.parentNode) {
-    currentNotification.remove();
-  }
+  const toast = document.createElement('div');
+  toast.className = `notification-toast ${type}`;
+  
+  let icon = 'info-circle';
+  if (type === 'success') icon = 'check-circle';
+  if (type === 'error') icon = 'exclamation-circle';
+  if (type === 'warning') icon = 'exclamation-triangle';
 
-  const notification = document.createElement('div');
-  currentNotification = notification;
+  toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${message}</span>`;
+  document.body.appendChild(toast);
 
-  let iconClass = 'fa-info-circle';
-  let bgColor = '#3b82f6';
+  // Trigger slide-in animation
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
 
-  if (type === 'success') { iconClass = 'fa-check-circle'; bgColor = '#22c55e'; }
-  else if (type === 'error') { iconClass = 'fa-exclamation-circle'; bgColor = '#ef4444'; }
-
-  notification.style.cssText = `
-      position: fixed; 
-      top: 50%; 
-      left: 50%; 
-      transform: translate(-50%, -50%);
-      background: ${bgColor}; 
-      color: white; 
-      padding: 10px 20px; 
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-      z-index: 999999;
-      display: flex; 
-      align-items: center; 
-      gap: 8px; 
-      font-weight: 500;
-      font-size: 14px;
-      white-space: nowrap;
-      animation: fadeInScale 0.4s ease-out;
-  `;
-
-  notification.innerHTML = `<i class="fas ${iconClass}"></i> ${message}`;
-  document.body.appendChild(notification);
-
+  // Auto remove after 3 seconds
   setTimeout(() => {
-    notification.style.animation = 'fadeOut 0.3s ease-in';
-    setTimeout(() => notification.remove(), 300);
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
-// CSS animations
+// CSS Styles cho notification toast và modal
 if (!document.getElementById('settings-notification-styles')) {
   const style = document.createElement('style');
   style.id = 'settings-notification-styles';
   style.textContent = `
-    @keyframes fadeInScale {
-      from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    /* Notification Toast */
+    .notification-toast {
+      position: fixed !important;
+      top: 20px;
+      right: 20px;
+      left: auto;
+      transform: translateX(120%);
+      width: auto !important;
+      min-width: 250px;
+      max-width: 350px;
+      height: 80px;
+      padding: 16px 20px !important;
+      border-radius: 12px !important;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      z-index: 999999;
+      display: flex !important;
+      align-items: center;
+      gap: 12px;
+      transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      font-size: 14px;
     }
-    @keyframes fadeOut {
-      to { opacity: 0; }
+    
+    .notification-toast.show {
+      transform: translateX(0);
     }
+
+    .notification-toast.success { background: #10b981 !important; }
+    .notification-toast.error { background: #ef4444 !important; }
+    .notification-toast.info { background: #3b82f6 !important; }
+    .notification-toast.warning { background: #f59e0b !important; }
+
+    .notification-toast i {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Modal Overlay */
     .modal-overlay { 
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
-      align-items: center; justify-content: center; z-index: 99999; 
+      display: none; 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0,0,0,0.6); 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 99999; 
     }
+    
     .modal-content { 
-      background: var(--card-bg, #fff); border-radius: 20px; width: 90%; max-width: 420px; 
+      background: var(--card-bg, #fff); 
+      border-radius: 20px; 
+      width: 90%; 
+      max-width: 420px; 
       box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
     }
+    
     .modal-header { 
-      padding: 20px; border-bottom: 1px solid var(--border, #eee); 
-      display: flex; justify-content: space-between; align-items: center; 
+      padding: 20px; 
+      border-bottom: 1px solid var(--border, #eee); 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
     }
-    .modal-body { padding: 24px; }
+    
+    .modal-body { 
+      padding: 24px; 
+    }
+    
     .modal-footer { 
-      padding: 20px; display: flex; justify-content: flex-end; gap: 12px; 
+      padding: 20px; 
+      display: flex; 
+      justify-content: flex-end; 
+      gap: 12px; 
       border-top: 1px solid var(--border, #eee); 
     }
+    
     .close-modal { 
-      background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8; 
+      background: none; 
+      border: none; 
+      font-size: 24px; 
+      cursor: pointer; 
+      color: #94a3b8; 
     }
   `;
   document.head.appendChild(style);

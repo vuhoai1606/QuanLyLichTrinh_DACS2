@@ -55,6 +55,13 @@ io.on('connection', (socket) => {
     }
   });
   
+  // Task status updated - Realtime task status changes
+  socket.on('taskStatusUpdated', (data) => {
+    console.log('📋 Task status updated:', data);
+    // Broadcast to all connected clients
+    io.emit('taskStatusUpdated', data);
+  });
+  
   socket.on('disconnect', () => {
     // Remove user from online list
     if (socket.userId) {

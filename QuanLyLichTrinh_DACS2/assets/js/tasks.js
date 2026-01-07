@@ -56,6 +56,43 @@ const api = {
 
 // ==================== CÁC HÀM TIỆN ÍCH (Phạm vi Toàn cục) ====================
 
+// Toast notification nhỏ
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    
+    let icon = 'fa-info-circle';
+    let bgColor = '#3b82f6';
+    
+    if (type === 'success') {
+        icon = 'fa-check-circle';
+        bgColor = '#22c55e';
+    } else if (type === 'error') {
+        icon = 'fa-exclamation-circle';
+        bgColor = '#ef4444';
+    } else if (type === 'warning') {
+        icon = 'fa-exclamation-triangle';
+        bgColor = '#f59e0b';
+    }
+    
+    notification.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <span>${message}</span>
+    `;
+    notification.style.background = bgColor;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 const renderTasks = (taskArray, targetListEl) => {
     const taskList = targetListEl || document.getElementById('task-list');
     const emptyState = document.getElementById('empty-state');
@@ -111,8 +148,12 @@ const renderTasks = (taskArray, targetListEl) => {
 
             <div class="task-actions">
                 ${isOverdue ? `
-                <button class="btn-reset" title="Tái thiết lập" style="background-color: #6366f1; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                <button class="btn-reset" title="Tái thiết lập">
                     <i class="fas fa-undo"></i> Reset
+                </button>` : ''}
+                ${(task.kanban_column === 'in_progress' || isOverdue) && task.status !== 'done' ? `
+                <button class="btn-complete-overdue" title="Hoàn thành">
+                    <i class="fas fa-check-circle"></i> Hoàn thành
                 </button>` : ''}
                 <button class="btn-edit" title="Sửa"><i class="fas fa-edit"></i></button>
                 <button class="btn-delete" title="Xóa"><i class="fas fa-trash"></i></button>
@@ -122,10 +163,25 @@ const renderTasks = (taskArray, targetListEl) => {
         const btnReset = li.querySelector('.btn-reset');
         if (btnReset) {
             btnReset.onclick = () => {
-                openModal(task);
-                document.getElementById('modal-title').textContent = 'Tái thiết lập công việc quá hạn';
-                // Đặt trạng thái ngầm định là todo khi lưu
-                currentResetMode = true; 
+                openModal(task, true); // isReset = true
+            };
+        }
+        
+        const btnCompleteOverdue = li.querySelector('.btn-complete-overdue');
+        if (btnCompleteOverdue) {
+            btnCompleteOverdue.onclick = async () => {
+                if (confirm(`Xác nhận hoàn thành task "${task.title}"?`)) {
+                    const result = await api.update(task.task_id, { 
+                        status: 'done',
+                        kanban_column: 'done'
+                    });
+                    if (result.success) {
+                        showNotification('Task đã hoàn thành!', 'success');
+                        await loadTasks();
+                    } else {
+                        showNotification('Lỗi khi hoàn thành task', 'error');
+                    }
+                }
             };
         }
         
@@ -145,6 +201,29 @@ const loadTasks = async () => {
     const newTasks = await api.getAll();
     tasks = newTasks;
 
+    // Kiểm tra và cập nhật trạng thái overdue cho các task đã quá hạn
+    const now = Date.now();
+    for (const task of tasks) {
+        if (task.status !== 'done' && task.kanban_column !== 'overdue' && task.end_time) {
+            const endTime = new Date(task.end_time).getTime();
+            // Nếu đã quá hạn, cập nhật ngay
+            if (now >= endTime) {
+                await updateTaskKanbanColumn(task.task_id, 'overdue');
+            }
+            // Nếu đã đến giờ bắt đầu mà vẫn là todo, chuyển sang in_progress
+            else if (task.start_time && task.kanban_column === 'todo') {
+                const startTime = new Date(task.start_time).getTime();
+                if (now >= startTime) {
+                    await updateTaskKanbanColumn(task.task_id, 'in_progress');
+                }
+            }
+        }
+    }
+
+    // Reload lại tasks sau khi update trạng thái
+    const updatedTasks = await api.getAll();
+    tasks = updatedTasks;
+
     renderTasks(tasks, document.getElementById('task-list')); 
     updateCountdowns(); // Cập nhật countdown ngay sau khi render
     window.dispatchEvent(new Event('tasksUpdated')); 
@@ -157,7 +236,7 @@ const loadTasks = async () => {
 };
 window.loadTasks = loadTasks;
 
-const openModal = async (task = null) => {
+const openModal = async (task = null, isReset = false) => {
     const modal = document.getElementById('task-modal');
     const overlay = document.getElementById('modal-overlay');
     const modalTitle = document.getElementById('modal-title');
@@ -173,18 +252,71 @@ const openModal = async (task = null) => {
     const ganttContainer = document.getElementById('gantt-container');
     
     currentEditId = task ? task.task_id : null;
-    if (modalTitle) modalTitle.textContent = task ? 'Chỉnh sửa công việc' : 'Tạo công việc mới';
+    
+    // Xác định tiêu đề modal
+    if (modalTitle) {
+        if (isReset) {
+            modalTitle.textContent = 'Tái thiết lập công việc quá hạn';
+        } else if (task) {
+            modalTitle.textContent = 'Chỉnh sửa công việc';
+        } else {
+            modalTitle.textContent = 'Tạo công việc mới';
+        }
+    }
 
+    // Điền thông tin
     if (inpTitle) inpTitle.value = task?.title || '';
     if (inpDesc) inpDesc.value = task?.description || '';
-    if (inpEnd) inpEnd.value = task?.end_time ? task.end_time.slice(0, 16) : ''; 
-    if (inpStart) inpStart.value = task?.start_time ? task.start_time.slice(0, 16) : '';
+    
+    // Nếu là reset, để trống thời gian
+    if (isReset) {
+        if (inpStart) inpStart.value = '';
+        if (inpEnd) inpEnd.value = '';
+    } else {
+        if (inpEnd) inpEnd.value = task?.end_time ? task.end_time.slice(0, 16) : ''; 
+        if (inpStart) inpStart.value = task?.start_time ? task.start_time.slice(0, 16) : '';
+    }
+    
     if (inpPriority) inpPriority.value = task?.priority || 'medium';
     if (inpRecurring) inpRecurring.value = task?.repeat_type || 'none'; 
     if (inpAssign) inpAssign.value = task?.assigned_to || ''; 
     if (inpDependency) inpDependency.innerHTML = '<option value="">Không phụ thuộc</option>';
     if (ganttContainer) ganttContainer.style.display = 'none';
     if (btnViewGantt) btnViewGantt.textContent = 'Xem Gantt Chart';
+
+    // Ẩn/hiện các trường dựa vào chế độ
+    const fieldsToHide = [
+        { label: 'Phụ thuộc vào Task', input: inpDependency },
+        { label: 'Lặp lại', input: inpRecurring },
+        { label: 'Giao cho', input: inpAssign },
+        { button: btnViewGantt }
+    ];
+
+    // Nếu là tạo mới (không có task) => ẩn các trường
+    if (!task) {
+        fieldsToHide.forEach(field => {
+            if (field.input) {
+                const label = field.input.previousElementSibling;
+                if (label && label.tagName === 'LABEL') label.style.display = 'none';
+                field.input.style.display = 'none';
+            }
+            if (field.button) {
+                field.button.style.display = 'none';
+            }
+        });
+    } else {
+        // Nếu là edit hoặc reset => hiện tất cả
+        fieldsToHide.forEach(field => {
+            if (field.input) {
+                const label = field.input.previousElementSibling;
+                if (label && label.tagName === 'LABEL') label.style.display = 'block';
+                field.input.style.display = 'block';
+            }
+            if (field.button) {
+                field.button.style.display = 'block';
+            }
+        });
+    }
 
     if (modal) modal.style.display = 'block';
     if (overlay) overlay.style.display = 'block';
@@ -210,8 +342,19 @@ async function updateTaskKanbanColumn(taskId, newColumn) {
       });
       const data = await res.json();
       if (data.success) {
-        if (typeof loadTasks === 'function') loadTasks(); 
-        if (typeof loadKanban === 'function') loadKanban(); 
+        // Emit socket event cho realtime update
+        if (typeof io !== 'undefined') {
+          try {
+            const socket = io();
+            socket.emit('taskStatusUpdated', { taskId, newColumn });
+          } catch (e) {
+            console.log('Socket.IO not available');
+          }
+        }
+        
+        // Force reload để cập nhật UI ngay lập tức
+        if (typeof loadTasks === 'function') await loadTasks(); 
+        if (typeof loadKanban === 'function') await loadKanban(); 
         return true;
       }
       return false;
@@ -243,18 +386,7 @@ function startAutoTaskManager(task) {
         const now = Date.now();
         const taskElement = document.querySelector(`[data-id="${taskId}"]`);
         
-        // 1. Thông báo trước 15 phút
-        if (start && now >= start - 15*60*1000 && now < start) {
-            const minutesToStart = Math.ceil((start - now) / 60000);
-            if (minutesToStart % 5 === 0 || minutesToStart <= 5) {
-                if (now - lastNotificationTime >= 5*60*1000) {
-                    showToast(`Sắp bắt đầu: "${task.title}" – còn ${minutesToStart} phút!`, 'warning');
-                    lastNotificationTime = now;
-                }
-            }
-        }
-
-        // 2. Đúng giờ bắt đầu → chuyển sang In Progress
+        // 1. Đúng giờ bắt đầu → chuyển sang In Progress
         if (start && now >= start && task.kanban_column === 'todo') {
             if (await updateTaskKanbanColumn(taskId, 'in_progress')) {
                 showToast(`Đang thực hiện: ${task.title}`, 'info');
@@ -262,49 +394,16 @@ function startAutoTaskManager(task) {
             }
         }
         
-        // 3. Trước 5 phút kết thúc
+        // 2. Trước 5 phút kết thúc - CHỈ THÔNG BÁO 1 LẦN DUY NHẤT
         if (end && now >= end - 5*60*1000 && now < end && task.kanban_column !== 'done' && task.kanban_column !== 'overdue') {
             if (now - lastNotificationTime >= 5*60*1000) { 
-                showToast(`"${task.title}" sắp kết thúc!`, 'warning');
+                showToast(`"${task.title}" sắp kết thúc trong 5 phút nữa!`, 'warning');
                 lastNotificationTime = now;
             }
         }
 
-        // 4. Đúng giờ kết thúc → hiện nút xác nhận (Thời gian ân hạn 5 phút)
-        if (end && now >= end && now <= end + 5*60*1000) {
-            if (taskElement && !taskElement.querySelector('.confirm-complete-group')) {
-                
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'confirm-complete-group';
-                groupDiv.style.marginTop = '8px';
-
-                const confirmBtn = document.createElement('button');
-                confirmBtn.className = 'btn-primary confirm-complete-btn';
-                confirmBtn.innerHTML = 'Xác nhận Hoàn thành';
-                confirmBtn.onclick = () => confirmComplete(taskId);
-                
-                const cancelBtn = document.createElement('button');
-                cancelBtn.className = 'btn-secondary cancel-grace-btn';
-                cancelBtn.innerHTML = 'Hủy';
-                cancelBtn.style.marginLeft = '10px';
-                cancelBtn.onclick = (e) => {
-                    e.stopPropagation(); 
-                    groupDiv.remove();
-                };
-                
-                groupDiv.appendChild(confirmBtn);
-                groupDiv.appendChild(cancelBtn);
-                
-                const metaDiv = taskElement?.querySelector('.task-meta');
-                if (metaDiv) metaDiv.insertAdjacentElement('afterend', groupDiv);
-            }
-        } else {
-            const existingGroup = taskElement?.querySelector('.confirm-complete-group');
-            if (existingGroup) existingGroup.remove();
-        }
-
-        // 5. Quá 5 phút ân hạn → trễ hạn
-        if (end && now > end + 5*60*1000 && task.kanban_column !== 'done' && task.kanban_column !== 'overdue') {
+        // 3. Đúng giờ kết thúc → chuyển sang OVERDUE ngay lập tức
+        if (end && now >= end && task.kanban_column !== 'done' && task.kanban_column !== 'overdue') {
             if (await updateTaskKanbanColumn(taskId, 'overdue')) {
                 showToast(`TRỄ HẠN: ${task.title}`, 'error');
                 clearInterval(window.taskTimers[taskId]); 
@@ -313,7 +412,7 @@ function startAutoTaskManager(task) {
     };
 
     check();
-    const timerId = setInterval(check, 10000); 
+    const timerId = setInterval(check, 5000); // Check mỗi 5 giây
     window.taskTimers[taskId] = timerId;
 }
 
@@ -521,6 +620,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     category_id
                 };
 
+                // Nếu đang reset task quá hạn (edit task với thời gian mới)
+                // Chuyển về trạng thái todo để nút Reset biến mất
+                if (currentEditId) {
+                    const currentTask = tasks.find(t => t.task_id === currentEditId);
+                    if (currentTask && currentTask.kanban_column === 'overdue') {
+                        payload.status = 'todo';
+                        payload.kanban_column = 'todo';
+                    }
+                }
+
                 // Gọi API
                 let result;
                 if (currentEditId) {
@@ -727,6 +836,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 ganttContainer.style.display = 'block';
                 btnViewGantt.innerHTML = 'Đóng Gantt';
             }
+        });
+    }
+
+    // ==================== SOCKET.IO REALTIME UPDATES ====================
+    if (typeof io !== 'undefined') {
+        const socket = io();
+        
+        // Lắng nghe task status update
+        socket.on('taskStatusUpdated', async (data) => {
+            console.log('[Socket.IO] Task status updated:', data);
+            
+            // Tìm task trong mảng hiện tại
+            const taskIndex = tasks.findIndex(t => t.task_id === data.taskId);
+            if (taskIndex !== -1) {
+                // Cập nhật task trong mảng
+                const updatedTask = await api.getOne(data.taskId);
+                if (updatedTask) {
+                    tasks[taskIndex] = updatedTask;
+                    
+                    // Re-render only the affected task
+                    const taskElement = document.querySelector(`[data-id="${data.taskId}"]`);
+                    if (taskElement) {
+                        // Render lại toàn bộ tasks để cập nhật nút
+                        renderTasks(tasks, taskList);
+                        updateCountdowns();
+                        
+                        // Hiển thị notification
+                        if (data.newColumn === 'in_progress') {
+                            showNotification(`Task "${updatedTask.title}" đang thực hiện!`, 'info');
+                        } else if (data.newColumn === 'overdue') {
+                            showNotification(`Task "${updatedTask.title}" đã QUÁ HẠN!`, 'error');
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Lắng nghe task kanban column update
+        socket.on('taskKanbanUpdated', async (data) => {
+            console.log('[Socket.IO] Task kanban updated:', data);
+            await loadTasks(); // Reload tất cả tasks
+            updateCountdowns();
         });
     }
 
