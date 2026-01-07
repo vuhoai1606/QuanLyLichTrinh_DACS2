@@ -301,76 +301,20 @@ function showNotificationPopup(message, type = 'info') {
 
   const notification = document.createElement('div');
   currentNotification = notification;
+  notification.classList.add('notification-toast', type);
 
   let iconClass = 'fa-info-circle';
-  let bgColor = '#3b82f6';
-
-  if (type === 'success') { iconClass = 'fa-check-circle'; bgColor = '#22c55e'; }
-  else if (type === 'error') { iconClass = 'fa-exclamation-circle'; bgColor = '#ef4444'; }
-
-  notification.style.cssText = `
-      position: fixed; 
-      top: 50%; 
-      left: 50%; 
-      transform: translate(-50%, -50%);
-      background: ${bgColor}; 
-      color: white; 
-      padding: 10px 20px; 
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-      z-index: 999999;
-      display: flex; 
-      align-items: center; 
-      gap: 8px; 
-      font-weight: 500;
-      font-size: 14px;
-      white-space: nowrap;
-      animation: fadeInScale 0.4s ease-out;
-  `;
+  if (type === 'success') { iconClass = 'fa-check-circle'; }
+  else if (type === 'error') { iconClass = 'fa-exclamation-circle'; }
 
   notification.innerHTML = `<i class="fas ${iconClass}"></i> ${message}`;
   document.body.appendChild(notification);
 
   setTimeout(() => {
+    notification.classList.remove('notification-toast');
     notification.style.animation = 'fadeOut 0.3s ease-in';
     setTimeout(() => notification.remove(), 300);
   }, 3000);
-}
-
-// CSS animations
-if (!document.getElementById('settings-notification-styles')) {
-  const style = document.createElement('style');
-  style.id = 'settings-notification-styles';
-  style.textContent = `
-    @keyframes fadeInScale {
-      from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
-    @keyframes fadeOut {
-      to { opacity: 0; }
-    }
-    .modal-overlay { 
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
-      align-items: center; justify-content: center; z-index: 99999; 
-    }
-    .modal-content { 
-      background: var(--card-bg, #fff); border-radius: 20px; width: 90%; max-width: 420px; 
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
-    }
-    .modal-header { 
-      padding: 20px; border-bottom: 1px solid var(--border, #eee); 
-      display: flex; justify-content: space-between; align-items: center; 
-    }
-    .modal-body { padding: 24px; }
-    .modal-footer { 
-      padding: 20px; display: flex; justify-content: flex-end; gap: 12px; 
-      border-top: 1px solid var(--border, #eee); 
-    }
-    .close-modal { 
-      background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8; 
-    }
-  `;
-  document.head.appendChild(style);
 }
 
 // System theme listener
