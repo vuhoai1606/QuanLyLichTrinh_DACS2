@@ -2030,7 +2030,7 @@ button,
   .calendar-grid .day,
   .week-view .week-cell,
   .day-view .day-cell {
-    background: #1e293b;
+    background: #fff;
     border-color: #334155;
   }
   
