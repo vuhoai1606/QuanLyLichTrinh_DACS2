@@ -30,4 +30,8 @@ router.patch('/api/tasks/reorder', taskController.reorderTasks);
 
 // Route mới để xác nhận hoàn thành task có overdue
 router.post('/api/tasks/:id/confirm-complete', taskController.confirmTaskComplete);
+
+// Route mới để reset task từ overdue về todo (xóa thời gian)
+router.post('/api/tasks/:id/reset', taskController.resetTask);
+
 module.exports = router;

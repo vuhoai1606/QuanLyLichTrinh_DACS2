@@ -1117,6 +1117,34 @@ body {
   border-color: var(--primary);
 }
 
+/* Drag & Drop States */
+.task-card.task-not-draggable {
+  cursor: pointer !important;
+}
+
+.task-card.task-not-draggable:active {
+  cursor: pointer !important;
+}
+
+.task-card.task-draggable {
+  cursor: grab;
+}
+
+.task-card.task-draggable:active {
+  cursor: grabbing;
+}
+
+.task-list.drag-over-allowed {
+  background: rgba(99, 102, 241, 0.05);
+  border: 2px dashed var(--primary);
+}
+
+.task-list.drag-over-forbidden {
+  background: rgba(239, 68, 68, 0.05);
+  border: 2px dashed var(--danger);
+  cursor: not-allowed;
+}
+
 /* Card Content */
 .card-item h4,
 .task-title {

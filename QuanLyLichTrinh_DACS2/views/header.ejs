@@ -18,7 +18,7 @@
     <div class="action-btn" data-tooltip="Thông báo">
       <a href="/notifications" class="notif-link">
         <i class="fas fa-bell"></i>
-        <span id="notif-badge" class="notif-badge" style="display: none !important;"></span>
+        <span id="notif-badge" class="notif-badge"></span>
       </a>
     </div>
 
@@ -108,3 +108,17 @@
 
 <!-- Settings Popup -->
 <%- include('settings-popup') %>
+
+<!-- Set current user info for socket and JS -->
+<script>
+  <% if (typeof user !== 'undefined' && user && user.user_id) { %>
+    window.currentUserId = <%= user.user_id %>;
+    window.userRole = '<%= user.role || "user" %>';
+  <% } else if (typeof userId !== 'undefined' && userId) { %>
+    window.currentUserId = <%= userId %>;
+    window.userRole = '<%= typeof userRole !== "undefined" ? userRole : "user" %>';
+  <% } else { %>
+    window.currentUserId = null;
+    window.userRole = 'guest';
+  <% } %>
+</script>

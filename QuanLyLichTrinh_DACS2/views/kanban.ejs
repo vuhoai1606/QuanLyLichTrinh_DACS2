@@ -84,23 +84,35 @@
   <!-- Modal: Task Detail -->
   <div id="task-detail-modal" class="modal">
     <div class="modal-content">
-      <h3>Task Detail</h3>
+      <h3 id="task-modal-title">Task Detail</h3>
       <input type="text" id="task-title" placeholder="Task Title" class="input-field">
       <textarea id="task-desc" placeholder="Description" class="input-field"></textarea>
-      <input type="date" id="task-due" class="input-field">
+      
+      <label for="task-start" style="font-weight: 600; margin-top: 10px; display: block;">Thời gian bắt đầu</label>
+      <input type="datetime-local" id="task-start" class="input-field">
+      
+      <label for="task-due" style="font-weight: 600; margin-top: 10px; display: block;">Thời gian kết thúc</label>
+      <input type="datetime-local" id="task-due" class="input-field">
+      
       <select id="task-priority" class="input-field">
         <option value="">Select Priority</option>
         <option value="high">🔴 High Priority</option>
         <option value="medium">🟡 Medium Priority</option>
         <option value="low">🟢 Low Priority</option>
       </select>
-      <input type="text" id="task-assignee" placeholder="Assignee Name" class="input-field">
-      <input type="number" id="task-progress" placeholder="Progress (%)" class="input-field" min="0" max="100">
+      
+      <label for="task-category" style="font-weight: 600; margin-top: 10px; display: block;">Danh mục</label>
+      <select id="task-category" class="input-field">
+        <option value="">Không có danh mục</option>
+      </select>
+      
+      <input type="text" id="task-assignee" placeholder="Assignee Name" class="input-field" style="display: none;">
+      <input type="number" id="task-progress" placeholder="Progress (%)" class="input-field" min="0" max="100" style="display: none;">
       <div class="modal-actions">
         <button id="save-task" class="btn btn-primary">
           <i class="fas fa-check"></i> Save
         </button>
-        <button id="delete-task" class="btn btn-danger">
+        <button id="delete-task" class="btn btn-danger" style="display: none;">
           <i class="fas fa-trash"></i> Delete
         </button>
         <button id="close-detail" class="btn btn-secondary">

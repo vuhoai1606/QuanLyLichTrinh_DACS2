@@ -493,6 +493,75 @@ exports.confirmTaskComplete = async (req, res) => {
   }
 };
 
+// Reset task từ overdue về todo - Xóa start_time và end_time
+exports.resetTask = async (req, res) => {
+  try {
+    const taskId = req.params.id;
+    const userId = req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Vui lòng đăng nhập' 
+      });
+    }
+
+    // Lấy thông tin task để kiểm tra
+    const checkTask = await pool.query(
+      'SELECT task_id, title FROM tasks WHERE task_id = $1 AND user_id = $2', 
+      [taskId, userId]
+    );
+
+    if (checkTask.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy task' 
+      });
+    }
+
+    const task = checkTask.rows[0];
+
+    // Reset task: Xóa start_time, end_time, grace_end_time và chuyển về todo
+    await pool.query(
+      `UPDATE tasks 
+       SET start_time = NULL, 
+           end_time = NULL, 
+           grace_end_time = NULL,
+           status = 'todo', 
+           kanban_column = 'todo'
+       WHERE task_id = $1 AND user_id = $2`,
+      [taskId, userId]
+    );
+
+    // Tạo notification (optional - bỏ qua nếu lỗi)
+    try {
+      await notificationService.createNotification({
+        userId,
+        title: 'Task đã được reset',
+        message: `Nhiệm vụ "${task.title}" đã được reset về To Do`,
+        type: 'task',
+        redirectUrl: '/tasks',
+        relatedId: taskId
+      });
+    } catch (notifErr) {
+      console.warn('Không thể tạo notification:', notifErr.message);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Reset task thành công',
+      action: 'reset_ok' 
+    });
+  } catch (err) {
+    console.error('Lỗi reset task:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Lỗi server khi reset task',
+      error: err.message 
+    });
+  }
+};
+
 exports.getCategories = async (req, res) => {
   try {
     const userId = req.session.userId;

@@ -12,23 +12,6 @@
   isolation: isolate;
 }
 
-/* Sửa lại để thông báo nhỏ gọn và không đè lên toàn bộ khung */
-.settings-overlay .notification-toast {
-  position: fixed !important; /* Dùng fixed để nó nổi lên trên hẳn */
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: auto !important;     /* Không cho nó chiếm 100% chiều rộng */
-  min-width: 200px;           /* Độ rộng tối thiểu vừa phải */
-  max-width: 300px;           /* Không cho to quá */
-  padding: 12px 20px !important;
-  border-radius: 12px !important;
-  background: rgba(239, 68, 68, 0.95) !important; /* Màu đỏ thông báo */
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  z-index: 10001;             /* Phải cao hơn z-index của popup (9999) */
-}
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -38,10 +21,11 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 500px;
+  width: 85%;
+  max-width: 420px;
   animation: fadeIn 0.2s ease-out;
   overflow: hidden;
+  margin: auto;
 }
 
 /* Light mode - Settings popup full trắng */
@@ -405,3 +389,201 @@ body[data-theme="dark"] .settings-popup-footer {
   }
 }
 
+/* Animations & Modal Styles */
+@keyframes fadeInScale {
+  from { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.8); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1); 
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes popInCenter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes fadeOut {
+  to { 
+    opacity: 0; 
+  }
+}
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.modal-content {
+  background: var(--card-bg, #fff);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border, #eee);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--border, #eee);
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+/* Notification Toast - Professional & Compact Design */
+.notification-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  color: #1e293b;
+  padding: 6px 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 999999;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 1.0;
+  white-space: nowrap;
+  animation: popInCenter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(12px);
+  border-left: 2px solid #3b82f6;
+  width: auto;
+  max-width: 350px;
+  min-width: 250px;
+  height: auto;
+  min-height: 50px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Success State */
+.notification-toast.success {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #00ff4c 0%, #00ff4c 100%);
+  color: #065f46;
+}
+
+.notification-toast.success i {
+  color: #3dff02;
+  font-size: 11px;
+}
+
+/* Error State */
+.notification-toast.error {
+  border-left-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #991b1b;
+}
+
+.notification-toast.error i {
+  color: #ef4444;
+  font-size: 11px;
+}
+
+/* Info State */
+.notification-toast.info {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1e40af;
+}
+
+.notification-toast.info i {
+  color: #3b82f6;
+  font-size: 11px;
+}
+
+/* Icon Styling */
+.notification-toast i {
+  min-width: 11px;
+  font-size: 11px;
+  text-align: center;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+/* Dark Mode Support for Notification */
+body[data-theme="dark"] .notification-toast,
+body.dark-mode .notification-toast {
+  background: #1f2937;
+  color: #f3f4f6;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme="dark"] .notification-toast.success,
+body.dark-mode .notification-toast.success {
+  background: linear-gradient(135deg, rgba(1, 255, 115, 0.596) 0%, rgb(1, 255, 77) 100%);
+  color: #000;
+}
+
+body[data-theme="dark"] .notification-toast.error,
+body.dark-mode .notification-toast.error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  color: #fca5a5;
+  border-left-color: #ef4444;
+}
+
+body[data-theme="dark"] .notification-toast.info,
+body.dark-mode .notification-toast.info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+  color: #93c5fd;
+  border-left-color: #3b82f6;
+}

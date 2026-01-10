@@ -47,9 +47,13 @@ function renderKanbanBoard(data) {
     let tasksHtml = '';
     col.tasks.forEach(task => {
       const isOverdueClass = col.id === 'overdue' ? 'task-overdue' : '';
+      // Chỉ cho phép kéo in_progress và overdue
+      const isDraggable = col.id === 'in_progress' || col.id === 'overdue';
+      const draggableAttr = isDraggable ? 'true' : 'false';
+      const draggableClass = isDraggable ? 'task-draggable' : 'task-not-draggable';
 
       tasksHtml += `
-        <div class="task-card ${isOverdueClass}" draggable="true" data-id="${task.task_id}" data-kanban-column="${task.kanban_column}" onclick="handleCardClick(event, ${task.task_id}, '${task.end_time || ''}', '${task.kanban_column}')">
+        <div class="task-card ${isOverdueClass} ${draggableClass}" draggable="${draggableAttr}" data-id="${task.task_id}" data-kanban-column="${task.kanban_column}" onclick="handleCardClick(event, ${task.task_id}, '${task.end_time || ''}', '${task.kanban_column}')">
           <h4 class="task-title">${escapeHtml(task.title)}</h4>
           <p class="task-desc">${escapeHtml(task.description || '')}</p>
 
@@ -111,14 +115,22 @@ function attachAddTaskButtons() {
   });
 }
 
-function openCreateTaskModal(columnId) {
+async function openCreateTaskModal(columnId) {
   currentTaskId = null;
   tempColumnForNewTask = columnId;
 
+  // Load categories trước
+  await loadCategoriesForModal();
+  
+  const modalTitle = document.getElementById('task-modal-title');
+  if (modalTitle) modalTitle.textContent = 'Tạo Task Mới';
+
   document.getElementById('task-title').value = '';
   document.getElementById('task-desc').value = '';
+  document.getElementById('task-start').value = '';
   document.getElementById('task-due').value = '';
   document.getElementById('task-priority').value = 'medium';
+  document.getElementById('task-category').value = '';
   document.getElementById('task-assignee').value = '';
   document.getElementById('task-progress').value = 0;
 
@@ -130,11 +142,17 @@ async function saveTask() {
   const title = document.getElementById("task-title").value.trim();
   if (!title) return alert('Tiêu đề không được để trống!');
 
+  const startInput = document.getElementById("task-start").value;
+  const dueInput = document.getElementById("task-due").value;
+  const categoryId = document.getElementById("task-category").value;
+  
   const body = {
     title,
     description: document.getElementById("task-desc").value.trim() || null,
-    end_time: document.getElementById("task-due").value ? document.getElementById("task-due").value + 'T00:00:00' : null,
+    start_time: startInput || null,
+    end_time: dueInput || null,
     priority: document.getElementById("task-priority").value || 'medium',
+    category_id: categoryId ? Number(categoryId) : null,
     progress: Number(document.getElementById("task-progress").value || 0)
   };
 
@@ -259,44 +277,213 @@ async function filterKanbanTasks(startDate, endDate) {
 // ------------------ DRAG & DROP ------------------
 let draggedCard = null;
 
+/**
+ * Kiểm tra xem có được phép drop không
+ * - todo và done: không thể di chuyển
+ * - in_progress: chỉ được sang done
+ * - overdue: chỉ được sang todo
+ */
+function isDropAllowed(fromColumn, toColumn) {
+  // Không cho phép drop vào cùng cột
+  if (fromColumn === toColumn) return false;
+  
+  // Không cho phép drop vào add task button area
+  if (toColumn === fromColumn) return false;
+  
+  // in_progress chỉ được sang done
+  if (fromColumn === 'in_progress') {
+    return toColumn === 'done';
+  }
+  
+  // overdue chỉ được sang todo
+  if (fromColumn === 'overdue') {
+    return toColumn === 'todo';
+  }
+  
+  // todo và done không thể di chuyển (nhưng đã bị disable draggable)
+  return false;
+}
+
+function getDropErrorMessage(fromColumn, toColumn) {
+  if (fromColumn === 'in_progress') {
+    return 'Task đang thực hiện chỉ có thể di chuyển sang Done (Hoàn thành)';
+  }
+  if (fromColumn === 'overdue') {
+    return 'Task quá hạn chỉ có thể di chuyển sang To Do để Reset';
+  }
+  return 'Không thể di chuyển task này';
+}
+
+/**
+ * Reset task khi kéo từ overdue sang todo
+ * Giống chức năng nút Reset trong tasks.js: Update task với start_time và end_time = null
+ * Sử dụng lại API PUT /api/tasks/:id thay vì tạo endpoint mới
+ */
+async function resetTaskFromDrag(taskId) {
+  try {
+    // Lấy thông tin task trước để giữ lại các trường khác
+    const getRes = await fetch(`/api/tasks/${taskId}`);
+    const getData = await getRes.json();
+    
+    if (!getData.success || !getData.task) {
+      showToast('Không tìm thấy task', 'error');
+      return;
+    }
+    
+    const task = getData.task;
+    
+    // Update task: Xóa thời gian (giống logic trong tasks.js)
+    const updateData = {
+      title: task.title,
+      description: task.description,
+      start_time: null,  // Xóa thời gian bắt đầu
+      end_time: null,    // Xóa thời gian kết thúc
+      priority: task.priority,
+      category_id: task.category_id,
+      progress: task.progress || 0
+    };
+    
+    const res = await fetch(`/api/tasks/${taskId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updateData)
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      // Cập nhật kanban_column và status thành todo
+      const kanbanRes = await fetch(`/api/tasks/${taskId}/kanban`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kanbanColumn: 'todo' })
+      });
+      
+      const kanbanData = await kanbanRes.json();
+      
+      if (kanbanData.success) {
+        showToast('Đã reset task về To Do - vui lòng thiết lập lại thời gian', 'success');
+        await loadKanban();
+        
+        // Mở modal ở chế độ reset để thiết lập lại thời gian (giống như trong tasks.js)
+        setTimeout(() => {
+          openTaskModal(taskId, true); // isReset = true
+        }, 500); // Delay nhỏ để loadKanban xong trước
+      } else {
+        showToast('Lỗi khi chuyển task về To Do', 'error');
+      }
+    } else {
+      showToast(data.message || 'Reset thất bại', 'error');
+    }
+  } catch (err) {
+    console.error('Lỗi reset task:', err);
+    showToast('Lỗi kết nối khi reset task', 'error');
+  }
+}
+
+/**
+ * Complete task khi kéo từ in_progress sang done
+ * Giống chức năng nút Hoàn thành
+ */
+async function completeTaskFromDrag(taskId) {
+  try {
+    const res = await fetch(`/api/tasks/${taskId}/confirm-complete`, {
+      method: 'POST'
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast('Task hoàn thành!', 'success');
+      await loadKanban();
+    } else {
+      showToast(data.message || 'Không thể hoàn thành task', 'error');
+    }
+  } catch (err) {
+    console.error('Lỗi complete task:', err);
+    showToast('Lỗi kết nối khi hoàn thành task', 'error');
+  }
+}
+
 function initDragAndDrop() {
   const cards = document.querySelectorAll('.task-card');
   const lists = document.querySelectorAll('.task-list');
 
   cards.forEach(card => {
-    card.addEventListener('dragstart', () => {
+    const isDraggable = card.getAttribute('draggable') === 'true';
+    
+    if (!isDraggable) {
+      // Không cho phép kéo todo và done - cursor bình thường
+      card.style.cursor = 'pointer';
+      return;
+    }
+    
+    card.style.cursor = 'grab';
+    
+    card.addEventListener('dragstart', (e) => {
       card.classList.add('dragging');
       draggedCard = card;
+      card.style.cursor = 'grabbing';
     });
+    
     card.addEventListener('dragend', () => {
       card.classList.remove('dragging');
       draggedCard = null;
+      card.style.cursor = 'grab';
     });
   });
 
   lists.forEach(list => {
-    list.addEventListener('dragover', e => e.preventDefault());
+    list.addEventListener('dragover', e => {
+      if (!draggedCard) return;
+      
+      const oldColumn = draggedCard.dataset.kanbanColumn;
+      const newColumn = list.dataset.column;
+      
+      // Kiểm tra điều kiện drop hợp lệ
+      const isValidDrop = isDropAllowed(oldColumn, newColumn);
+      
+      if (isValidDrop) {
+        e.preventDefault(); // Cho phép drop
+        list.style.cursor = 'copy';
+      } else {
+        list.style.cursor = 'not-allowed'; // Cấm drop
+      }
+    });
+    
+    list.addEventListener('dragleave', () => {
+      list.style.cursor = 'default';
+    });
+    
     list.addEventListener('drop', async e => {
       e.preventDefault();
+      list.style.cursor = 'default';
+      
       if (!draggedCard) return;
-
-      list.appendChild(draggedCard);
 
       const taskId = draggedCard.dataset.id;
       const oldColumn = draggedCard.dataset.kanbanColumn;
       const newColumn = list.dataset.column;
-
-      // YÊU CẦU: Nếu từ overdue sang todo -> Mở modal chỉnh sửa
-      if (oldColumn === 'overdue' && newColumn === 'todo') {
-          openTaskModal(taskId);
-          // Thay đổi tiêu đề modal để người dùng biết cần chỉnh sửa lại thời gian
-          setTimeout(() => {
-              document.querySelector('#task-detail-modal h3').textContent = 'Cập nhật lại thời gian cho Task';
-          }, 100);
-          return; // Dừng việc cập nhật API tự động, đợi người dùng nhấn Save trong Modal
+      
+      // Validate drop
+      if (!isDropAllowed(oldColumn, newColumn)) {
+        showToast(getDropErrorMessage(oldColumn, newColumn), 'warning');
+        return;
       }
 
-      // Chỉ cho phép di chuyển task Quá hạn sang cột Todo
+      // OVERDUE → TODO: Reset task (xóa thời gian như nút Reset)
+      if (oldColumn === 'overdue' && newColumn === 'todo') {
+        await resetTaskFromDrag(taskId);
+        return;
+      }
+      
+      // IN_PROGRESS → DONE: Complete task (như nút Hoàn thành)
+      if (oldColumn === 'in_progress' && newColumn === 'done') {
+        await completeTaskFromDrag(taskId);
+        return;
+      }
+
+      // Chỉ cho phép di chuyển task Quá hạn sang cột Todo (old logic - đã xử lý ở trên)
       if (oldColumn === 'overdue' && newColumn !== 'todo') {
           showToast('Task quá hạn chỉ có thể di chuyển sang cột To Do để thiết lập lại', 'warning');
           return;
@@ -344,8 +531,10 @@ setInterval(updateCountdowns, 60000);
 updateCountdowns();
 
 // ------------------ OPEN TASK MODAL ------------------
-async function openTaskModal(taskId) {
+async function openTaskModal(taskId, isReset = false) {
   const modal = document.getElementById('task-detail-modal');
+  const modalTitle = document.getElementById('task-modal-title');
+  
   if (!modal) {
     console.error("Modal không tồn tại!");
     return;
@@ -355,17 +544,35 @@ async function openTaskModal(taskId) {
   tempColumnForNewTask = null; // Reset khi mở task cũ
 
   try {
+    // Load categories trước
+    await loadCategoriesForModal();
+    
     const res = await fetch(`/api/kanban/${taskId}`);
     if (!res.ok) throw new Error('Không lấy được dữ liệu task');
 
     const { success, data } = await res.json();
     if (!success || !data) throw new Error('Dữ liệu task không hợp lệ');
 
+    // Đổi tiêu đề modal nếu là chế độ reset
+    if (modalTitle) {
+      modalTitle.textContent = isReset ? 'Tái thiết lập công việc quá hạn' : 'Task Detail';
+    }
+
     // Điền dữ liệu vào modal
     document.getElementById('task-title').value = data.title || '';
     document.getElementById('task-desc').value = data.description || '';
-    document.getElementById('task-due').value = data.end_time ? data.end_time.slice(0, 10) : '';
+    
+    // Nếu là reset, để trống thời gian; nếu không thì điền dữ liệu có sẵn
+    if (isReset) {
+      document.getElementById('task-start').value = '';
+      document.getElementById('task-due').value = '';
+    } else {
+      document.getElementById('task-start').value = data.start_time ? data.start_time.slice(0, 16) : '';
+      document.getElementById('task-due').value = data.end_time ? data.end_time.slice(0, 16) : '';
+    }
+    
     document.getElementById('task-priority').value = data.priority || 'medium';
+    document.getElementById('task-category').value = data.category_id || '';
     document.getElementById('task-assignee').value = data.assigned_to || '';
     document.getElementById('task-progress').value = data.progress || 0;
 
@@ -381,6 +588,29 @@ function closeDetailModal() {
   if (modal) modal.classList.remove('active');
   currentTaskId = null;
   tempColumnForNewTask = null;
+}
+
+// Load categories cho modal
+async function loadCategoriesForModal() {
+  try {
+    const res = await fetch('/api/categories');
+    const data = await res.json();
+    
+    if (data.success && data.categories) {
+      const select = document.getElementById('task-category');
+      if (select) {
+        select.innerHTML = '<option value="">Không có danh mục</option>';
+        data.categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.category_id;
+          option.textContent = cat.category_name;
+          select.appendChild(option);
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi load categories:', err);
+  }
 }
 
 function escapeHtml(text) {

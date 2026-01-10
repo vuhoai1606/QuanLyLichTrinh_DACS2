@@ -292,8 +292,8 @@ const openModal = async (task = null, isReset = false) => {
         { button: btnViewGantt }
     ];
 
-    // Nếu là tạo mới (không có task) => ẩn các trường
-    if (!task) {
+    // Nếu là tạo mới (không có task) hoặc reset => ẩn các trường
+    if (!task || isReset) {
         fieldsToHide.forEach(field => {
             if (field.input) {
                 const label = field.input.previousElementSibling;
@@ -305,7 +305,7 @@ const openModal = async (task = null, isReset = false) => {
             }
         });
     } else {
-        // Nếu là edit hoặc reset => hiện tất cả
+        // Nếu là edit => hiện tất cả
         fieldsToHide.forEach(field => {
             if (field.input) {
                 const label = field.input.previousElementSibling;
